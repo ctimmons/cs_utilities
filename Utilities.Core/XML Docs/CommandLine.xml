@@ -1,0 +1,176 @@
+﻿<docs>
+
+  <member name="CommandLineParameterException">
+    <summary>
+      Basic descendents of <see cref="System.Exception">Exception</see>.
+    </summary>
+  </member>
+
+  <member name="CommandLineParameterException_String">
+    <summary>
+      Descendent of <see cref="System.Exception">Exception</see> that takes a <see cref="System.String">String</see> parameter.
+    </summary>
+  </member>
+
+  <member name="CommandLineParameterException_StringException">
+    <summary>
+      Descendent of <see cref="System.Exception">Exception</see> that takes a <see cref="System.String">String</see>
+      and an <see cref="System.Exception">Exception</see> parameter.
+    </summary>
+  </member>
+
+  <member name="CommandLine">
+    <summary>
+      A class that simplifies processing command line items.
+    </summary>
+    <remarks>
+      <para>
+        Command line items in Windows can be divided into the following four categories:
+      </para>
+      <para>
+        <list type="bullet">
+          <listheader>
+            <term>
+              Item
+            </term>
+            <description>
+              Description
+            </description>
+          </listheader>
+          <item>
+            <term>
+              Switch
+            </term>
+            <description>
+              <para>
+                Switch characters may be -, / or any combination of those two characters.
+              </para>
+              <para>
+                A switch is a command line item that is preceded by a switch character, and does not have an associated value.
+              </para>
+              <para>
+                Examples: --version, /?, -P
+              </para>
+            </description>
+          </item>
+          <item>
+            <term>
+              Parameter
+            </term>
+            <description>
+              <para>
+                A parameter is a switch that has a value associated with it.
+              </para>
+              <para>
+                The switch and value may be adjacent (i.e. with no separating character between them),
+                or they may be separated by a : or = character, or they may be separated by one or more
+                whitespace characters.
+              </para>
+              <para>
+                If the value has embedded whitespace, wrap it in double-quotes so it is treated as one entity by
+                the Windows command line.  Otherwise, Windows will treat the whitespace characters as separators
+                and split the value up into multiple command line items.
+              </para>
+              <para>
+                Examples:
+                <table class="helptable">
+                  <tbody>
+                    <tr>
+                      -output"d:\data\My File With Spaces.txt"
+                    </tr>
+                    <tr>
+                      -output:"d:\data\My File With Spaces.txt"
+                    </tr>
+                    <tr>
+                      -output=d:\data\My File With Spaces.txt
+                    </tr>
+                    <tr>
+                      -output d:\data\My File With Spaces.txt
+                    </tr>
+                  </tbody>
+                </table>
+              </para>
+            </description>
+          </item>
+          <item>
+            <term>
+              Value
+            </term>
+            <description>
+              <para>
+                A value is any command line item that is not preceded by a switch character.
+                These types of parameters are usually accessed by their position in the string
+                array that holds the command line items.
+              </para>
+              <para>
+                Examples:
+                <ul>
+                  <li>"d:\data\My File With Spaces.txt"</li>
+                  <li>d:\data\MyFileWithNoSpaces.txt</li>
+                </ul>
+              </para>
+            </description>
+          </item>
+          <item>
+            <term>
+              Response File
+            </term>
+            <description>
+              <para>
+                Response files are plain text files that contain zero or more command line
+                items, along with optional comment lines and blank lines.
+              </para>
+              <para>
+                A response file's filename is specified on the command line by preceding it with
+                the @ character.  When the CommandLine object is instantiated, its constructor will
+                expand the contents of the response file inline into the string array holding the
+                command line items.
+              </para>
+              <para>
+                Within a response file, blank lines are ignored.  A comment line starts
+                with the # character (any leading whitespace is ignored).  Comments may only
+                appear on lines by themselves; a comment may not follow any command line
+                items on the same line.  If a comment does appear on the same line
+                as one or more command line items, no error will be thrown.  But the
+                comment will be broken up into individual words and those words treated
+                as command line items.
+              </para>
+              <para>
+
+              </para>
+            </description>
+          </item>
+        </list>
+      </para>
+
+
+
+
+      d:\data\ResponseFile1.rsp
+      -----------------
+
+      # This is a response file.
+
+      /foo
+      -bar
+
+      e:\my files\ResponseFile2.rsp
+      -----------------
+
+      # This is a different response file.
+
+      --baz /quux
+
+      Original command line
+      ---------------------
+
+      /switch1 @d:\data\ResponseFile1.rsp /switch2 @"e:\my files\ResponseFile2.rsp" /switch3
+
+      Expanded command line
+      ---------------------
+
+      /switch1 /foo -bar /switch2 --baz /quux /switch3
+    </remarks>
+  </member>
+
+</docs>

@@ -1,0 +1,310 @@
+﻿<docs>
+  
+  <member name="StringAssertion">
+    <summary>
+      Specifies constants used to determine what checks are done on a <see cref="System.String"/>.
+      <para>This enumeration has a <see cref="System.FlagsAttribute"/> attribute that allows a bitwise combination of its member values.</para>
+    </summary>
+    <remarks>
+      Specify a bitwise combination of one or more StringAssertion values as a parameter to one of the <see cref="O:Utilities.Core.AssertUtils.Check">Check</see> extension methods.
+    </remarks>
+    <example>
+      See the <see cref="O:Utilities.Core.AssertUtils.Check">Check</see> extension methods for examples.
+    </example>
+  </member>
+
+  <member name="StringAssertion_None">
+    <summary>
+      The string will not be checked at all.
+    </summary>
+  </member>
+
+  <member name="StringAssertion_NotNull">
+    <summary>
+      The string will be checked to see if it's null.
+    </summary>
+  </member>
+
+  <member name="StringAssertion_NotOnlyWhitespace">
+    <summary>
+      The string will be checked to see if it consists of only whitespace.
+    </summary>
+  </member>
+
+  <member name="StringAssertion_NotZeroLength">
+    <summary>
+      The string will be checked to see if it's length is zero.
+    </summary>
+  </member>
+
+  <member name="StringAssertion_All">
+    <summary>
+      The NotNull, NotOnlyWhitespace and NotZeroLength assertions will be applied to the string.
+    </summary>
+  </member>
+  
+  <member name="AssertUtils">
+    <summary>
+      A small collection of extension methods that reduces the code needed to check <see cref="System.String">String</see>s for null-ness, whitespace only and length.
+    </summary>
+    <remarks>
+      A common idiom in C# methods is using one or more if/then statements to check parameter(s) for validity.
+      <para>
+        <code language="C#">
+          public String GetFileContents(String filename)
+          {
+            if (filename == null)
+              throw new ArgumentNullException("filename cannot be null.");
+              
+            if (filename.Trim().Length == 0)
+              throw new ArgumentException("filename cannot be empty.");
+              
+            // more code here...
+          }
+        </code>
+      </para>
+      <para>
+        Those if/then statements are ripe for abstraction.  A more pleasant way to express the above logic might be something like this:
+      </para>
+      <para>
+        <code language="C#">
+          public String GetFileContents(String filename)
+          {
+            filename.Check("filename", StringAssertion.NotNull | StringAssertion.NotZeroLength);
+              
+            // more code here...
+          }
+        </code>
+      </para>
+      <para>
+        Or even shorter, since checking a string for null-ness and length is so common:
+      </para>
+      <para>
+        <code language="C#">
+          public String GetFileContents(String filename)
+          {
+            filename.Check("filename");
+              
+            // more code here...
+          }
+        </code>
+      </para>
+      <para>
+        That's what this class provides - extension methods on .Net's <see cref="System.String">String</see> type
+        that reduce many of those if/then statements to simple function calls.
+      </para>
+      <para>
+        One thing to note is these string extension methods will work if the string is null and the null has a string type.
+      </para>
+      <para>
+        <code language="C#">
+          // The following three lines of code are equivalent.
+          
+          AssertUtils.Check(null, "s");
+          
+          ((String) null).Check("s");
+          
+          String s = null; s.Check("s");
+          
+          // The compiler will emit an error if an untyped null is used.
+          null.Check("s");
+        </code>
+      </para>
+    </remarks>
+    <example>
+      <code source="..\xml docs\AssertExamples.cs" language="C#"/>
+    </example>
+  </member>
+  
+  <member name="Check_StringString">
+    <summary>
+      Checks a given <see cref="System.String">String</see>, applying all of the assertions indicated by <see cref="Utilities.Core.StringAssertion.All">StringAssertion.All</see>.
+    </summary>
+    <param name="value">
+      The string being checked.
+    </param>
+    <param name="name">
+      The name of the string being checked.  If this method throws an exception, this name will be used in the exception message.
+    </param>
+    <exception cref="System.ArgumentNullException">
+      <c>value</c> is null. 
+    </exception>
+    <exception cref="System.ArgumentException">
+      <para>
+        <c>value</c>'s length is zero.
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <c>value</c> consists of only whitespace.
+      </para>
+    </exception>
+    <example>
+      <code source="..\xml docs\AssertExamples.cs" language="C#"/>
+    </example>
+  </member>
+  
+  <member name="Check_StringStringStringAssertion">
+    <summary>
+    </summary>
+    <param name="value">
+      The string being checked.
+    </param>
+    <param name="name">
+      The name of the string being checked.  If this method throws an exception, this name will be used in the exception message.
+    </param>
+    <param name="stringAssertion">
+      One of the enumeration values that specifies the rules to use in the assertion. 
+    </param>
+    <exception cref="System.ArgumentNullException">
+      <para>
+        <c>name</c> is null.
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        If <see cref="Utilities.Core.StringAssertion.NotNull">StringAssertion.NotNull</see> has been specified, and <c>value</c> is null. 
+      </para>
+    </exception>
+    <exception cref="System.ArgumentException">
+      <para>
+        If <see cref="Utilities.Core.StringAssertion.NotZeroLength">StringAssertion.NotZeroLength</see> has been specified, and <c>value</c>'s length is zero. 
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <see cref="Utilities.Core.StringAssertion.NotOnlyWhitespace">StringAssertion.NotOnlyWhitespace</see> has been specified, and <c>value</c> consists only of whitespace. 
+      </para>
+    </exception>
+    <example>
+      <code source="..\xml docs\AssertExamples.cs" language="C#"/>
+    </example>
+  </member>
+  
+  <member name="Check_StringStringStringAssertionInt32">
+    <summary>
+    </summary>
+    <param name="value">
+      The string being checked.
+    </param>
+    <param name="name">
+      The name of the string being checked.  If this method throws an exception, this name will be used in the exception message.
+    </param>
+    <param name="stringAssertion">
+      One of the enumeration values that specifies the rules to use in the assertion. 
+    </param>
+    <param name="length">
+      The exact length the string must be in order to be considered valid.
+    </param>
+    <exception cref="System.ArgumentNullException">
+      <para>
+        <c>name</c> is null.
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        If <see cref="Utilities.Core.StringAssertion.NotNull">StringAssertion.NotNull</see> has been specified, and <c>value</c> is null. 
+      </para>
+    </exception>
+    <exception cref="System.ArgumentException">
+      <para>
+        If <see cref="Utilities.Core.StringAssertion.NotZeroLength">StringAssertion.NotZeroLength</see> has been specified, and <c>value</c>'s length is zero. 
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <see cref="Utilities.Core.StringAssertion.NotOnlyWhitespace">StringAssertion.NotOnlyWhitespace</see> has been specified, and <c>value</c> consists only of whitespace. 
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <c>value</c>'s length does not equal <c>length</c>.
+      </para>
+    </exception>
+    <example>
+      <code source="..\xml docs\AssertExamples.cs" language="C#"/>
+    </example>
+  </member>
+  
+  <member name="Check_StringStringStringAssertionInt32Int32">
+    <summary>
+    </summary>
+    <param name="value">
+      The string being checked.
+    </param>
+    <param name="name">
+      The name of the string being checked.  If this method throws an exception, this name will be used in the exception message.
+    </param>
+    <param name="stringAssertion">
+      One of the enumeration values that specifies the rules to use in the assertion. 
+    </param>
+    <param name="minimumLength">
+      The minimum length (inclusive) the string must be in order to be considered valid.
+    </param>
+    <param name="maximumLength">
+      The maximum length (inclusive) the string must be in order to be considered valid.
+    </param>
+    <exception cref="System.ArgumentNullException">
+      <para>
+        <c>name</c> is null.
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        If <see cref="Utilities.Core.StringAssertion.NotNull">StringAssertion.NotNull</see> has been specified, and <c>value</c> is null. 
+      </para>
+    </exception>
+    <exception cref="System.ArgumentException">
+      <para>
+        If <see cref="Utilities.Core.StringAssertion.NotZeroLength">StringAssertion.NotZeroLength</see> has been specified, and <c>value</c>'s length is zero. 
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <see cref="Utilities.Core.StringAssertion.NotOnlyWhitespace">StringAssertion.NotOnlyWhitespace</see> has been specified, and <c>value</c> consists only of whitespace. 
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <c>minimumLength</c> is greater than <c>maximumLength</c>.
+      </para>
+      <para>
+        or
+      </para>
+      <para>
+        <c>value</c>'s length is shorter than <c>minimumLength</c>, or longer than <c>maximumLength</c>.
+      </para>
+    </exception>
+    <example>
+      <code source="..\xml docs\AssertExamples.cs" language="C#"/>
+    </example>
+  </member>
+  
+  <member name="CheckForNull">
+    <summary>
+      Generic extension method to check the <c>value</c> parameter for null-ness.
+    </summary>
+    <param name="value">
+      The type T being checked.
+    </param>
+    <param name="name">
+      The name of the type being checked.  If this method throws an exception, this name will be used in the exception message.
+    </param>
+    <exception cref="System.ArgumentNullException">
+      When <c>value</c> is null. 
+    </exception>
+    <example>
+      <code source="..\xml docs\AssertExamples.cs" language="C#"/>
+    </example>
+  </member>
+
+</docs>
