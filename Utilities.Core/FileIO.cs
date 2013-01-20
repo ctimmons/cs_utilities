@@ -1,6 +1,7 @@
 /* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -13,11 +14,81 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace Utilities.Core
 {
+  public enum DirectoryWalkerErrorHandling { Accumulate, StopOnFirst }
+  [Flags]
+  public enum FileSystemTypes { Files = 1, Directories = 2, All = Files | Directories }
   public enum Overwrite { Yes, No }
 
   public static class FileUtils
   {
     public static readonly Char[] DirectorySeparators = new Char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+
+    public static List<Exception> DirectoryWalker(String rootDirectory, Action<FileSystemInfo> action)
+    {
+      return DirectoryWalker(rootDirectory, action, FileSystemTypes.All, DirectoryWalkerErrorHandling.Accumulate);
+    }
+
+    public static List<Exception> DirectoryWalker(String rootDirectory, Action<FileSystemInfo> action, FileSystemTypes fileSystemTypes)
+    {
+      return DirectoryWalker(rootDirectory, action, fileSystemTypes, DirectoryWalkerErrorHandling.Accumulate);
+    }
+
+    public static List<Exception> DirectoryWalker(String rootDirectory, Action<FileSystemInfo> action, DirectoryWalkerErrorHandling directoryWalkerErrorHandling)
+    {
+      return DirectoryWalker(rootDirectory, action, FileSystemTypes.All, directoryWalkerErrorHandling);
+    }
+
+    public static List<Exception> DirectoryWalker(String rootDirectory, Action<FileSystemInfo> action, FileSystemTypes fileSystemTypes, DirectoryWalkerErrorHandling directoryWalkerErrorHandling)
+    {
+      var exceptions = new List<Exception>();
+
+      Action<String> rec = null;
+      rec =
+        (directory) =>
+        {
+          if (directoryWalkerErrorHandling.HasFlag(DirectoryWalkerErrorHandling.StopOnFirst) && exceptions.Any())
+            return;
+
+          try
+          {
+            var di = new DirectoryInfo(directory);
+            foreach (var fsi in di.EnumerateFileSystemInfos())
+            {
+              /* Depth first. */
+              if (fsi is DirectoryInfo)
+                rec(fsi.FullName);
+
+              if (directoryWalkerErrorHandling.HasFlag(DirectoryWalkerErrorHandling.StopOnFirst) && exceptions.Any())
+                return;
+
+              try
+              {
+                if ((fileSystemTypes.HasFlag(FileSystemTypes.Files) && (fsi is FileInfo)) ||
+                   ((fileSystemTypes.HasFlag(FileSystemTypes.Directories) && (fsi is DirectoryInfo))))
+                  action(fsi);
+              }
+              catch (Exception ex)
+              {
+                exceptions.Add(ex);
+              }
+            }
+          }
+          catch (Exception ex)
+          {
+            exceptions.Add(ex);
+          }
+        };
+
+      rec(rootDirectory);
+
+      return exceptions;
+    }
+
+    public static void DeleteIfEmpty(this DirectoryInfo di)
+    {
+      if (!di.EnumerateFileSystemInfos().Any())
+        di.Delete();
+    }
 
     public static void SafelyCreateEmptyFile(String filename)
     {

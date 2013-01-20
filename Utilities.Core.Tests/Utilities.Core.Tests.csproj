@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandLine.cs" />
-    <Compile Include="Comparison.cs" />
     <Compile Include="DateTimeUtils.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="IEnumerable.cs" />

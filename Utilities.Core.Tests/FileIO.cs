@@ -12,10 +12,11 @@ namespace Utilities.Core.UnitTests
   [TestFixture]
   public class FileUtilsTests
   {
-    private static String _testFilesPath = FileUtils.GetTemporarySubfolder();
-    private static String _testStringsFile = _testFilesPath + "test_strings.txt";
-    private static String _testString = "The quick brown fox jumped over the lazy dog.";
-    private static String _testStrings = (_testString + Environment.NewLine).Repeat(10).Trim();
+    private static readonly String _testFilesPath = FileUtils.GetTemporarySubfolder();
+    private static readonly String _testStringsFile = _testFilesPath + "test_strings.txt";
+    private static readonly String _testString = "The quick brown fox jumped over the lazy dog.";
+    private static readonly String _testStrings = (_testString + Environment.NewLine).Repeat(10).Trim();
+    private static readonly String _directories = @"level_1.{0}\level_2.{0}\level_3.{0}";
 
     public FileUtilsTests()
       : base()
@@ -32,6 +33,9 @@ namespace Utilities.Core.UnitTests
     {
       /* Setup an environment of folders and files that most of the unit tests use when they run. */
       Directory.CreateDirectory(_testFilesPath);
+      foreach (var i in Enumerable.Range(1, 3))
+        Directory.CreateDirectory(Path.Combine(_testFilesPath, String.Format(_directories, i)));
+
       File.WriteAllText(_testStringsFile, _testStrings);
     }
 
@@ -40,6 +44,23 @@ namespace Utilities.Core.UnitTests
     {
       if (Directory.Exists(_testFilesPath))
         Directory.Delete(_testFilesPath, true /* Delete all files and subdirectories also. */);
+    }
+
+    [Test]
+    public void DirectoryWalkerTest_GetFilenamesBasedOnRegex()
+    {
+      /* create directory tree under _testfilespath several layers deep.  populate with files.
+      
+      read files from root based on filename
+      read files from child folder one level below root based on filename
+      read files from child folder more than one level below root based on filename
+      ditto for directories
+
+      saa, except examine file contents
+
+      saa, except delete certain files and remove empty directories
+      
+      */
     }
 
     [Test]
