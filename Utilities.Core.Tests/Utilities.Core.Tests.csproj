@@ -60,13 +60,13 @@
     <Compile Include="Xml.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Utilities.Core\Utilities.Core.csproj">
-      <Project>{714BA021-2A07-4D0E-B174-149C41C4B37A}</Project>
-      <Name>Utilities.Core</Name>
-    </ProjectReference>
+    <None Include="UNLICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="UNLICENSE.txt" />
+    <ProjectReference Include="..\Utilities.Core\Utilities.Core.csproj">
+      <Project>{714ba021-2a07-4d0e-b174-149c41c4b37a}</Project>
+      <Name>Utilities.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

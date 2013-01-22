@@ -38,6 +38,39 @@ namespace Utilities.Core
       return DirectoryWalker(rootDirectory, action, FileSystemTypes.All, directoryWalkerErrorHandling);
     }
 
+    /* System.IO.DirectoryInfo.EnumerateFileSystemInfos is a great method for
+       getting file and directory info.  Unfortunately, that
+       method can't be used to easily modify those files and directories, much less do multiple
+       modifying operations on one traversal of the tree.
+
+       That's what DirectoryWalker is for.  It recurses down the tree
+       doing a depth-first traversal until it reaches the "leaves" (i.e. directories
+       that don't contain any subdirectories).  Then, as the recursion unwinds,
+       the provided action lambda is given a FileSystemInfo representing either the
+       current file or directory that's being enumerated.  The lambda can do anything
+       it wants with the FileSystemInfo, including deleting the file or directory it represents.
+       This is a safe operation since it happens on the way back "up" the tree, so deleting
+       a directory won't have any affect on this method's algorithm.
+    
+       One neat trick this allows, and the reason I wrote this method in the first place,
+       is that the lambda can delete files, and then delete any directories if they're empty.
+       Both of those operations occur safely in one traversal of the directory hierarchy.
+       (See the unit tests in Utilities.Core.Tests::FileIO.cs for an example of this and
+       several other uses of DirectoryWalker).
+
+       Since this method allows file operations, there's always the chance of an
+       exception occurring.  Should the method stop on the first exception, or store it
+       for later perusal and continue?  The answer I decided on is "both".
+
+       The DirectoryWalkerErrorHandling parameter allows the caller to select what
+       exception handling behavior DirectoryWalker should exhibit.  The exceptions are
+       not thrown, so this method doesn't need to be wrapped in a try/catch handler.
+       Any exceptions that do occur are stored in the return value of List<Exception>.
+       
+       When called with a setting of DirectoryWalkerErrorHandling.Accumulate, DirectoryWalker
+       will process all files and directories, storing all exception objects in the return value.
+    */
+
     public static List<Exception> DirectoryWalker(String rootDirectory, Action<FileSystemInfo> action, FileSystemTypes fileSystemTypes, DirectoryWalkerErrorHandling directoryWalkerErrorHandling)
     {
       var exceptions = new List<Exception>();
@@ -54,7 +87,6 @@ namespace Utilities.Core
             var di = new DirectoryInfo(directory);
             foreach (var fsi in di.EnumerateFileSystemInfos())
             {
-              /* Depth first. */
               if (fsi is DirectoryInfo)
                 rec(fsi.FullName);
 

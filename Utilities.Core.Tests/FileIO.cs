@@ -1,10 +1,11 @@
 /* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace Utilities.Core.UnitTests
@@ -14,9 +15,15 @@ namespace Utilities.Core.UnitTests
   {
     private static readonly String _testFilesPath = FileUtils.GetTemporarySubfolder();
     private static readonly String _testStringsFile = _testFilesPath + "test_strings.txt";
-    private static readonly String _testString = "The quick brown fox jumped over the lazy dog.";
-    private static readonly String _testStrings = (_testString + Environment.NewLine).Repeat(10).Trim();
-    private static readonly String _directories = @"level_1.{0}\level_2.{0}\level_3.{0}";
+    private static readonly String _testStringFoxAndDog = "The quick brown fox jumped over the lazy dog.";
+    private static readonly String _testStringHelloWorld = "Hello, world!";
+    private static readonly String _testStrings = (_testStringFoxAndDog + Environment.NewLine).Repeat(10).Trim();
+
+    private static readonly String _level_1_1 = Path.Combine(_testFilesPath, @"level_1.1");
+    private static readonly String _level_1_2 = Path.Combine(_testFilesPath, @"level_1.2");
+    private static readonly String _level_2_2 = Path.Combine(_testFilesPath, @"level_1.1\level_2.2");
+    private static readonly String _level_3_1 = Path.Combine(_testFilesPath, @"level_1.1\level_2.1\level_3.1");
+    private static readonly String _level_3_2 = Path.Combine(_testFilesPath, @"level_1.1\level_2.1\level_3.2");
 
     public FileUtilsTests()
       : base()
@@ -32,9 +39,17 @@ namespace Utilities.Core.UnitTests
     public void Init()
     {
       /* Setup an environment of folders and files that most of the unit tests use when they run. */
-      Directory.CreateDirectory(_testFilesPath);
-      foreach (var i in Enumerable.Range(1, 3))
-        Directory.CreateDirectory(Path.Combine(_testFilesPath, String.Format(_directories, i)));
+
+      Directory.CreateDirectory(_level_1_2);
+      Directory.CreateDirectory(_level_2_2);
+      Directory.CreateDirectory(_level_3_1);
+      Directory.CreateDirectory(_level_3_2);
+
+      File.WriteAllText(Path.Combine(_level_1_1, "fox_and_dog.txt"), _testStringFoxAndDog);
+      File.WriteAllText(Path.Combine(_level_1_2, "hello_world.txt"), _testStringHelloWorld);
+      File.WriteAllText(Path.Combine(_level_2_2, "hello_world.txt"), _testStringHelloWorld);
+      File.WriteAllText(Path.Combine(_level_3_1, "fox_and_dog.txt"), _testStringFoxAndDog);
+      File.WriteAllText(Path.Combine(_level_3_2, "hello_world.txt"), _testStringHelloWorld);
 
       File.WriteAllText(_testStringsFile, _testStrings);
     }
@@ -46,21 +61,45 @@ namespace Utilities.Core.UnitTests
         Directory.Delete(_testFilesPath, true /* Delete all files and subdirectories also. */);
     }
 
+    private void DirectoryWalkerHarness(Action<FileSystemInfo> action, List<String> expected, List<String> actual)
+    {
+      var exceptions = FileUtils.DirectoryWalker(_testFilesPath, action, FileSystemTypes.All, DirectoryWalkerErrorHandling.Accumulate);
+
+      if (exceptions.Any())
+      {
+        var messages = String.Join(Environment.NewLine, exceptions.Select(ex => ex.Message));
+        throw new Exception(messages);
+      }
+      else
+      {
+        Assert.IsTrue(!expected.Except(actual).Any());
+      }
+    }
+
     [Test]
     public void DirectoryWalkerTest_GetFilenamesBasedOnRegex()
     {
-      /* create directory tree under _testfilespath several layers deep.  populate with files.
-      
-      read files from root based on filename
-      read files from child folder one level below root based on filename
-      read files from child folder more than one level below root based on filename
-      ditto for directories
+      var actual = new List<String>();
 
-      saa, except examine file contents
+      Action<FileSystemInfo> action =
+        fsi =>
+        {
+          if (fsi is FileInfo)
+          {
+            var fi = (fsi as FileInfo);
+            if (Regex.Match(fsi.FullName, "he..o", RegexOptions.Singleline).Success)
+              actual.Add(fsi.FullName);
+          }
+        };
 
-      saa, except delete certain files and remove empty directories
-      
-      */
+      var expected = new List<String>()
+      {
+        Path.Combine(_level_3_2, "hello_world.txt"),
+        Path.Combine(_level_2_2, "hello_world.txt"),
+        Path.Combine(_level_1_2, "hello_world.txt")
+      };
+
+      this.DirectoryWalkerHarness(action, expected, actual);
     }
 
     [Test]
@@ -98,7 +137,7 @@ namespace Utilities.Core.UnitTests
       FileUtils.CreateEmptyFile(filename, Overwrite.No);
       Assert.IsTrue(File.Exists(filename));
 
-      File.WriteAllText(filename, _testString);
+      File.WriteAllText(filename, _testStringFoxAndDog);
       Assert.IsTrue((new FileInfo(filename)).Length > 0);
       FileUtils.CreateEmptyFile(filename, Overwrite.No);
       Assert.IsTrue((new FileInfo(filename)).Length > 0);
@@ -132,11 +171,11 @@ namespace Utilities.Core.UnitTests
 
       using (var ms = new MemoryStream())
       {
-        ms.Write(Encoding.UTF8.GetBytes(_testString), 0, _testString.Length);
+        ms.Write(Encoding.UTF8.GetBytes(_testStringFoxAndDog), 0, _testStringFoxAndDog.Length);
         FileUtils.WriteMemoryStreamToFile(filename, ms);
 
         var contents = File.ReadAllText(filename);
-        Assert.AreEqual(_testString, contents);
+        Assert.AreEqual(_testStringFoxAndDog, contents);
       }
     }
 
@@ -161,9 +200,9 @@ namespace Utilities.Core.UnitTests
       Directory.CreateDirectory(Path.Combine(rootDir, "really empty/empty"));
       Directory.CreateDirectory(Path.Combine(rootDir, "really empty/empty/empty"));
 
-      File.WriteAllText(Path.Combine(rootDir, "empty/non empty/dummy.txt"), _testString);
-      File.WriteAllText(Path.Combine(rootDir, "non empty/dummy.txt"), _testString);
-      File.WriteAllText(Path.Combine(rootDir, "non empty/non empty/dummy.txt"), _testString);
+      File.WriteAllText(Path.Combine(rootDir, "empty/non empty/dummy.txt"), _testStringFoxAndDog);
+      File.WriteAllText(Path.Combine(rootDir, "non empty/dummy.txt"), _testStringFoxAndDog);
+      File.WriteAllText(Path.Combine(rootDir, "non empty/non empty/dummy.txt"), _testStringFoxAndDog);
 
       FileUtils.DeleteEmptyDirectories(rootDir);
 
@@ -197,7 +236,7 @@ namespace Utilities.Core.UnitTests
       Directory.CreateDirectory(Path.Combine(rootDir, "empty/empty"));
       Directory.CreateDirectory(Path.Combine(rootDir, "empty/non empty"));
 
-      File.WriteAllText(Path.Combine(rootDir, "empty/non empty/dummy.txt"), _testString);
+      File.WriteAllText(Path.Combine(rootDir, "empty/non empty/dummy.txt"), _testStringFoxAndDog);
 
       Assert.IsTrue(FileUtils.IsDirectoryEmpty(Path.Combine(rootDir, "empty/empty")));
       Assert.IsFalse(FileUtils.IsDirectoryEmpty(Path.Combine(rootDir, "empty/non empty")));
