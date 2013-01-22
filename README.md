@@ -3,7 +3,7 @@ cs_utilities (A C# Utilities Library)
 
 Just a few projects of C# utility code I've accumulated over the years.
 
-I've placed all of the code, with a few exceptions, in the public domain.  See the UNLICENSE.txt file in the root folder of each project for the details.
+I've placed all of the code in the public domain.  See the UNLICENSE.txt file in the root folder of each project for the details.
 
 The projects in this repo are configured to use the latest version of .Net (4.5 as of this writing), but most of the code should work with 3.5 or even earlier.
 
