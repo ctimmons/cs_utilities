@@ -16,9 +16,11 @@ There are no XML comments, even though C# and Visual Studio have excellent suppo
 Dependencies
 ------------
 
-Utilities.Tests depends on [NUnit](http://www.nunit.org/) (nunit.framework.dll). 
+Utilities.Core has no dependencies outside of .Net.
 
-Utilities.Internet depends on [Html Agility Pack](http://htmlagilitypack.codeplex.com/) (HtmlAgilityPack.dll).
+Utilities.Core.Tests depends on Utilities.Core and [NUnit](http://www.nunit.org/) (nunit.framework.dll). 
+
+Utilities.Internet depends on Utilities.Core and [Html Agility Pack](http://htmlagilitypack.codeplex.com/) (HtmlAgilityPack.dll).
 
 Highlights
 ----------

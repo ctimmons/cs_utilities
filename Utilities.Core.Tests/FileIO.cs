@@ -77,6 +77,118 @@ namespace Utilities.Core.UnitTests
     }
 
     [Test]
+    public void DirectoryWalkerTest_DeleteFilesAndEmptyDirectories()
+    {
+      Action<FileSystemInfo> action =
+        fsi =>
+        {
+          if (fsi is DirectoryInfo)
+          {
+            (fsi as DirectoryInfo).DeleteIfEmpty();
+          }
+          else if (fsi is FileInfo)
+          {
+            var fi = (fsi as FileInfo);
+            if (fi.Name == "hello_world.txt")
+              fi.Delete();
+          }
+        };
+
+      var exceptions = FileUtils.DirectoryWalker(_testFilesPath, action, FileSystemTypes.All, DirectoryWalkerErrorHandling.Accumulate);
+
+      if (exceptions.Any())
+      {
+        var messages = String.Join(Environment.NewLine, exceptions.Select(ex => ex.Message));
+        throw new Exception(messages);
+      }
+      else
+      {
+        /* Contains fox_and_dog.txt, so this directory should still exist. */
+        Assert.IsTrue(Directory.Exists(_level_3_1));
+
+        /* All of these directories contained hello_world.txt, so they should have been deleted. */
+        Assert.IsTrue(!Directory.Exists(_level_1_2));
+        Assert.IsTrue(!Directory.Exists(_level_2_2));
+        Assert.IsTrue(!Directory.Exists(_level_3_2));
+      }
+    }
+
+    [Test]
+    public void DirectoryWalkerTest_GetDirectoryNamesBasedOnFilenamesInDirectory()
+    {
+      var actual = new List<String>();
+
+      Action<FileSystemInfo> action =
+        fsi =>
+        {
+          if (fsi is DirectoryInfo)
+          {
+            var di = (fsi as DirectoryInfo);
+            if (di.EnumerateFiles().Where(fi => fi.Name.Contains("dog")).Any())
+              actual.Add(di.FullName);
+          }
+        };
+
+      var expected = new List<String>()
+      {
+        _level_1_1,
+        _level_3_1
+      };
+
+      this.DirectoryWalkerHarness(action, expected, actual);
+    }
+
+    [Test]
+    public void DirectoryWalkerTest_GetDirectoryNamesBasedOnRegex()
+    {
+      var actual = new List<String>();
+
+      Action<FileSystemInfo> action =
+        fsi =>
+        {
+          if (fsi is DirectoryInfo)
+          {
+            var di = (fsi as DirectoryInfo);
+            if (Regex.Match(di.FullName, "le..l_1", RegexOptions.Singleline).Success)
+              actual.Add(di.FullName);
+          }
+        };
+
+      var expected = new List<String>()
+      {
+        _level_1_1,
+        _level_1_2
+      };
+
+      this.DirectoryWalkerHarness(action, expected, actual);
+    }
+
+    [Test]
+    public void DirectoryWalkerTest_GetFilenamesBasedOnFileContents()
+    {
+      var actual = new List<String>();
+
+      Action<FileSystemInfo> action =
+        fsi =>
+        {
+          if (fsi is FileInfo)
+          {
+            var fi = (fsi as FileInfo);
+            if (File.ReadAllText(fi.FullName).Contains("fox"))
+              actual.Add(fi.FullName);
+          }
+        };
+
+      var expected = new List<String>()
+      {
+        Path.Combine(_level_1_1, "fox_and_dog.txt"),
+        Path.Combine(_level_3_1, "fox_and_dog.txt")
+      };
+
+      this.DirectoryWalkerHarness(action, expected, actual);
+    }
+
+    [Test]
     public void DirectoryWalkerTest_GetFilenamesBasedOnRegex()
     {
       var actual = new List<String>();
@@ -87,8 +199,8 @@ namespace Utilities.Core.UnitTests
           if (fsi is FileInfo)
           {
             var fi = (fsi as FileInfo);
-            if (Regex.Match(fsi.FullName, "he..o", RegexOptions.Singleline).Success)
-              actual.Add(fsi.FullName);
+            if (Regex.Match(fi.FullName, "he..o", RegexOptions.Singleline).Success)
+              actual.Add(fi.FullName);
           }
         };
 
