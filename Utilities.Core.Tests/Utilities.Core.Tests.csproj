@@ -53,6 +53,7 @@
     <Compile Include="FileIO.cs" />
     <Compile Include="Graphics.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="MathUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Random.cs" />
