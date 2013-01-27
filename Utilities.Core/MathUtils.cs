@@ -13,40 +13,6 @@ namespace Utilities.Core
 
   public static class MathUtils
   {
-    /* The code for the ApproximatelyEqual method is taken from
-       the *excellent* http://floating-point-gui.de/ website,
-       and is licensed under Creative Commons 3.0 (http://creativecommons.org/licenses/by/3.0/). */
-    public static Boolean ApproximatelyEqual(this Double value1, Double value2, Double epsilon)
-    {
-      var diff = Math.Abs(value1 - value2);
-
-      if (value1 == value2)
-        // shortcut, handles infinities
-        return true;
-      else if ((value1 * value2) == 0)
-        // a or b or both are zero
-        // relative error is not meaningful here
-        return diff < (epsilon * epsilon);
-      else
-        // use relative error
-        return (diff / (Math.Abs(value1) + Math.Abs(value2))) < epsilon;
-    }
-
-    public static Double AsRadians(this Double degrees)
-    {
-      return ((Math.PI / 180) * degrees);
-    }
-
-    public static Double AsDegrees(this Double radians)
-    {
-      return ((180 / Math.PI) * radians);
-    }
-
-    public static Double GetHypotenuse(Double x, Double y)
-    {
-      return Math.Sqrt((x * x) + (y * y));
-    }
-
     public static Boolean IsInteger(this String number)
     {
       /* Double.TryParse is used so num values with a larger range than Int64 can be handled. */
