@@ -1,15 +1,13 @@
 /* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace Utilities.Core
 {
-  public enum RangeCheck
-  {
-    Exclusive,
-    Inclusive
-  }
+  public enum RangeCheck { Exclusive, Inclusive }
 
   public static class MathUtils
   {

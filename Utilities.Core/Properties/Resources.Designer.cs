@@ -205,6 +205,15 @@ namespace Utilities.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File does not exist.
+        /// </summary>
+        internal static string Exceptions_File_Does_Not_Exist {
+            get {
+                return ResourceManager.GetString("Exceptions_File_Does_Not_Exist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0}Missing file is &apos;{1}&apos;..
         /// </summary>
         internal static string Exceptions_MissingFile {

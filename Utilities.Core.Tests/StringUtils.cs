@@ -58,7 +58,7 @@ namespace Utilities.Core.UnitTests
 
       str = "a";
       count = 0;
-      Assert.AreEqual("a", str.Repeat(count));
+      Assert.AreEqual("", str.Repeat(count), "A non-empty string repeated zero times should be an empty string.");
 
       str = "a";
       count = 2;

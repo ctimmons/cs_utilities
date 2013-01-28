@@ -73,7 +73,7 @@ namespace Utilities.Core
 
         /* When a file is missing in an ASP.Net app, the error message 'File does not exist' is less than helpful.
            Find the missing file name and add it to the error message. */
-        if ((context != null) && (result.IndexOf("File does not exist", StringComparison.InvariantCultureIgnoreCase) > -1))
+        if ((context != null) && (result.IndexOf(Properties.Resources.Exceptions_File_Does_Not_Exist, StringComparison.CurrentCultureIgnoreCase) > -1))
           result += String.Format(Properties.Resources.Exceptions_MissingFile, nl, context.Request.CurrentExecutionFilePath);
 
         foreach (DictionaryEntry de in ex.Data)

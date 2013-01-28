@@ -26,10 +26,17 @@ namespace Utilities.Core
       return (!String.IsNullOrEmpty(value)) && (Properties.Resources.StringUtils_BooleanTruthLiterals.IndexOf(value.Trim(), StringComparison.InvariantCultureIgnoreCase) > -1);
     }
 
+    /* Return 'value' repeated 'count' times.
+    
+       Value cannot be null.
+       A count of zero or a negative count returns an empty string.
+       A count of one returns value.
+       A count of more than one returns value repeated count times. */
+
     public static String Repeat(this String value, Int32 count)
     {
       value.Check("value", StringAssertion.NotNull);
-      return (count < 2) ? value : (new StringBuilder(value.Length * count)).Insert(0, value, count).ToString();
+      return (count < 1) ? "" : (new StringBuilder(value.Length * count)).Insert(0, value, count).ToString();
     }
 
     public static Char LastChar(this String value)
