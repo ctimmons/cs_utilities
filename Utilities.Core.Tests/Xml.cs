@@ -3,65 +3,83 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
-
 using NUnit.Framework;
 
 namespace Utilities.Core.UnitTests
 {
+  [Serializable]
+  public class TestClass
+  {
+    [XmlComment(@"
+Multi-line comment.
+Another line.
+")]
+    public String StringProperty1 { get; set; }
+
+    [XmlComment(@"Single-line comment.")]
+    public Int32 Int32Property1 { get; set; }
+
+    [XmlComment(@"
+Multi-line comment.
+Another line.
+")]
+    public List<Int32> ListInt32Property1 { get; set; }
+
+    public TestClass TestClassInstance { get; set; }
+
+    public static TestClass GetInstance()
+    {
+      var testClass =
+        new TestClass()
+        {
+          StringProperty1 = "Hello, world!",
+          Int32Property1 = 42,
+          ListInt32Property1 = new List<Int32>() { 1, 2, 3 },
+          TestClassInstance =
+            new TestClass()
+            {
+              StringProperty1 = "foo bar baz quux",
+              Int32Property1 = 138,
+              ListInt32Property1 = new List<Int32>() { 4, 5, 6 },
+              TestClassInstance = null
+            }
+        };
+
+      return testClass;
+    }
+
+    public static Boolean AreTestClassInstancesEqual(TestClass expected, TestClass actual)
+    {
+      return
+        (expected.StringProperty1 == actual.StringProperty1) &&
+        (expected.Int32Property1 == actual.Int32Property1) &&
+        (expected.ListInt32Property1.Count == actual.ListInt32Property1.Count) &&
+        Enumerable.SequenceEqual(expected.ListInt32Property1, actual.ListInt32Property1) &&
+        (((expected.TestClassInstance != null) && (actual.TestClassInstance != null))
+          ? AreTestClassInstancesEqual(expected.TestClassInstance, actual.TestClassInstance)
+          : true);
+    }
+  }
+
   [TestFixture]
   public class Xml
   {
     public Xml() : base() { }
-
-    [Serializable]
-    public class TestClass
-    {
-      public String StringProperty { get; set; }
-      public Int32 Int32Property { get; set; }
-      public List<Int32> ListInt32Property { get; set; }
-
-      public TestClass()
-        : base()
-      {
-      }
-    }
-
-    private TestClass _testClassInstance = new TestClass()
-    {
-      StringProperty = "Hello, world!",
-      Int32Property = 42,
-      ListInt32Property = new List<Int32>() { 1, 2, 3 }
-    };
-
-    private Boolean AreTestClassInstancesEqual(TestClass testClass1, TestClass testClass2)
-    {
-      /* TODO: Write generic method to compare the values of any two class' instance and static members.
-               Add code to detect cycles to prevent runaway recursion. */
-      var result =
-        (testClass1.StringProperty == testClass2.StringProperty) &&
-        (testClass1.Int32Property == testClass2.Int32Property) &&
-        (testClass1.ListInt32Property.Count == testClass2.ListInt32Property.Count);
-
-      if (result)
-        for (var n = 0; n < testClass1.ListInt32Property.Count; n++)
-          if (testClass1.ListInt32Property[n] != testClass2.ListInt32Property[n])
-            return false;
-
-      return result;
-    }
 
     [Test]
     public void BinaryFileToFromTest()
     {
       var filename = Path.GetTempFileName();
 
-      XmlUtils.SerializeObjectToBinaryFile(this._testClassInstance, filename);
+      XmlUtils.SerializeObjectToBinaryFile(TestClass.GetInstance(), filename);
       try
       {
         var testClass = XmlUtils.DeserializeObjectFromBinaryFile<TestClass>(filename);
-        Assert.IsTrue(AreTestClassInstancesEqual(this._testClassInstance, testClass));
+        Assert.IsTrue(TestClass.AreTestClassInstancesEqual(TestClass.GetInstance(), testClass));
       }
       finally
       {
@@ -74,11 +92,11 @@ namespace Utilities.Core.UnitTests
     {
       var filename = Path.GetTempFileName();
 
-      XmlUtils.SerializeObjectToXmlFile(this._testClassInstance, filename);
+      XmlUtils.SerializeObjectToXmlFile(TestClass.GetInstance(), filename);
       try
       {
         var testClass = XmlUtils.DeserializeObjectFromXmlFile<TestClass>(filename);
-        Assert.IsTrue(AreTestClassInstancesEqual(this._testClassInstance, testClass));
+        Assert.IsTrue(TestClass.AreTestClassInstancesEqual(TestClass.GetInstance(), testClass));
       }
       finally
       {
@@ -89,17 +107,17 @@ namespace Utilities.Core.UnitTests
     [Test]
     public void XDocumentToFromTest()
     {
-      var xDocument = XmlUtils.SerializeObjectToXDocument(this._testClassInstance);
+      var xDocument = XmlUtils.SerializeObjectToXDocument(TestClass.GetInstance());
       var testClass = XmlUtils.DeserializeObjectFromXDocument<TestClass>(xDocument);
-      Assert.IsTrue(AreTestClassInstancesEqual(this._testClassInstance, testClass));
+      Assert.IsTrue(TestClass.AreTestClassInstancesEqual(TestClass.GetInstance(), testClass));
     }
 
     [Test]
     public void XmlStringToFromTest()
     {
-      var s = XmlUtils.SerializeObjectToXmlString(this._testClassInstance);
+      var s = XmlUtils.SerializeObjectToXmlString(TestClass.GetInstance());
       var testClass = XmlUtils.DeserializeObjectFromXmlString<TestClass>(s);
-      Assert.IsTrue(AreTestClassInstancesEqual(this._testClassInstance, testClass));
+      Assert.IsTrue(TestClass.AreTestClassInstancesEqual(TestClass.GetInstance(), testClass));
     }
 
     [Test]
@@ -197,6 +215,65 @@ namespace Utilities.Core.UnitTests
       var xmlDoc = new XmlDocument();
       xmlDoc.LoadXml(xmlText);
       Assert.AreEqual("middle text", xmlDoc.GetNodesInnerText("/Root/Child[2]"));
+    }
+
+    [Test]
+    public void XmlCommentFormattingTest()
+    {
+      var expected = @"<TestClass xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">
+  <!-- 
+       Multi-line comment.
+       Another line.
+        -->
+  <StringProperty1>Hello, world!</StringProperty1>
+  <!-- Single-line comment. -->
+  <Int32Property1>42</Int32Property1>
+  <!-- 
+       Multi-line comment.
+       Another line.
+        -->
+  <ListInt32Property1>
+    <int>1</int>
+    <int>2</int>
+    <int>3</int>
+  </ListInt32Property1>
+  <TestClassInstance>
+    <!-- 
+         Multi-line comment.
+         Another line.
+          -->
+    <StringProperty1>foo bar baz quux</StringProperty1>
+    <!-- Single-line comment. -->
+    <Int32Property1>138</Int32Property1>
+    <!-- 
+         Multi-line comment.
+         Another line.
+          -->
+    <ListInt32Property1>
+      <int>4</int>
+      <int>5</int>
+      <int>6</int>
+    </ListInt32Property1>
+  </TestClassInstance>
+</TestClass>";
+
+      var actual = XmlUtils.SerializeObjectToXmlString(TestClass.GetInstance());
+      
+      /* The two XML strings, 'expected' and 'actual', cannot be directly compared like this:
+        
+           Assert.AreEqual(expected, actual);
+
+         This is because the serialization process inserts XML namespace attributes
+         into the final XML string, and the order of the namespaces is not guaranteed
+         nor predictable.
+
+         Since all this test cares about are the XML comments, a regular expression
+         and some LINQ magic are used to pluck out the comments and compare them. */
+
+      var xmlCommentRegex = new Regex(@"\<!--.*?--\>", RegexOptions.Singleline);
+      var expectedXmlComments = xmlCommentRegex.Matches(expected).Cast<Match>().Select(m => m.Value);
+      var actualXmlComments = xmlCommentRegex.Matches(actual).Cast<Match>().Select(m => m.Value);
+      Assert.IsTrue(expectedXmlComments.SequenceEqual(actualXmlComments));
     }
   }
 }

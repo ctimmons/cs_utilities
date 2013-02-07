@@ -2,7 +2,9 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 using System.Xml.Linq;
@@ -14,6 +16,8 @@ namespace Utilities.Core
   {
     public static String GetFormattedXml(String xml)
     {
+      xml.Check("xml");
+
       using (var sw = new StringWriter())
       {
         using (var xmlWriter = new XmlTextWriter(sw))
@@ -47,8 +51,7 @@ namespace Utilities.Core
     {
       Directory.CreateDirectory(Path.GetDirectoryName(filename));
 
-      using (var writer = new StreamWriter(filename))
-        XmlSerializerCache.GetXmlSerializer(typeof(T)).Serialize(writer, value);
+      SerializeObjectToXDocument(value).Save(filename);
     }
 
     public static T DeserializeObjectFromXmlFile<T>(String filename)
@@ -59,12 +62,15 @@ namespace Utilities.Core
 
     public static XDocument SerializeObjectToXDocument<T>(T value)
     {
+      value.CheckForNull("value");
+
       var doc = new XDocument();
       using (var writer = doc.CreateWriter())
-      {
         XmlSerializerCache.GetXmlSerializer(typeof(T)).Serialize(writer, value);
-        return doc;
-      }
+
+      /* This must be executed after writer has been closed. */
+      InsertXmlComments(value, doc.Elements(), 1);
+      return doc;
     }
 
     public static T DeserializeObjectFromXDocument<T>(XDocument value)
@@ -76,17 +82,64 @@ namespace Utilities.Core
 
     public static String SerializeObjectToXmlString<T>(T value)
     {
-      using (var sw = new StringWriter())
-      {
-        XmlSerializerCache.GetXmlSerializer(typeof(T)).Serialize(sw, value);
-        return sw.ToString();
-      }
+      return SerializeObjectToXDocument(value).ToString();
     }
 
     public static T DeserializeObjectFromXmlString<T>(String s)
     {
       using (var sr = new StringReader(s))
         return (T) XmlSerializerCache.GetXmlSerializer(typeof(T)).Deserialize(sr);
+    }
+
+    private static readonly Type _xmlCommentAttributeType = typeof(XmlCommentAttribute);
+    private static readonly Boolean _shouldSearchInheritanceChain = false;
+
+    /* Any XmlCommentAttributes in obj are inserted into xElements as XML comments (XComment objects).
+    
+       This method assumes xElements is a serialization of obj.
+       If that's not the case, the behavior of this method is unpredictable. */
+    private static void InsertXmlComments(Object obj, IEnumerable<XElement> xElements, Int32 level)
+    {
+      /* Base case. */
+      if ((obj == null) || !xElements.Any())
+        return;
+
+      Func<XmlCommentAttribute, XComment> getXCommentWithIndentedText =
+        xmlCommentAttribute =>
+        {
+          if (xmlCommentAttribute.ShouldIndent)
+          {
+            var prefixSpaces = " ".Repeat((level * xmlCommentAttribute.IndentSize) + "<!-- ".Length);
+            return new XComment(xmlCommentAttribute.Value.Replace(Environment.NewLine, Environment.NewLine + prefixSpaces));
+          }
+          else
+          {
+            return new XComment(xmlCommentAttribute.Value);
+          }
+        };
+
+      /* Recursive case. */
+      foreach (var propertyInfo in obj.GetType().GetProperties())
+      {
+        if (propertyInfo.CanRead && propertyInfo.GetIndexParameters().Length == 0)
+        {
+          if (propertyInfo.IsDefined(_xmlCommentAttributeType, _shouldSearchInheritanceChain))
+          {
+            var xmlComment =
+              propertyInfo
+              .GetCustomAttributes(_xmlCommentAttributeType, _shouldSearchInheritanceChain)
+              .Cast<XmlCommentAttribute>()
+              .Single();
+
+            xElements
+            .Elements(propertyInfo.Name)
+            .Single()
+            .AddBeforeSelf(getXCommentWithIndentedText(xmlComment));
+          }
+
+          InsertXmlComments(propertyInfo.GetValue(obj, null), xElements.Elements(propertyInfo.Name), level + 1);
+        }
+      }
     }
 
     public static void WriteStartElements(this XmlWriter xmlWriter, params String[] tagNames)
@@ -123,8 +176,9 @@ namespace Utilities.Core
   }
 
   /* Each construction of an XmlSerializer instance creates an assembly which is loaded
-     into the current app domain.  Such assemblies are not re-used, nor can they be unloaded
-     from the app domain, so a memory leak occurs.  This cache class prevents those memory leaks
+     into the current app domain.  When the XmlSerializer instance is garbage collected,
+     the assembly it created is not unloaded from the app domain, nor can the assembly
+     be re-used, so a memory leak occurs.  This cache class prevents those memory leaks
      by re-using the XmlSerializers based on they type they were constructed for. */
   public static class XmlSerializerCache
   {
@@ -136,11 +190,20 @@ namespace Utilities.Core
     }
   }
 
-  [AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
+  [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
   public class XmlCommentAttribute : Attribute
   {
     private String _value = String.Empty;
-    public string Value
+
+    public XmlCommentAttribute(String value)
+      : base()
+    {
+      this._value = value;
+      this.ShouldIndent = true;
+      this.IndentSize = 2;
+    }
+
+    public String Value
     {
       /* If the return value isn't surrounded with spaces,
          the XML comment comes out looking like this:
@@ -151,5 +214,8 @@ namespace Utilities.Core
       get { return " " + this._value + " "; }
       set { this._value = value; }
     }
+
+    public Boolean ShouldIndent { get; set; }
+    public Int32 IndentSize { get; set; }
   }
 }
