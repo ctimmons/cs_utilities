@@ -23,7 +23,7 @@ namespace Utilities.Core
       var numberOfCharactersInBuffer = FormatMessage(formatMessageFromSystem, IntPtr.Zero, win32ErrorCode, defaultLanguageID, buffer, buffer.Capacity, IntPtr.Zero);
 
       if (numberOfCharactersInBuffer > 0)
-        return buffer.ToString();
+        return buffer.ToString().Trim();
       else
         return "Unable to retrieve system error message for error " + Marshal.GetLastWin32Error().ToString();
     }

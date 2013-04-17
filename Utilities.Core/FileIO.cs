@@ -116,6 +116,78 @@ namespace Utilities.Core
       return exceptions;
     }
 
+    /* System.IO.DirectoryInfo.EnumerateFileSystemInfos has, in my opinion,
+       a serious design flaw.  When enumerating directories, if one of those
+       directories cannot be accessed, that method throws an exception and all
+       enumeration stops.
+    
+       This method is meant to act as a replacement for System.IO.DirectoryInfo.EnumerateFileSystemInfos.
+       When an exception occurs in this method, the error handler is called, and processing continues
+       with the next file or directory.
+    
+       Like the DirectoryWalker method, this method does a depth-first tree
+       traversal.  Unlike DirectoryWalker, this method is LINQ-friendly,
+       and is meant to be used in read-only situations (like most LINQ expressions).
+       DirectoryWalker is best used if modification is necessary while traversing
+       the directory tree. */
+    public static IEnumerable<FileSystemInfo> EnumerateFileSystemInfos(String path, String filemask, System.IO.SearchOption searchOption, Action<String, Exception> errorHandler)
+    {
+      /* Yield statements cannot appear inside of a try/catch statement.
+         That's why the di and diEnumerator variables,
+         and the associated if/then logic, are necessary. */
+
+      DirectoryInfo di = null;
+      try
+      {
+        di = new DirectoryInfo(path);
+      }
+      catch (Exception ex)
+      {
+        if (errorHandler != null)
+          errorHandler(path, ex);
+      }
+
+      if (di == null)
+      {
+        yield break;
+      }
+      else
+      {
+        yield return di;
+
+        IEnumerable<FileSystemInfo> diEnumerator = null;
+        try
+        {
+          diEnumerator = di.EnumerateFileSystemInfos(filemask);
+        }
+        catch (Exception ex)
+        {
+          if (errorHandler != null)
+            errorHandler(path, ex);
+        }
+
+        if (diEnumerator == null)
+        {
+          yield break;
+        }
+        else
+        {
+          foreach (var fsi in diEnumerator)
+          {
+            if ((fsi is DirectoryInfo) && (searchOption == System.IO.SearchOption.AllDirectories))
+            {
+              foreach (var fsi2 in EnumerateFileSystemInfos(fsi.FullName, filemask, searchOption, errorHandler))
+                yield return fsi2;
+            }
+            else if (fsi is FileInfo)
+            {
+              yield return fsi;
+            }
+          }
+        }
+      }
+    }
+
     public static void DeleteIfEmpty(this DirectoryInfo di)
     {
       if (!di.EnumerateFileSystemInfos().Any())
@@ -276,5 +348,57 @@ namespace Utilities.Core
       directory.Check("directory", StringAssertion.NotNull);
       return directory.TrimEnd().TrimEnd(DirectorySeparators);
     }
+  }
+
+  [StructLayout(LayoutKind.Sequential)]
+  public struct SYSTEMTIME
+  {
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Year;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Month;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 DayOfWeek;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Day;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Hour;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Minute;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Second;
+    [MarshalAs(UnmanagedType.U2)]
+    public UInt16 Milliseconds;
+
+    public SYSTEMTIME(DateTime dt)
+    {
+      dt = dt.ToUniversalTime();  // SetSystemTime expects the SYSTEMTIME in UTC
+      Year = (UInt16) dt.Year;
+      Month = (UInt16) dt.Month;
+      DayOfWeek = (UInt16) dt.DayOfWeek;
+      Day = (UInt16) dt.Day;
+      Hour = (UInt16) dt.Hour;
+      Minute = (UInt16) dt.Minute;
+      Second = (UInt16) dt.Second;
+      Milliseconds = (UInt16) dt.Millisecond;
+    }
+  }
+
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+  public struct WIN32_FIND_DATA
+  {
+    public FileAttributes dwFileAttributes;
+    public FILETIME ftCreationTime;
+    public FILETIME ftLastAccessTime;
+    public FILETIME ftLastWriteTime;
+    public Int32 nFileSizeHigh;
+    public Int32 nFileSizeLow;
+    public Int32 dwReserved0;
+    public Int32 dwReserved1;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+    public String cFileName;
+    // not using this
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+    public String cAlternate;
   }
 }
