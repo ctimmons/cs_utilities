@@ -210,4 +210,7 @@
   <data name="CommandLine_ResponseFileLineError" xml:space="preserve">
     <value>In response file '{0}', at line number {1}, the line of command line parameters '{2}' could not be parsed.  Error {3}: {4}</value>
   </data>
+  <data name="Exceptions_File_Does_Not_Exist" xml:space="preserve">
+    <value>File does not exist</value>
+  </data>
 </root>
