@@ -7,8 +7,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Xml;
 
-using Utilities.Core;
-
 namespace Utilities.Sql
 {
   /// <summary>
@@ -33,12 +31,12 @@ namespace Utilities.Sql
     AsString,
     
     /// <summary>
-    /// Create code to handle the xml column as a <see cref="System.Xml.XmlDocument">XmlDocument</see>.
+    /// Create code to handle the xml column as an <see cref="System.Xml.XmlDocument">XmlDocument</see>.
     /// </summary>
     NonLinq_XmlDocument,
     
     /// <summary>
-    /// Create code to handle the xml column as a <see cref="System.Xml.Linq.XDocument">XDocument</see>.
+    /// Create code to handle the xml column as an <see cref="System.Xml.Linq.XDocument">XDocument</see>.
     /// </summary>
     Linq_XDocument
   }
@@ -611,7 +609,7 @@ namespace Utilities.Sql
     public String Name { get; set; }
 
     /// <summary>
-    /// This class is named Table, it handles both tables and views.  This property indicates what a Table instance really contains.
+    /// This class is named Table, but it handles both tables and views.  This property indicates what a Table instance really contains.
     /// </summary>
     public Boolean IsView { get; set; }
 
@@ -649,7 +647,7 @@ namespace Utilities.Sql
       {
         if (this._columns == null)
         {
-          /* Treat the connection's current database as an in. */
+          /* Treat the connection's current database as an invariant. */
           var previousDatabaseName = (this._configuration.Connection.Database == this.DatabaseName) ? null : this._configuration.Connection.Database;
           try
           {
@@ -779,13 +777,13 @@ SELECT
             LogicalLength = Convert.ToInt32(row["LOGICAL_LENGTH"]),
             Precision = Convert.ToInt32(row["PRECISION"]),
             Scale = Convert.ToInt32(row["SCALE"]),
-            IsNullable = row["IS_NULLABLE"].ToString().AsBoolean(),
-            IsIdentity = row["IS_IDENTITY"].ToString().AsBoolean(),
-            IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().AsBoolean(),
+            IsNullable = row["IS_NULLABLE"].ToString().ToUpper() == "Y",
+            IsIdentity = row["IS_IDENTITY"].ToString().ToUpper() == "Y",
+            IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().ToUpper() == "Y",
             XmlCollectionName = row["XML_COLLECTION_NAME"].ToString(),
-            IsPrimaryKey = row["IS_PRIMARY_KEY"].ToString().AsBoolean(),
+            IsPrimaryKey = row["IS_PRIMARY_KEY"].ToString().ToUpper() == "Y",
             PrimaryKeyOrdinal = Convert.ToInt32(row["PRIMARY_KEY_ORDINAL"]),
-            IsForeignKey = row["IS_FOREIGN_KEY"].ToString().AsBoolean(),
+            IsForeignKey = row["IS_FOREIGN_KEY"].ToString().ToUpper() == "Y",
             PrimaryKeyTable = row["PRIMARY_KEY_TABLE"].ToString(),
             PrimaryKeyColumn = row["PRIMARY_KEY_COLUMN"].ToString(),
           });
@@ -1699,7 +1697,7 @@ SELECT
           return String.Format("'{0} with length ' + CONVERT(NVARCHAR(MAX), DATALENGTH({1})) + '.'", this.BaseServerDataTypeName, this.SqlIdentifier);
 
         case "SQL_VARIANT":
-          return String.Format("dbo.util_Get_SqlVariant_As_String({0})", this.SqlIdentifier);
+          return String.Format("dbo.util_Get_SqlVariant_As_NVarCharMax({0})", this.SqlIdentifier);
 
         default:
           return String.Format("Don't know how to convert type {0} to a string.", this.BaseServerDataTypeName);
