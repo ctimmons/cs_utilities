@@ -61,6 +61,15 @@ namespace Utilities.Sql.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Database &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string DatabaseNotFound {
+            get {
+                return ResourceManager.GetString("DatabaseNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Don&apos;t know how to handle the enumerated value TargetLanguage.{0}..
         /// </summary>
         internal static string UnknownTargetLanguageValue {
