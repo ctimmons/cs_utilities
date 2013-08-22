@@ -70,6 +70,15 @@ namespace Utilities.Sql.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cannot cast DBNull.Value to type &apos;{0}&apos;. Please use a nullable type.  Column name = &apos;{1}&apos;, column index = {2}..
+        /// </summary>
+        internal static string NonNullableCast {
+            get {
+                return ResourceManager.GetString("NonNullableCast", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Don&apos;t know how to handle the enumerated value TargetLanguage.{0}..
         /// </summary>
         internal static string UnknownTargetLanguageValue {

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Internet", "Utili
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Sql", "Utilities.Sql\Utilities.Sql.csproj", "{594ED8DB-E3E4-472B-9BC7-BD5D89D29EFD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Sql.Tests", "Utilities.Sql.Tests\Utilities.Sql.Tests.csproj", "{E0DB6D57-E6E3-41D2-BC32-73493732F7E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,10 @@ Global
 		{594ED8DB-E3E4-472B-9BC7-BD5D89D29EFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{594ED8DB-E3E4-472B-9BC7-BD5D89D29EFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{594ED8DB-E3E4-472B-9BC7-BD5D89D29EFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0DB6D57-E6E3-41D2-BC32-73493732F7E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0DB6D57-E6E3-41D2-BC32-73493732F7E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0DB6D57-E6E3-41D2-BC32-73493732F7E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0DB6D57-E6E3-41D2-BC32-73493732F7E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

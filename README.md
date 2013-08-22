@@ -5,7 +5,7 @@ Just a few projects of C# utility code I've accumulated over the years.
 
 I've placed all of the code in the public domain.  See the UNLICENSE.txt file in the root folder of each project for the details.
 
-The projects in this repo are configured to use the latest version of .Net (4.5 as of this writing), but most of the code should work with 3.5 or even earlier.
+The projects in this repository are configured to use the latest version of .Net (4.5 as of this writing), but most of the code should work with 3.5 or even earlier.
 
 Most of the code in Utilities.Core has unit tests in Utilities.Core.Tests.  Unit testing Utilities.Internet proved to be a non-starter.  Instead of mock objects, I like to write integration or system test harnesses.  I've got some floating around for the internet-related code, but it's too raw/unstable/ugly to add to the repo right now.
 
@@ -37,7 +37,7 @@ Utilities.Core includes code for simplifying assertions (Assert.cs), processing 
 
 Utilities.Internet has a complete FTP client in Ftp.cs.
 
-Utilities.Sql provides a set of classes that read the metadata from one or more SQL Server databases.  The classes transform this metadata so it can be used in T4 templates to generate TSQL stored procedures, and C#/F#/Visual Basic database access code.  In other words, this project can be used to generate your own custom ORM, without the drawbacks of an ORM.  See the t4_generated_sql_code GitHub project for several examples.
+Utilities.Sql provides a set of classes that read the metadata from one or more SQL Server databases.  The classes expose this metadata so it can be used in T4 templates to generate TSQL stored procedures, and C#/F#/Visual Basic database access code.  In other words, this project can be used to generate your own custom ORM, without the drawbacks of an ORM.  See the [t4_sql_examples](https://github.com/ctimmons/t4_sql_examples) repository for several examples.
 
 Pull Requests and Copying
 -------------------------

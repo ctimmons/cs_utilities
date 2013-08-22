@@ -105,6 +105,10 @@ namespace Utilities.Sql
     Linq_XDocument
   }
 
+  /// <summary>
+  /// The three currently supported target languages are C#, F# and VB.
+  /// TSQL is always supported, so there's no need for a separate TSQL value in this enumeration.
+  /// </summary>
   public enum TargetLanguage { CSharp, VisualBasic, FSharp }
 
   public enum IsTargetLanguageCaseSensitive { No, Yes }
@@ -126,17 +130,29 @@ namespace Utilities.Sql
     /// </summary>
     public XmlSystem XmlSystem { get; set; }
 
+    /// <summary>
+    /// If your code only calls methods that return TSQL code, then this setting will have no affect.
+    /// </summary>
     public TargetLanguage TargetLanguage { get; set; }
 
     public IsTargetLanguageCaseSensitive IsTargetLanguageCaseSensitive { get; set; }
   }
 
+  /// <summary>
+  /// This interface allows the NameableList&lt;T&gt; class to search instances that
+  /// implement INameable by their Name property.
+  /// </summary>
   public interface INameable
   {
     String Name { get; set; }
   }
 
-  public abstract class BaseList<T> : List<T> where T : class, INameable
+  /// <summary>
+  /// A descendant of List&lt;T&gt; with an indexer property that allows
+  /// searching the INameable items in the list by their Name property.
+  /// </summary>
+  /// <typeparam name="T">Any type that is a class and implements the INameable interface.</typeparam>
+  public abstract class NameableList<T> : List<T> where T : class, INameable
   {
     public T this[String name]
     {
@@ -575,19 +591,47 @@ namespace Utilities.Sql
   }
 
   /// <summary>
-  /// The purpose of the Server class, and its related classes, is to allow T4 templates to
+  /// The Server class, and its related classes, allows T4 templates to
   /// use SQL Server metadata to easily generate database access code.
   /// <para>The class hierarchy is quite simple:  A Server contains zero or more Databases,
   /// a Database contains zero or more Tables, and a Table contains one or more Columns.
   /// (The Table class is used for both tables and views.  They're differentiated by the Table.IsView property.)</para>
-  /// <para>example to create a server</para>
-  /// <para>example to list columns for a specific table</para>
-  /// <para></para>
-  /// <para></para>
-  /// <para></para>
-  /// <para></para>
-  /// <para></para>
-  /// <para></para>
+  /// <para>For more examples, see the https://github.com/ctimmons/t4_sql_examples solution.</para>
+  /// <example>
+  /// To create a Server instance, create a connection and open it.  Then create a Configuration
+  /// instance and pass it to the Server constructor.
+  /// <code>
+  /// using (var connection = new SqlConnection("Data Source=laptop2;Initial Catalog=AdventureWorks2012;Integrated Security=true;"))
+  /// {
+  ///   connection.Open();
+  ///    
+  ///   var configuration =
+  ///     new Configuration()
+  ///     {
+  ///       Connection = connection,
+  ///       XmlSystem = XmlSystem.Linq_XDocument,
+  ///       TargetLanguage = TargetLanguage.CSharp,
+  ///       IsTargetLanguageCaseSensitive = IsTargetLanguageCaseSensitive.Yes
+  ///     };
+  /// 
+  ///   var server = new Server(configuration);
+  ///  
+  ///   // Code that uses the server instance here...
+  /// }
+  /// </code>
+  /// </example>
+  /// <example>
+  /// Once a Server instance is created, it can be used to retrieve metadata for the databases,
+  /// tables, and columns on that server.
+  /// <code>
+  /// // Find a specific table in a database:
+  /// var personTable = server.Databases["AdventureWorks2012"].Tables["Person"];
+  ///   
+  /// // Get a ready-made list of target language method parameter declarations
+  /// // for use in an update method:
+  /// var parameterDeclarations = personTable.Columns.GetTargetLanguageMethodIdentifiersAndTypes(ColumnType.CanAppearInUpdateSetClause));
+  /// </code>
+  /// </example>
   /// </summary>
   public class Server : SqlAbstractBase
   {
@@ -609,11 +653,15 @@ namespace Utilities.Sql
     }
   }
 
-  public class Databases : BaseList<Database>
+  public class Databases : NameableList<Database>
   {
     /// <summary>
     /// There are usually some databases that can be ignored during code generation.
     /// <para>This property contains a list of those database names.  Modify it as needed.</para>
+    /// <para>NOTE: This property only affects what's returned by the RelevantDatabases property.
+    /// In other words, this property has NO EFFECT on enumerating the databases directly
+    /// (e.g. foreach (var db in server.Databases)), or in accessing an individual database
+    /// directly (e.g. server.Databases["utilities"]).</para>
     /// </summary>
     public readonly List<String> IgnoredDatabaseNames = new List<String>() { "master", "model", "msdb", "tempdb", "reportserver", "reportservertempdb" };
 
@@ -625,7 +673,7 @@ namespace Utilities.Sql
     {
       get
       {
-        return this.Where(db => !this.IgnoredDatabaseNames.Exists(name => db.Name.ToLower() == name)).ToList();
+        return this.Where(db => !this.IgnoredDatabaseNames.Exists(dbname => String.Equals(db.Name, dbname, StringComparison.CurrentCultureIgnoreCase))).ToList();
       }
     }
 
@@ -678,7 +726,7 @@ namespace Utilities.Sql
     }
   }
 
-  public class Tables : BaseList<Table>
+  public class Tables : NameableList<Table>
   {
     public Tables(Configuration configuration, String databaseName)
       : base()
@@ -778,7 +826,7 @@ namespace Utilities.Sql
     }
   }
 
-  public class Columns : BaseList<Column>
+  public class Columns : NameableList<Column>
   {
     private Configuration _configuration = null;
 
@@ -813,13 +861,13 @@ AS
       INNER JOIN sys.index_columns AS ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id and i.is_primary_key = 1
       INNER JOIN sys.columns AS C ON C.[object_id] = IC.[object_id] AND c.[column_id] = ic.column_id
 ),
-column_type_CTE (USER_TYPE_ID, SERVER_DATATYPE_NAME, BASE_SERVER_DATATYPE_NAME)
+column_type_CTE (USER_TYPE_ID, SERVER_DATATYPE_NAME, NATIVE_SERVER_DATATYPE_NAME)
 AS
 (
   SELECT
       T1.user_type_id,
       SERVER_DATATYPE_NAME = UPPER(T1.name),
-      BASE_SERVER_DATATYPE_NAME = UPPER(COALESCE(T2.name, T1.name))
+      NATIVE_SERVER_DATATYPE_NAME = UPPER(COALESCE(T2.name, T1.name))
     FROM
       sys.types AS T1
       LEFT OUTER JOIN sys.types AS T2 ON T2.user_type_id = T1.system_type_id AND T1.is_table_type = 0
@@ -834,7 +882,7 @@ SELECT
     C.user_type_id,
     C.system_type_id,
     SERVER_DATATYPE_NAME = CT_CTE.SERVER_DATATYPE_NAME,
-    BASE_SERVER_DATATYPE_NAME = CT_CTE.BASE_SERVER_DATATYPE_NAME,
+    NATIVE_SERVER_DATATYPE_NAME = CT_CTE.NATIVE_SERVER_DATATYPE_NAME,
     PHYSICAL_LENGTH = C.max_length,
     LOGICAL_LENGTH = 
       CASE
@@ -885,12 +933,12 @@ SELECT
         if (columnType == ColumnType.Unknown)
           columnType |= ColumnType.NonKeyAndNonID;
 
-        var baseServerDataTypeName = row["BASE_SERVER_DATATYPE_NAME"].ToString();
+        var nativeServerDataTypeName = row["NATIVE_SERVER_DATATYPE_NAME"].ToString();
 
-        if ((baseServerDataTypeName != "TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
+        if ((nativeServerDataTypeName != "TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
           columnType |= (ColumnType.CanAppearInInsertStatement | ColumnType.CanAppearInUpdateSetClause);
 
-        if (baseServerDataTypeName != "XML")
+        if (nativeServerDataTypeName != "XML")
           columnType |= ColumnType.CanAppearInSqlWhereClause;
 
         this.Add(
@@ -900,7 +948,7 @@ SELECT
             Ordinal = Convert.ToInt32(row["COLUMN_ORDINAL"]),
             ColumnType = columnType,
             ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
-            BaseServerDataTypeName = baseServerDataTypeName,
+            NativeServerDataTypeName = nativeServerDataTypeName,
             PhysicalLength = Convert.ToInt32(row["PHYSICAL_LENGTH"]),
             LogicalLength = Convert.ToInt32(row["LOGICAL_LENGTH"]),
             Precision = Convert.ToInt32(row["PRECISION"]),
@@ -1245,6 +1293,10 @@ SELECT
     }
   }
 
+  /// <summary>
+  /// The Column class contains the majority of primitive properties and methds needed to generate
+  /// TSQL, C#, F# and VB target code.
+  /// </summary>
   public class Column : SqlAbstractBase, INameable
   {
     /// <summary>
@@ -1258,7 +1310,7 @@ SELECT
     public Int32 Ordinal { get; set; }
 
     /// <summary>
-    /// A bitwise set of values indicating what kind of column this is.
+    /// An enumeration indicating what kind of column this is.
     /// </summary>
     public ColumnType ColumnType { get; set; }
 
@@ -1272,7 +1324,7 @@ SELECT
     /// is an aliased type name, this property will contain the underlying native data type name.  E.g. if this column has
     /// a ServerDataTypeName of "CustomerAddress", this property will contain the underlying native data type name of NVARCHAR(50).
     /// </summary>
-    public String BaseServerDataTypeName { get; set; }
+    public String NativeServerDataTypeName { get; set; }
 
     /// <summary>
     /// The number of bytes the column occupies on the server.
@@ -1292,24 +1344,25 @@ SELECT
     public String XmlCollectionName { get; set; }
     
     /// <summary>
-    /// Some primary keys consist of multiple columns.  If <see cref="Utilities.Sql.Column.IsPrimaryKey">IsPrimaryKey</see> is true, this property
+    /// Some primary keys consist of multiple columns.  If <see cref="Utilities.Sql.Column.ColumnType">ColumnType</see> contains
+    /// the PrimaryKey flag, this property
     /// indicates this column's position in the set of columns that make up the primary key.
     /// </summary>
     public Int32 PrimaryKeyOrdinal { get; set; }
 
     /// <summary>
-    /// If <see cref="Utilities.Sql.Column.IsForeignKey">IsForeignKey</see> is true, the name of the table this foreign key references.
+    /// If <see cref="Utilities.Sql.Column.ColumnType">ColumnType</see> contains the ForeignKey flag, the name of the table this foreign key references.
     /// </summary>
     public String PrimaryKeyTable { get; set; }
 
     /// <summary>
-    /// If <see cref="Utilities.Sql.Column.IsForeignKey">IsForeignKey</see> is true, the name of the column this foreign key references.
+    /// If <see cref="Utilities.Sql.Column.ColumnType">ColumnType</see> contains the ForeignKey flag, the name of the column this foreign key references.
     /// </summary>
     public String PrimaryKeyColumn { get; set; }
 
     private String _clrTypeName = null;
     /// <summary>
-    /// The fully qualified CLR type name for this column's <see cref="Utilities.Sql.Column.BaseServerDataTypeName">BaseServerDataTypeName</see>.
+    /// The fully qualified CLR type name for this column's <see cref="Utilities.Sql.Column.NativeServerDataTypeName">NativeServerDataTypeName</see>.
     /// E.g. this property would contain System.String for a column type of NVARCHAR(50).
     /// </summary>
     public String ClrTypeName
@@ -1433,11 +1486,6 @@ SELECT
       }
     }
 
-    /*public Boolean CanBeUsedInSqlWhereClause
-    {
-      get { return this.BaseServerDataTypeName != "XML"; }
-    }*/
-
     private String _keyIdentificationComment = null;
     /// <summary>
     /// It can be helpful to annotate the generated code of primary and foreign key columns with a comment, simply because of their importance.
@@ -1456,17 +1504,6 @@ SELECT
       }
     }
 
-    /*
-    public Boolean CanBeUsedInUpdateSetClause
-    {
-      get { return (this.BaseServerDataTypeName != "TIMESTAMP") && !this.ColumnType.HasFlag(ColumnType.ID); }
-    }
-
-    public Boolean CanBeUsedInInsertStatement
-    {
-      get { return (this.BaseServerDataTypeName != "TIMESTAMP") && !this.ColumnType.HasFlag(ColumnType.ID); }
-    }*/
-
     public Column(Configuration configuration)
       : base(configuration)
     {
@@ -1482,7 +1519,7 @@ SELECT
     {
       String format = "";
 
-      switch (this.BaseServerDataTypeName)
+      switch (this.NativeServerDataTypeName)
       {
         case "GEOGRAPHY":
         case "GEOMETRY":
@@ -1521,7 +1558,7 @@ SELECT
           }
         };
 
-      switch (this.BaseServerDataTypeName)
+      switch (this.NativeServerDataTypeName)
       {
         case "BIGINT":
           return getAppropriateClrType("Int64");
@@ -1602,7 +1639,7 @@ SELECT
         case "UNIQUEIDENTIFIER":
           return getAppropriateClrType("Guid");
         default:
-          return String.Format("ERROR - Can't find CLR type that corresponds to SQL Server type {0}.", this.BaseServerDataTypeName);
+          return String.Format("ERROR - Can't find CLR type that corresponds to SQL Server type {0}.", this.NativeServerDataTypeName);
       }
     }
 
@@ -1635,7 +1672,7 @@ SELECT
          will be used to generate source code, probably for a case-sensitive language
          like C#. */
 
-      switch (this.BaseServerDataTypeName.ToUpper())
+      switch (this.NativeServerDataTypeName.ToUpper())
       {
         case "BIGINT":
           result = "BigInt";
@@ -1775,12 +1812,12 @@ SELECT
 
     private Boolean IsDataTypeTrimmable()
     {
-      return "CHAR/VARCHAR/NCHAR/NVARCHAR/TEXT/NTEXT".Contains(this.BaseServerDataTypeName);
+      return "CHAR/VARCHAR/NCHAR/NVARCHAR/TEXT/NTEXT".Contains(this.NativeServerDataTypeName);
     }
 
     private String GetSqlExpressionToConvertToString()
     {
-      switch (this.BaseServerDataTypeName)
+      switch (this.NativeServerDataTypeName)
       {
         case "CHAR":
         case "NCHAR":
@@ -1827,13 +1864,13 @@ SELECT
         case "BINARY":
         case "IMAGE":
         case "VARBINARY":
-          return String.Format("'{0} with length ' + CONVERT(NVARCHAR(MAX), DATALENGTH({1})) + '.'", this.BaseServerDataTypeName, this.SqlIdentifier);
+          return String.Format("'{0} with length ' + CONVERT(NVARCHAR(MAX), DATALENGTH({1})) + '.'", this.NativeServerDataTypeName, this.SqlIdentifier);
 
         case "SQL_VARIANT":
           return String.Format("dbo.util_Get_SqlVariant_As_NVarCharMax({0})", this.SqlIdentifier);
 
         default:
-          return String.Format("Don't know how to convert type {0} to a string.", this.BaseServerDataTypeName);
+          return String.Format("Don't know how to convert type {0} to a string.", this.NativeServerDataTypeName);
       }
     }
 
@@ -1852,21 +1889,21 @@ SELECT
         case TargetLanguage.CSharp:
           if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
             return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3} }}{4}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.BaseServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+              this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
           else
             return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, Value = {2} }}{3}",
               this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
         case TargetLanguage.FSharp:
           if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
             return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3}){4}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.BaseServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+              this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
           else
             return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, Value = {2}){3}",
               this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
         case TargetLanguage.VisualBasic:
           if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
             return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .UdtTypeName = \"{2}\", .Value = {3} }}{4}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.BaseServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+              this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
           else
             return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .Value = {2} }}{3}",
               this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);

@@ -120,6 +120,9 @@
   <data name="DatabaseNotFound" xml:space="preserve">
     <value>Database '{0}' not found.</value>
   </data>
+  <data name="NonNullableCast" xml:space="preserve">
+    <value>Cannot cast DBNull.Value to type '{0}'. Please use a nullable type.  Column name = '{1}', column index = {2}.</value>
+  </data>
   <data name="UnknownTargetLanguageValue" xml:space="preserve">
     <value>Don't know how to handle the enumerated value TargetLanguage.{0}.</value>
   </data>
