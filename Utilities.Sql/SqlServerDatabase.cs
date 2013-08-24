@@ -593,7 +593,8 @@ namespace Utilities.Sql
   /// <summary>
   /// The Server class, and its related classes, allows T4 templates to
   /// use SQL Server metadata to easily generate database access code.
-  /// <para>The class hierarchy is quite simple:  A Server contains zero or more Databases,
+  /// <para>The class hierarchy is quite simple:  A Server contains zero or more Schemas,
+  /// a schema contains zero or more Databases,
   /// a Database contains zero or more Tables, and a Table contains one or more Columns.
   /// (The Table class is used for both tables and views.  They're differentiated by the Table.IsView property.)</para>
   /// <para>For more examples, see the https://github.com/ctimmons/t4_sql_examples solution.</para>
@@ -625,7 +626,7 @@ namespace Utilities.Sql
   /// tables, and columns on that server.
   /// <code>
   /// // Find a specific table in a database:
-  /// var personTable = server.Databases["AdventureWorks2012"].Tables["Person"];
+  /// var personTable = server.Databases["AdventureWorks2012"].Schemas["Person"].Tables["Person"];
   ///   
   /// // Get a ready-made list of target language method parameter declarations
   /// // for use in an update method:
@@ -693,6 +694,83 @@ namespace Utilities.Sql
     /// </summary>
     public String Name { get; set; }
 
+    private Schemas _schemas = null;
+    public Schemas Schemas
+    {
+      get
+      {
+        if (this._schemas == null)
+        {
+          /* In order to get the right list of schemas, the connection's
+             database has to be pointed at the right database.
+             
+             Treat the connection's current database as an invariant.
+             I.e. remember the connection's current database,
+             point to the new database and get the schemas, then switch
+             the connection back to its old database. */
+
+          var previousDatabaseName = (this._configuration.Connection.Database == this.Name) ? null : this._configuration.Connection.Database;
+          try
+          {
+            if (previousDatabaseName != null)
+              this._configuration.Connection.ChangeDatabase(this.Name);
+
+            this._schemas = new Schemas(this._configuration, this.Name);
+          }
+          finally
+          {
+            if (previousDatabaseName != null)
+              this._configuration.Connection.ChangeDatabase(previousDatabaseName);
+          }
+        }
+
+        return this._schemas;
+      }
+    }
+
+    public Database(Configuration configuration)
+      : base(configuration)
+    {
+    }
+  }
+
+  public class Schemas : NameableList<Schema>
+  {
+    public Schemas(Configuration configuration, String databaseName)
+      : base()
+    {
+      var sql = @"
+SELECT
+    [SCHEMA_NAME] = S.[name]
+  FROM
+    sys.schemas AS S
+    INNER JOIN sys.database_principals AS U ON U.principal_id = S.principal_id
+  WHERE
+    U.is_fixed_role = 0
+    AND U.sid IS NOT NULL
+    AND LEN(U.sid) > 0
+    AND LOWER(S.[Name]) NOT IN ('sys', 'guest')
+
+;";
+
+      var schemas = configuration.Connection.GetDataSet(sql).Tables[0];
+      foreach (DataRow row in schemas.Rows)
+        this.Add(new Schema(configuration) { DatabaseName = databaseName, Name = row["SCHEMA_NAME"].ToString() });
+    }
+  }
+
+  public class Schema : SqlAbstractBase, INameable
+  {
+    /// <summary>
+    /// The schema's database name as it appears on the database server.
+    /// </summary>
+    public String DatabaseName { get; set; }
+
+    /// <summary>
+    /// The schema name as it appears on the database server.
+    /// </summary>
+    public String Name { get; set; }
+
     private Tables _tables = null;
     public Tables Tables
     {
@@ -700,12 +778,19 @@ namespace Utilities.Sql
       {
         if (this._tables == null)
         {
-          /* Treat the connection's current database as an in. */
-          var previousDatabaseName = (this._configuration.Connection.Database == this.Name) ? null : this._configuration.Connection.Database;
+          /* In order to get the right list of tables, the connection's
+             database has to be pointed at the right database.
+             
+             Treat the connection's current database as an invariant.
+             I.e. remember the connection's current database,
+             point to the new database and get the tables, then switch
+             the connection back to its old database. */
+
+          var previousDatabaseName = (this._configuration.Connection.Database == this.DatabaseName) ? null : this._configuration.Connection.Database;
           try
           {
             if (previousDatabaseName != null)
-              this._configuration.Connection.ChangeDatabase(this.Name);
+              this._configuration.Connection.ChangeDatabase(this.DatabaseName);
 
             this._tables = new Tables(this._configuration, this.Name);
           }
@@ -720,7 +805,7 @@ namespace Utilities.Sql
       }
     }
 
-    public Database(Configuration configuration)
+    public Schema(Configuration configuration)
       : base(configuration)
     {
     }
@@ -728,19 +813,24 @@ namespace Utilities.Sql
 
   public class Tables : NameableList<Table>
   {
-    public Tables(Configuration configuration, String databaseName)
+    public Tables(Configuration configuration, String schemaName)
       : base()
     {
       var table = configuration.Connection.GetSchema("Tables");
       foreach (DataRow row in table.Rows)
-        this.Add(
-          new Table(configuration)
-          {
-            DatabaseName = databaseName,
-            SchemaName = row["table_schema"].ToString(),
-            Name = row["table_name"].ToString(),
-            IsView = row["table_type"].ToString().Equals("VIEW", StringComparison.InvariantCultureIgnoreCase)
-          });
+      {
+        if (schemaName.Equals(row["table_schema"].ToString(), StringComparison.CurrentCultureIgnoreCase))
+        {
+          this.Add(
+            new Table(configuration)
+            {
+              DatabaseName = row["table_catalog"].ToString(),
+              SchemaName = schemaName,
+              Name = row["table_name"].ToString(),
+              IsView = row["table_type"].ToString().Equals("VIEW", StringComparison.InvariantCultureIgnoreCase)
+            });
+        }
+      }
     }
   }
 
