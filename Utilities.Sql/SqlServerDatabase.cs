@@ -748,10 +748,8 @@ SELECT
   WHERE
     U.is_fixed_role = 0
     AND U.sid IS NOT NULL
-    AND LEN(U.sid) > 0
-    AND LOWER(S.[Name]) NOT IN ('sys', 'guest')
-
-;";
+    AND DATALENGTH(U.sid) > 0
+    AND LOWER(S.[Name]) NOT IN ('sys', 'guest');";
 
       var schemas = configuration.Connection.GetDataSet(sql).Tables[0];
       foreach (DataRow row in schemas.Rows)
