@@ -58,6 +58,12 @@
   <ItemGroup>
     <Content Include="UNLICENSE.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Utilities.Core\Utilities.Core.csproj">
+      <Project>{714ba021-2a07-4d0e-b174-149c41c4b37a}</Project>
+      <Name>Utilities.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

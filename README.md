@@ -20,15 +20,17 @@ Dependencies
 
 Utilities.Core has no dependencies outside of .Net.
 
-Utilities.Core.Tests depends on Utilities.Core and [NUnit](http://www.nunit.org/) (nunit.framework.dll). 
+Utilities.Core.Tests depends on Utilities.Core and [NUnit](http://www.nunit.org/) (nunit.framework.dll).
 
 Utilities.Internet depends on Utilities.Core and [Html Agility Pack](http://htmlagilitypack.codeplex.com/) (HtmlAgilityPack.dll).
 
-Utilities.Sql has no dependencies outside of .Net.  Note, however, the code it generates may have dependencies on Utilities.Core, Utilities.Sql, and/or Microsoft.SqlServer.Types.
+Utilities.Sql depends on Utilities.Core.  Note, however, the code it generates may have dependencies on other assemblies, like Utilities.Core, Utilities.Sql, and/or Microsoft.SqlServer.Types.
 
 (To get the Microsoft.SqlServer.Types assembly, go to [SQL Server 2012 SP1 Feature Pack](http://www.microsoft.com/en-us/download/details.aspx?id=35580) and expand the "Install Instructions" section.  Scroll down to the section labeled "Microsoft® System CLR Types for Microsoft® SQL Server® 2012" and download and run the appropriate 32 or 64 bit installer.
 
 There are feature packs available for other versions of SQL Server.  Go to [Microsoft Search](http://search.microsoft.com/) and search for "sql server feature pack".)
+
+Utilities.Sql.Tests depends on Utilities.Sql and [NUnit](http://www.nunit.org/) (nunit.framework.dll).
 
 Highlights
 ----------

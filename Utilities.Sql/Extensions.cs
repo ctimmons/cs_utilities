@@ -8,6 +8,9 @@ using System.Data.SqlTypes;
 using System.IO;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.Schema;
+
+using Utilities.Core;
 
 namespace Utilities.Sql
 {
@@ -105,24 +108,104 @@ namespace Utilities.Sql
 
     /// <summary>
     /// Convert a string containing xml to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// <para>No validation is done on the XML.</para>
     /// </summary>
     /// <param name="xml">A <see cref="System.String">String</see> containing xml.</param>
     /// <returns></returns>
     public static SqlXml GetSqlXml(this String xml)
     {
-      using (var stringReader = new StringReader(xml))
-        using (var xmlTextReader = new XmlTextReader(stringReader))
-          return new SqlXml(xmlTextReader);
+      xml.Check("xml");
+
+      return xml.GetSqlXml(new XmlReaderSettings() { ValidationType = ValidationType.None });
     }
 
     /// <summary>
-    /// Convert an XNode to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// Convert a string containing xml to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// <para>The XML is validated using the xmlSchemaSet.</para>
     /// </summary>
-    /// <param name="xNode">An <see cref="System.Xml.Linq.XNode">XNode</see>.</param>
+    /// <param name="xml">A <see cref="System.String">String</see> containing xml.</param>
+    /// <param name="xmlSchemaSet"></param>
     /// <returns></returns>
-    public static SqlXml GetSqlXml(this XNode xNode)
+    public static SqlXml GetSqlXml(this String xml, XmlSchemaSet xmlSchemaSet)
     {
-      using (var xmlReader = xNode.CreateReader())
+      xml.Check("xml");
+      xmlSchemaSet.CheckForNull("xmlSchemaSet");
+
+      return xml.GetSqlXml(new XmlReaderSettings() { ValidationType = ValidationType.Schema, Schemas = xmlSchemaSet });
+    }
+
+    /// <summary>
+    /// Convert a string containing xml to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// <para>The xmlReaderSettings are used when creating the internal XmlReader that actually does the conversion.</para>
+    /// </summary>
+    /// <param name="xml">A <see cref="System.String">String</see> containing xml.</param>
+    /// <param name="xmlReaderSettings"></param>
+    /// <returns></returns>
+    public static SqlXml GetSqlXml(this String xml, XmlReaderSettings xmlReaderSettings)
+    {
+      xml.Check("xml");
+      xmlReaderSettings.CheckForNull("xmlReaderSettings");
+
+      using (var stringReader = new StringReader(xml))
+        using (var xmlReader = XmlReader.Create(stringReader, xmlReaderSettings))
+          return new SqlXml(xmlReader);
+    }
+
+    /// <summary>
+    /// Convert an XElement to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// </summary>
+    /// <param name="xElement"></param>
+    /// <param name="xmlSchemaSet"></param>
+    /// <returns></returns>
+    public static SqlXml GetSqlXml(this XElement xElement, XmlSchemaSet xmlSchemaSet)
+    {
+      xElement.CheckForNull("xElement");
+      xmlSchemaSet.CheckForNull("xmlSchemaSet");
+
+      xElement.Validate(xElement.GetSchemaInfo().SchemaElement, xmlSchemaSet, null /* Throw exceptions on validation error. */);
+
+      return xElement.GetSqlXml();
+    }
+
+    /// <summary>
+    /// Convert an XElement to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// </summary>
+    /// <param name="xElement"></param>
+    /// <returns></returns>
+    public static SqlXml GetSqlXml(this XElement xElement)
+    {
+      xElement.CheckForNull("xElement");
+
+      using (var xmlReader = xElement.CreateReader())
+        return new SqlXml(xmlReader);
+    }
+
+    /// <summary>
+    /// Convert an XDocument to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// </summary>
+    /// <param name="xDocument"></param>
+    /// <param name="xmlSchemaSet"></param>
+    /// <returns></returns>
+    public static SqlXml GetSqlXml(this XDocument xDocument, XmlSchemaSet xmlSchemaSet)
+    {
+      xDocument.CheckForNull("xDocument");
+      xmlSchemaSet.CheckForNull("xmlSchemaSet");
+
+      xDocument.Validate(xmlSchemaSet, null /* Throw exceptions on validation error. */);
+
+      return xDocument.GetSqlXml();
+    }
+
+    /// <summary>
+    /// Convert an XDocument to an <see cref="System.Data.SqlTypes.SqlXml">SqlXml</see> instance.
+    /// </summary>
+    /// <param name="xDocument"></param>
+    /// <returns></returns>
+    public static SqlXml GetSqlXml(this XDocument xDocument)
+    {
+      xDocument.CheckForNull("xDocument");
+
+      using (var xmlReader = xDocument.CreateReader())
         return new SqlXml(xmlReader);
     }
 
@@ -134,6 +217,11 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this XmlDocument xmlDocument, XmlNodeType xmlNodeType)
     {
+      xmlDocument.CheckForNull("xmlDocument");
+
+      if ((xmlDocument.Schemas != null) && (xmlDocument.Schemas.Count > 0))
+        xmlDocument.Validate(null);
+
       using (var xmlTextReader = new XmlTextReader(xmlDocument.InnerXml, xmlNodeType, null as XmlParserContext))
         return new SqlXml(xmlTextReader);
     }
