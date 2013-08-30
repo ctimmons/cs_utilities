@@ -258,5 +258,33 @@ namespace Utilities.Sql
       else
         throw new InvalidCastException(String.Format(Properties.Resources.NonNullableCast, type.FullName, dbDataReader.GetName(columnIndex), columnIndex));
     }
+
+    public static void ExecuteUnderDatabaseInvariant(this SqlConnection connection, String databaseName, Action action)
+    {
+      /* Some operations need to change the database in order to get the data they want.
+         
+         However, it's not polite to switch a connection to a different database
+         without guaranteeing that the connection will be switched back to
+         its original database.
+             
+         So, this method treats the connection's current database as an invariant.
+         I.e. it stores the connection's current database,
+         point to the new database (if necessary), and perform the action.
+         Finally, it switches the connection back to its old database (if necessary). */
+
+      var previousDatabaseName = (connection.Database == databaseName) ? null : connection.Database;
+      try
+      {
+        if (previousDatabaseName != null)
+          connection.ChangeDatabase(databaseName);
+
+        action();
+      }
+      finally
+      {
+        if (previousDatabaseName != null)
+          connection.ChangeDatabase(previousDatabaseName);
+      }
+    }
   }
 }

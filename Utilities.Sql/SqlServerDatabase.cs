@@ -6,6 +6,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Xml;
+using System.Xml.Schema;
 
 namespace Utilities.Sql
 {
@@ -700,29 +701,7 @@ namespace Utilities.Sql
       get
       {
         if (this._schemas == null)
-        {
-          /* In order to get the right list of schemas, the connection's
-             database has to be pointed at the right database.
-             
-             Treat the connection's current database as an invariant.
-             I.e. remember the connection's current database,
-             point to the new database and get the schemas, then switch
-             the connection back to its old database. */
-
-          var previousDatabaseName = (this._configuration.Connection.Database == this.Name) ? null : this._configuration.Connection.Database;
-          try
-          {
-            if (previousDatabaseName != null)
-              this._configuration.Connection.ChangeDatabase(this.Name);
-
-            this._schemas = new Schemas(this._configuration, this.Name);
-          }
-          finally
-          {
-            if (previousDatabaseName != null)
-              this._configuration.Connection.ChangeDatabase(previousDatabaseName);
-          }
-        }
+          this._configuration.Connection.ExecuteUnderDatabaseInvariant(this.Name, () => this._schemas = new Schemas(this._configuration, this.Name));
 
         return this._schemas;
       }
@@ -775,29 +754,7 @@ SELECT
       get
       {
         if (this._tables == null)
-        {
-          /* In order to get the right list of tables, the connection's
-             database has to be pointed at the right database.
-             
-             Treat the connection's current database as an invariant.
-             I.e. remember the connection's current database,
-             point to the new database and get the tables, then switch
-             the connection back to its old database. */
-
-          var previousDatabaseName = (this._configuration.Connection.Database == this.DatabaseName) ? null : this._configuration.Connection.Database;
-          try
-          {
-            if (previousDatabaseName != null)
-              this._configuration.Connection.ChangeDatabase(this.DatabaseName);
-
-            this._tables = new Tables(this._configuration, this.Name);
-          }
-          finally
-          {
-            if (previousDatabaseName != null)
-              this._configuration.Connection.ChangeDatabase(previousDatabaseName);
-          }
-        }
+          this._configuration.Connection.ExecuteUnderDatabaseInvariant(this.DatabaseName, () => this._tables = new Tables(this._configuration, this.Name));
 
         return this._tables;
       }
