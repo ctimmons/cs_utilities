@@ -120,6 +120,9 @@
   <data name="DatabaseNotFound" xml:space="preserve">
     <value>Database '{0}' not found.</value>
   </data>
+  <data name="ItemNotFound" xml:space="preserve">
+    <value>'{0}' not found in list.</value>
+  </data>
   <data name="NonNullableCast" xml:space="preserve">
     <value>Cannot cast DBNull.Value to type '{0}'. Please use a nullable type.  Column name = '{1}', column index = {2}.</value>
   </data>

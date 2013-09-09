@@ -70,6 +70,15 @@ namespace Utilities.Sql.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; not found in list..
+        /// </summary>
+        internal static string ItemNotFound {
+            get {
+                return ResourceManager.GetString("ItemNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cannot cast DBNull.Value to type &apos;{0}&apos;. Please use a nullable type.  Column name = &apos;{1}&apos;, column index = {2}..
         /// </summary>
         internal static string NonNullableCast {

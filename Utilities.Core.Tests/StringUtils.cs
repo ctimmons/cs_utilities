@@ -322,5 +322,29 @@ namespace Utilities.Core.UnitTests
       strings.Add("a");
       Assert.IsTrue(strings.AreAnyEmpty());
     }
+
+    [Test]
+    public void IndentTest()
+    {
+      String input = null;
+      Assert.Throws<ArgumentNullException>(() => input.Indent(4));
+
+      input = "";
+      Assert.Throws<ArgumentException>(() => input.Indent(4));
+
+      input = @"one
+two
+three
+";
+
+      var output = @"    one
+    two
+    three
+    ";
+
+      Assert.AreEqual(input, input.Indent(0)); // An indent of zero or less should return the source string unchanged.
+
+      Assert.AreEqual(input.Indent(4), output);
+    }
   }
 }

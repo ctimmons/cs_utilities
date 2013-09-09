@@ -128,5 +128,23 @@ namespace Utilities.Core
       strings.CheckForNull("strings");
       return strings.Any(s => String.IsNullOrWhiteSpace(s));
     }
+
+    public static String Indent(this String value, Int32 indent)
+    {
+      value.Check("value", StringAssertion.NotNull | StringAssertion.NotZeroLength);
+      
+      /* A string may consist of more than one line (i.e. lines separated by carriage returns).
+          Return a string in which all lines are indented by the specified number of spaces. */
+
+      if (indent <= 0)
+      {
+        return value;
+      }
+      else
+      {
+        var indentString = " ".Repeat(indent);
+        return indentString + value.Replace(Environment.NewLine, Environment.NewLine + indentString);
+      }
+    }
   }
 }

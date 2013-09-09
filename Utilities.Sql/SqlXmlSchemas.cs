@@ -15,6 +15,14 @@ namespace Utilities.Sql
   /// </summary>
   public class SqlXmlSchemas
   {
+    public static SqlXmlSchemas Instance = null;
+
+    public static void InitializeInstance(SqlConnection connection)
+    {
+      if (Instance == null)
+        Instance = new SqlXmlSchemas(connection);
+    }
+    
     private class ThreeStringTupleEqualityComparer : IEqualityComparer<Tuple<String, String, String>>
     {
       public Boolean Equals(Tuple<String, String, String> x, Tuple<String, String, String> y)
