@@ -131,12 +131,12 @@ namespace Utilities.Core
 
     public static String Indent(this String value, Int32 indent)
     {
-      value.Check("value", StringAssertion.NotNull | StringAssertion.NotZeroLength);
+      value.Check("value", StringAssertion.NotNull);
       
       /* A string may consist of more than one line (i.e. lines separated by carriage returns).
           Return a string in which all lines are indented by the specified number of spaces. */
 
-      if (indent <= 0)
+      if ((indent <= 0) || (value == ""))
       {
         return value;
       }

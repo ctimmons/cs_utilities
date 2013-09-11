@@ -904,12 +904,13 @@ SELECT
       this._configuration = configuration;
 
       var sql = @"
-;WITH foreign_keys_CTE (FOREIGN_KEY_TABLE, FOREIGN_KEY_COLUMN, PRIMARY_KEY_TABLE, PRIMARY_KEY_COLUMN)
+;WITH foreign_keys_CTE (FOREIGN_KEY_TABLE, FOREIGN_KEY_COLUMN, PRIMARY_KEY_SCHEMA, PRIMARY_KEY_TABLE, PRIMARY_KEY_COLUMN)
 AS
 (
   SELECT
       FOREIGN_KEY_TABLE = OBJECT_NAME(FKC.parent_object_id),
       FOREIGN_KEY_COLUMN = C.NAME,
+      PRIMARY_KEY_SCHEMA = OBJECT_SCHEMA_NAME(FKC.referenced_object_id),
       PRIMARY_KEY_TABLE = OBJECT_NAME(FKC.referenced_object_id),
       PRIMARY_KEY_COLUMN = CREF.NAME
     FROM
@@ -968,6 +969,7 @@ SELECT
     IS_PRIMARY_KEY = CASE WHEN (PK_CTE.primary_key_ordinal IS NULL) THEN 'N' ELSE 'Y' END,
     PRIMARY_KEY_ORDINAL = COALESCE(PK_CTE.primary_key_ordinal, -1),
     IS_FOREIGN_KEY = CASE WHEN (FKCTE.foreign_key_table IS NULL) THEN 'N' ELSE 'Y' END,
+    PRIMARY_KEY_SCHEMA = COALESCE(FKCTE.primary_key_schema, ''),
     PRIMARY_KEY_TABLE = COALESCE(FKCTE.primary_key_table, ''),
     PRIMARY_KEY_COLUMN = COALESCE(FKCTE.primary_key_column, '')
   FROM
@@ -1028,6 +1030,7 @@ SELECT
             IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().ToUpper() == "Y",
             XmlCollectionName = row["XML_COLLECTION_NAME"].ToString(),
             PrimaryKeyOrdinal = Convert.ToInt32(row["PRIMARY_KEY_ORDINAL"]),
+            PrimaryKeySchema = row["PRIMARY_KEY_SCHEMA"].ToString(),
             PrimaryKeyTable = row["PRIMARY_KEY_TABLE"].ToString(),
             PrimaryKeyColumn = row["PRIMARY_KEY_COLUMN"].ToString()
           });
@@ -1460,6 +1463,11 @@ SELECT
     public Int32 PrimaryKeyOrdinal { get; set; }
 
     /// <summary>
+    /// If <see cref="Utilities.Sql.Column.ColumnType">ColumnType</see> contains the ForeignKey flag, the name of the schema that owns the table this foreign key references.
+    /// </summary>
+    public String PrimaryKeySchema { get; set; }
+
+    /// <summary>
     /// If <see cref="Utilities.Sql.Column.ColumnType">ColumnType</see> contains the ForeignKey flag, the name of the table this foreign key references.
     /// </summary>
     public String PrimaryKeyTable { get; set; }
@@ -1545,7 +1553,7 @@ SELECT
     /// </summary>
     public Boolean DoesTargetLanguagePropertyNeedBackingStore
     {
-      get { return !String.IsNullOrWhiteSpace(this.XmlCollectionName); }
+      get { return (!String.IsNullOrWhiteSpace(this.XmlCollectionName) && this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter)); }
     }
 
     private String _sqlIdentifier = null;
@@ -2085,7 +2093,7 @@ SELECT
         comments.Add(String.Format("primary key {0}", this.PrimaryKeyOrdinal));
 
       if (this.ColumnType.HasFlag(ColumnType.ForeignKey))
-        comments.Add(String.Format("foreign key ({0}, {1})", this.PrimaryKeyTable, this.PrimaryKeyColumn));
+        comments.Add(String.Format("foreign key ({0}.{1}, {2})", this.PrimaryKeySchema, this.PrimaryKeyTable, this.PrimaryKeyColumn));
 
       var format = "";
 
@@ -2162,7 +2170,7 @@ SELECT
     {
       var keyIdentificationComment = (includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "";
 
-      if (String.IsNullOrWhiteSpace(this.XmlCollectionName))
+      if (String.IsNullOrWhiteSpace(this.XmlCollectionName) || !this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter))
       {
         var format = "";
 

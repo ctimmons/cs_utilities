@@ -329,8 +329,7 @@ namespace Utilities.Core.UnitTests
       String input = null;
       Assert.Throws<ArgumentNullException>(() => input.Indent(4));
 
-      input = "";
-      Assert.Throws<ArgumentException>(() => input.Indent(4));
+      Assert.AreEqual("", "".Indent(4));
 
       input = @"one
 two
