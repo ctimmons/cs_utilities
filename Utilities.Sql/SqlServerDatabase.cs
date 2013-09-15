@@ -6,20 +6,11 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Xml;
-using System.Xml.Schema;
 
 using Utilities.Core;
 
 namespace Utilities.Sql
 {
-  public class ItemNotFoundException : Exception
-  {
-    public ItemNotFoundException(String message)
-      : base(message)
-    {
-    }
-  }
-  
   /// <summary>
   /// Some of the methods in the classes in this namespace select a set of columns.
   /// This enumeration allows for selecting a subset of a table's columns
@@ -142,8 +133,132 @@ namespace Utilities.Sql
   /// <summary>
   /// The three currently supported target languages are C#, F# and VB.
   /// <para>TSQL is always supported, so there's no need for a separate TSQL value in this enumeration.</para>
+  /// <para>The languages are broken out by version number.  This is to allow for flexibility in generating things
+  /// like properties, where the later versions of a language support auto properties, but the earlier versions do not.</para>
+  /// <para>See <a href="http://en.wikipedia.org/wiki/C_Sharp_%28programming_language%29#Versions">C# (Programming Language)</a> for a complete table of C# version numbers.</para>
+  /// <para>See <a href="http://en.wikipedia.org/wiki/Visual_Basic_.NET">Visual Basic.Net</a> for a list of VB.Net version numbers.</para>
   /// </summary>
-  public enum TargetLanguage { CSharp, VisualBasic, FSharp }
+  public enum TargetLanguage
+  {
+    /// <summary>
+    /// .Net 1.0, Visual Studio 2002.
+    /// </summary>
+    CSharp_1_0,
+
+    /// <summary>
+    /// .Net 1.1, Visual Studio 2003.  And yes, it really is C# 1.2, not C# 1.1.
+    /// </summary>
+    CSharp_1_2,
+
+    /// <summary>
+    /// .Net 2.0, Visual Studio 2005.
+    /// </summary>
+    CSharp_2_0,
+
+    /// <summary>
+    /// .Net 3.0, Visual Studio 2008.
+    /// </summary>
+    CSharp_3_0,
+
+    /// <summary>
+    /// .Net 4.0, Visual Studio 2010.
+    /// </summary>
+    CSharp_4_0,
+
+    /// <summary>
+    /// .Net 4.5, Visual Studio 2012.
+    /// </summary>
+    CSharp_5_0,
+
+    /// <summary>
+    /// Convenience value equal to the latest version of C#.
+    /// </summary>
+    CSharp_Latest = CSharp_5_0,
+
+
+    /// <summary>
+    /// .Net 4.0, Visual Studio 2010.
+    /// </summary>
+    FSharp_2_0, /* .Net 4.0, Visual Studio 2010 */
+
+    /// <summary>
+    /// .Net 4.5, Visual Studio 2012.
+    /// </summary>
+    FSharp_3_0, /* .Net 4.5, Visual Studio 2012 */
+
+    /// <summary>
+    /// Convenience value equal to the latest version of F#.
+    /// </summary>
+    FSharp_Latest = FSharp_3_0,
+
+
+    /// <summary>
+    /// .Net 1.0, Visual Studio 2002.
+    /// </summary>
+    VisualBasic_7_0,
+
+    /// <summary>
+    /// .Net 1.1, Visual Studio 2003.
+    /// </summary>
+    VisualBasic_7_1,
+
+    /// <summary>
+    /// .Net 2.0, Visual Studio 2005.
+    /// </summary>
+    VisualBasic_8_0,
+
+    /// <summary>
+    /// .Net 3.0, Visual Studio 2008.
+    /// </summary>
+    VisualBasic_9_0,
+
+    /// <summary>
+    /// .Net 4.0, Visual Studio 2010.
+    /// </summary>
+    VisualBasic_10_0,
+
+    /// <summary>
+    /// .Net 4.5, Visual Studio 2012.
+    /// </summary>
+    VisualBasic_11_0,
+
+    /// <summary>
+    /// Convenience value equal to the latest version of VB.Net.
+    /// </summary>
+    VisualBasic_Latest = VisualBasic_11_0
+  }
+
+  /// <summary>
+  /// System.Enum types can't have methods directly attached to them, so extension methods are a necessary workaround.
+  /// </summary>
+  public static class TargetLanguageExtensionMethods
+  {
+    /// <summary>
+    /// Not all versions of a target language support auto properties.  C# 3.0 and later, F# 3.0 and later, and VB.Net 10.0 and later do.
+    /// </summary>
+    public static Boolean DoesSupportAutoProperties(this TargetLanguage targetLanguage)
+    {
+      return
+        ((targetLanguage >= TargetLanguage.CSharp_3_0) && (targetLanguage <= TargetLanguage.CSharp_Latest)) ||
+        ((targetLanguage >= TargetLanguage.FSharp_3_0) && (targetLanguage <= TargetLanguage.FSharp_Latest)) ||
+        ((targetLanguage >= TargetLanguage.VisualBasic_10_0) && (targetLanguage <= TargetLanguage.VisualBasic_Latest));
+    }
+
+    public static Boolean IsCSharp(this TargetLanguage targetLanguage)
+    {
+      return (targetLanguage >= TargetLanguage.CSharp_1_0) && (targetLanguage <= TargetLanguage.CSharp_Latest);
+    }
+
+    public static Boolean IsFSharp(this TargetLanguage targetLanguage)
+    {
+      return (targetLanguage >= TargetLanguage.FSharp_2_0) && (targetLanguage <= TargetLanguage.FSharp_Latest);
+    }
+
+    public static Boolean IsVisualBasic(this TargetLanguage targetLanguage)
+    {
+      return (targetLanguage >= TargetLanguage.VisualBasic_7_0) && (targetLanguage <= TargetLanguage.VisualBasic_Latest);
+    }
+  }
 
   public enum IsTargetLanguageCaseSensitive { No, Yes }
 
@@ -587,20 +702,14 @@ namespace Utilities.Sql
     {
       this._configuration = configuration;
 
-      switch (this._configuration.TargetLanguage)
-      {
-        case TargetLanguage.CSharp:
-          this._targetLanguageKeywords = this._csharpKeywords;
-          break;
-        case TargetLanguage.FSharp:
-          this._targetLanguageKeywords = this._fsharpKeywords;
-          break;
-        case TargetLanguage.VisualBasic:
-          this._targetLanguageKeywords = this._visualBasicKeywords;
-          break;
-        default:
-          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-      }
+      if (this._configuration.TargetLanguage.IsCSharp())
+        this._targetLanguageKeywords = this._csharpKeywords;
+      else if (this._configuration.TargetLanguage.IsFSharp())
+        this._targetLanguageKeywords = this._fsharpKeywords;
+      else if (this._configuration.TargetLanguage.IsVisualBasic())
+        this._targetLanguageKeywords = this._visualBasicKeywords;
+      else
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
     }
 
     /// <summary>
@@ -630,7 +739,7 @@ namespace Utilities.Sql
   }
 
   /// <summary>
-  /// The Server class, and its related classes, allows T4 templates to
+  /// Server and its related classes allow T4 templates to
   /// use SQL Server metadata to easily generate database access code.
   /// <para>The class hierarchy is quite simple:  A Server contains zero or more Schemas,
   /// a schema contains zero or more Databases,
@@ -1546,14 +1655,21 @@ SELECT
     }
 
     /// <summary>
-    /// Sometimes the target language property code returned by GetTargetLanguageProperty
+    /// Sometimes the code for a particular target language's property definition returned by GetTargetLanguageProperty
     /// has a dependency on an associated backing store.
     /// This property can be used to determine whether or not TargetLanguageBackingStoreDeclaration
     /// needs to be used to place the backing store in any generated code.
     /// </summary>
     public Boolean DoesTargetLanguagePropertyNeedBackingStore
     {
-      get { return (!String.IsNullOrWhiteSpace(this.XmlCollectionName) && this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter)); }
+      get
+      {
+        var isXmlRelatedProperty =
+          !String.IsNullOrWhiteSpace(this.XmlCollectionName) &&
+          this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter);
+
+        return !this._configuration.TargetLanguage.DoesSupportAutoProperties() || isXmlRelatedProperty;
+      }
     }
 
     private String _sqlIdentifier = null;
@@ -1699,16 +1815,12 @@ SELECT
       Func<String, String> getAppropriateClrType =
         clrType =>
         {
-          switch (this._configuration.TargetLanguage)
-          {
-            case TargetLanguage.CSharp:
-            case TargetLanguage.FSharp:
-              return this.IsNullable ? "System.Nullable<System." + clrType + ">" : "System." + clrType;
-            case TargetLanguage.VisualBasic:
-              return this.IsNullable ? "System.Nullable(Of System." + clrType + ")" : "System." + clrType;
-            default:
-              throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-          }
+          if (this._configuration.TargetLanguage.IsCSharp() || this._configuration.TargetLanguage.IsFSharp())
+            return this.IsNullable ? "System.Nullable<System." + clrType + ">" : "System." + clrType;
+          else if (this._configuration.TargetLanguage.IsVisualBasic())
+            return this.IsNullable ? "System.Nullable(Of System." + clrType + ")" : "System." + clrType;
+          else
+            throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
         };
 
       switch (this.NativeServerDataTypeName)
@@ -1721,16 +1833,12 @@ SELECT
         case "ROWVERSION":
         case "TIMESTAMP":
         case "VARBINARY":
-          switch (this._configuration.TargetLanguage)
-          {
-            case TargetLanguage.CSharp:
-            case TargetLanguage.FSharp:
-              return "System.Byte[]";
-            case TargetLanguage.VisualBasic:
-              return "System.Byte()";
-            default:
-              throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-          }
+          if (this._configuration.TargetLanguage.IsCSharp() || this._configuration.TargetLanguage.IsFSharp())
+            return "System.Byte[]";
+          else if (this._configuration.TargetLanguage.IsVisualBasic())
+            return "System.Byte()";
+          else
+            throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
         case "BIT":
           return getAppropriateClrType("Boolean");
         case "CURSOR":
@@ -1804,16 +1912,12 @@ SELECT
     /// <returns>A String.</returns>
     public String GetTargetLanguageDataReaderExpression(String readerName)
     {
-      switch (this._configuration.TargetLanguage)
-      {
-        case TargetLanguage.CSharp:
-        case TargetLanguage.FSharp:
-          return String.Format("{0}.GetValueOrDefault<{1}>(\"{2}\")", readerName, this.ClrTypeName, this.Name);
-        case TargetLanguage.VisualBasic:
-          return String.Format("{0}.GetValueOrDefault(Of {1})(\"{2}\")", readerName, this.ClrTypeName, this.Name);
-        default:
-          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-      }
+      if (this._configuration.TargetLanguage.IsCSharp() || this._configuration.TargetLanguage.IsFSharp())
+        return String.Format("{0}.GetValueOrDefault<{1}>(\"{2}\")", readerName, this.ClrTypeName, this.Name);
+      else if (this._configuration.TargetLanguage.IsVisualBasic())
+        return String.Format("{0}.GetValueOrDefault(Of {1})(\"{2}\")", readerName, this.ClrTypeName, this.Name);
+      else
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
     }
 
     private String GetSqlDbTypeFromNativeSqlType()
@@ -2037,32 +2141,35 @@ SELECT
     {
       var comment = ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "");
 
-      switch (this._configuration.TargetLanguage)
+      if (this._configuration.TargetLanguage.IsCSharp())
       {
-        case TargetLanguage.CSharp:
-          if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
-            return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3} }}{4}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
-          else
-            return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, Value = {2} }}{3}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
-        case TargetLanguage.FSharp:
-          if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
-            return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3}){4}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
-          else
-            return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, Value = {2}){3}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
-        case TargetLanguage.VisualBasic:
-          if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
-            return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .UdtTypeName = \"{2}\", .Value = {3} }}{4}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
-          else
-            return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .Value = {2} }}{3}",
-              this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
-        default:
-          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
+        if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
+          return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3} }} {4}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+        else
+          return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, Value = {2} }} {3}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
       }
+      else if (this._configuration.TargetLanguage.IsFSharp())
+      {
+        if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
+          return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3}) {4}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+        else
+          return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, Value = {2}) {3}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
+      }
+      else if (this._configuration.TargetLanguage.IsVisualBasic())
+      {
+        if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
+          return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .UdtTypeName = \"{2}\", .Value = {3} }} {4}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+        else
+          return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .Value = {2} }} {3}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
+      }
+      else
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
     }
 
     private String GetTargetLanguageSqlParameterValue()
@@ -2097,20 +2204,14 @@ SELECT
 
       var format = "";
 
-      switch (this._configuration.TargetLanguage)
-      {
-        case TargetLanguage.CSharp:
-          format = "  /* {0} */";
-          break;
-        case TargetLanguage.FSharp:
-          format = "  (* {0} *)";
-          break;
-        case TargetLanguage.VisualBasic:
-          format = "  ' {0}";
-          break;
-        default:
-          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-      }
+      if (this._configuration.TargetLanguage.IsCSharp())
+        format = "/* {0} */";
+      else if (this._configuration.TargetLanguage.IsFSharp())
+        format = "(* {0} *)";
+      else if (this._configuration.TargetLanguage.IsVisualBasic())
+        format = "' {0}";
+      else
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
       return (comments.Count == 0) ? "" : String.Format(format, String.Join(", ", comments));
     }
@@ -2125,20 +2226,14 @@ SELECT
     {
       var format = "";
 
-      switch (this._configuration.TargetLanguage)
-      {
-        case TargetLanguage.CSharp:
-          format = "{0} {1}{2}";
-          break;
-        case TargetLanguage.FSharp:
-          format = "({1} : {0}{2})";
-          break;
-        case TargetLanguage.VisualBasic:
-          format = "{1} As {0}{2}";
-          break;
-        default:
-          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-      }
+      if (this._configuration.TargetLanguage.IsCSharp())
+        format = "{0} {1} {2}";
+      else if (this._configuration.TargetLanguage.IsFSharp())
+        format = "({1} : {0} {2})";
+      else if (this._configuration.TargetLanguage.IsVisualBasic())
+        format = "{1} As {0} {2}";
+      else
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
       return String.Format(format, this.ClrTypeName, this.TargetLanguageIdentifier,
         ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : ""));
@@ -2146,17 +2241,14 @@ SELECT
 
     private String GetTargetLanguageBackingStoreDeclaration()
     {
-      switch (this._configuration.TargetLanguage)
-      {
-        case TargetLanguage.CSharp:
-          return String.Format("private {0} {1};", this.ClrTypeName, this.TargetLanguageBackingStoreIdentifier);
-        case TargetLanguage.FSharp:
-          return String.Format("let mutable {1} = Unchecked.defaultof<{0}>", this.ClrTypeName, this.TargetLanguageBackingStoreIdentifier);
-        case TargetLanguage.VisualBasic:
-          return String.Format("Private Dim {1} As {0}", this.ClrTypeName, this.TargetLanguageBackingStoreIdentifier);
-        default:
-          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-      }
+      if (this._configuration.TargetLanguage.IsCSharp())
+        return String.Format("private {0} {1};", this.ClrTypeName, this.TargetLanguageBackingStoreIdentifier);
+      else if (this._configuration.TargetLanguage.IsFSharp())
+        return String.Format("let mutable {1} = Unchecked.defaultof<{0}>", this.ClrTypeName, this.TargetLanguageBackingStoreIdentifier);
+      else if (this._configuration.TargetLanguage.IsVisualBasic())
+        return String.Format("Private Dim {1} As {0}", this.ClrTypeName, this.TargetLanguageBackingStoreIdentifier);
+      else
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
     }
 
     /// <summary>
@@ -2169,48 +2261,77 @@ SELECT
     public String GetTargetLanguageProperty(String scope, IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
       var keyIdentificationComment = (includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "";
+      var targetLanguage = this._configuration.TargetLanguage;
 
       if (String.IsNullOrWhiteSpace(this.XmlCollectionName) || !this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter))
       {
         var format = "";
 
-        switch (this._configuration.TargetLanguage)
+        if (targetLanguage.IsCSharp())
         {
-          case TargetLanguage.CSharp:
+          if (targetLanguage.DoesSupportAutoProperties())
             format = "{0} {1} {2}{3} {{ get; set; }}";
-            break;
-          case TargetLanguage.FSharp:
-            format = "member val {0} {2} = Unchecked.defaultof<{1}> with get, set{3}";
-            break;
-          case TargetLanguage.VisualBasic:
-            format = "{0} Property {2}() As {1}{3}";
-            break;
-          default:
-            throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
+          else
+            format = @"
+{3}
+{0} {1} {2}
+{{
+  get {{ return this.{4}; }}
+  set {{ this.{4} = value; }}
+}}
+";
         }
+        else if (targetLanguage.IsFSharp())
+        {
+          if (targetLanguage.DoesSupportAutoProperties())
+            format = "member val {0} {2} = Unchecked.defaultof<{1}> with get, set{3}";
+          else
+            format = @"
+{3}
+member {0} this.{2} with get() = {4}
+member {0} this.{2} with set value = {4} <- value
+";
+        }
+        else if (targetLanguage.IsVisualBasic())
+        {
+          if (targetLanguage.DoesSupportAutoProperties())
+            format = "{0} Property {2}() As {1}{3}";
+          else
+            format = @"
+{3}
+{0} Property {2}() As {1}
+  Get
+    Return {4}
+  End Get
+  Set (Value As {1})
+    {4} = value
+  End Set
+End Property
+";
+        }
+        else
+          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
-        return String.Format(format, scope, this.ClrTypeName, this.TargetLanguageIdentifier, keyIdentificationComment);
+        return String.Format(format, scope, this.ClrTypeName, this.TargetLanguageIdentifier, keyIdentificationComment, this.TargetLanguageBackingStoreIdentifier);
       }
       else
       {
-        switch (this._configuration.TargetLanguage)
-        {
-          case TargetLanguage.CSharp:
-            return this.GetXmlValidatedPropertyForCSharp(scope, keyIdentificationComment);
-          case TargetLanguage.FSharp:
-            return this.GetXmlValidatedPropertyForFSharp(scope, keyIdentificationComment);
-          case TargetLanguage.VisualBasic:
-            return this.GetXmlValidatedPropertyForVisualBasic(scope, keyIdentificationComment);
-          default:
-            throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
-        }
+        if (this._configuration.TargetLanguage.IsCSharp())
+          return this.GetXmlValidatedPropertyForCSharp(scope, keyIdentificationComment);
+        else if (this._configuration.TargetLanguage.IsFSharp())
+          return this.GetXmlValidatedPropertyForFSharp(scope, keyIdentificationComment);
+        else if (this._configuration.TargetLanguage.IsVisualBasic())
+          return this.GetXmlValidatedPropertyForVisualBasic(scope, keyIdentificationComment);
+        else
+          throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
       }
     }
 
     private String GetXmlValidatedPropertyForCSharp(String scope, String keyIdentificationComment)
     {
       var propertyTemplate = @"
-{0} {1} {2}{3}
+{3}
+{0} {1} {2}
 {{
   get
   {{
@@ -2372,7 +2493,7 @@ End If
     /// <returns>A String.</returns>
     public String GetStoredProcedureParameterDeclaration(IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
-      return String.Format("{0} {1}{2}", this.SqlIdentifier, this.SqlIdentifierTypeAndSize,
+      return String.Format("{0} {1} {2}", this.SqlIdentifier, this.SqlIdentifierTypeAndSize,
         ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : ""));
     }
   }

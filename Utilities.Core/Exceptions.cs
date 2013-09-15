@@ -6,6 +6,14 @@ using System.Web;
 
 namespace Utilities.Core
 {
+  public class ItemNotFoundException : Exception
+  {
+    public ItemNotFoundException(String message)
+      : base(message)
+    {
+    }
+  }
+
   /*
 
      Descendants of some common exception classes
