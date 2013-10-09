@@ -93,7 +93,7 @@ SELECT
 
     private XmlSchemaSet GetXmlSchemaSetForColumn(SqlDataReader sqlDataReader, String columnName)
     {
-      using (var xmlReader = sqlDataReader.GetXmlReader(sqlDataReader.GetOrdinal(columnName)))
+      using (var xmlReader = sqlDataReader.GetSqlXml(sqlDataReader.GetOrdinal(columnName)).CreateReader())
       {
         var schemaSet = new XmlSchemaSet();
 

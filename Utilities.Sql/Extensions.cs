@@ -56,7 +56,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static XDocument GetXDocument(this SqlDataReader sqlDataReader, Int32 columnIndex)
     {
-      using (var xmlReader = sqlDataReader.GetXmlReader(columnIndex))
+      using (var xmlReader = sqlDataReader.GetSqlXml(columnIndex).CreateReader())
         return XDocument.Load(xmlReader);
     }
 
@@ -77,7 +77,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static XElement GetXElement(this SqlDataReader sqlDataReader, Int32 columnIndex)
     {
-      using (var xmlReader = sqlDataReader.GetXmlReader(columnIndex))
+      using (var xmlReader = sqlDataReader.GetSqlXml(columnIndex).CreateReader())
         return XElement.Load(xmlReader);
     }
 
@@ -98,7 +98,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static XmlDocument GetXmlDocument(this SqlDataReader sqlDataReader, Int32 columnIndex)
     {
-      using (var xmlReader = sqlDataReader.GetXmlReader(columnIndex))
+      using (var xmlReader = sqlDataReader.GetSqlXml(columnIndex).CreateReader())
       {
         var xmlDocument = new XmlDocument();
         xmlDocument.Load(xmlReader);

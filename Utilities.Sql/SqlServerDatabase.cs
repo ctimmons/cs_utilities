@@ -721,7 +721,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public String GetTargetLanguageIdentifier(String sqlIdentifier)
     {
-      var result = sqlIdentifier.ToLower().Replace(" ", "_").Replace(".", "_");
+      var result = sqlIdentifier.Replace(" ", "_").Replace(".", "_");
 
       if (Char.IsDigit(result[0]))
         result = "_" + result;
@@ -2236,7 +2236,7 @@ SELECT
         throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
       return String.Format(format, this.ClrTypeName, this.TargetLanguageIdentifier,
-        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : ""));
+        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "")).Trim();
     }
 
     private String GetTargetLanguageBackingStoreDeclaration()
