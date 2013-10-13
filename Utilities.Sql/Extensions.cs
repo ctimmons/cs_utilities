@@ -254,7 +254,7 @@ namespace Utilities.Sql
       if (isNullableType)
         return isNullValue ? default(T) : (T) dbDataReader[columnIndex];
       else if (!isNullValue)
-        return (T) dbDataReader[columnIndex];
+        return (T) Convert.ChangeType(dbDataReader[columnIndex], typeof(T));
       else
         throw new InvalidCastException(String.Format(Properties.Resources.NonNullableCast, type.FullName, dbDataReader.GetName(columnIndex), columnIndex));
     }
