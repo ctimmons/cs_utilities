@@ -147,4 +147,19 @@ namespace Utilities.Core
       }
     }
   }
+
+  public class CaseInsensitiveStringComparer : IEqualityComparer<String>
+  {
+    public static CaseInsensitiveStringComparer Instance = new CaseInsensitiveStringComparer();
+
+    public Int32 GetHashCode(String s)
+    {
+      return s.GetHashCode();
+    }
+
+    public Boolean Equals(String s1, String s2)
+    {
+      return s1.Equals(s2, StringComparison.CurrentCultureIgnoreCase);
+    }
+  }
 }

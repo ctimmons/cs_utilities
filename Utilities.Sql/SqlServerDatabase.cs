@@ -292,39 +292,6 @@ namespace Utilities.Sql
     public IsTargetLanguageCaseSensitive IsTargetLanguageCaseSensitive { get; set; }
   }
 
-  /// <summary>
-  /// This interface allows the NameableList&lt;T&gt; class to search instances that
-  /// implement INameable by their Name property.
-  /// </summary>
-  public interface INameable
-  {
-    String Name { get; set; }
-  }
-
-  /// <summary>
-  /// A descendant of List&lt;T&gt; with an indexer property that allows
-  /// searching the INameable items in the list by their Name property.
-  /// </summary>
-  /// <typeparam name="T">Any type that is a class and implements the INameable interface.</typeparam>
-  public abstract class NameableList<T> : List<T> where T : class, INameable
-  {
-    public T this[String name]
-    {
-      get
-      {
-        var item =
-          this
-          .Where(i => String.Equals(i.Name, name, StringComparison.CurrentCultureIgnoreCase))
-          .FirstOrDefault();
-
-        if (item == default(T))
-          throw new ItemNotFoundException(String.Format(Properties.Resources.ItemNotFound, name));
-        else
-          return item;
-      }
-    }
-  }
-
   public abstract class SqlAbstractBase
   {
     private List<String> _csharpKeywords =
@@ -802,30 +769,8 @@ namespace Utilities.Sql
     }
   }
 
-  public class Databases : NameableList<Database>
+  public class Databases : List<Database>
   {
-    /// <summary>
-    /// There are usually some databases that can be ignored during code generation.
-    /// <para>This property contains a list of those database names.  Modify it as needed.</para>
-    /// <para>NOTE: This property only affects what's returned by the RelevantDatabases property.
-    /// In other words, this property has NO EFFECT on enumerating the databases directly
-    /// (e.g. foreach (var db in server.Databases)), or in accessing an individual database
-    /// directly (e.g. server.Databases["utilities"]).</para>
-    /// </summary>
-    public readonly List<String> IgnoredDatabaseNames = new List<String>() { "master", "model", "msdb", "tempdb", "reportserver", "reportservertempdb" };
-
-    /// <summary>
-    /// This property represents all of the database names in the server, except those in the
-    /// <see cref="Utilities.Sql.Databases.IgnoredDatabaseNames">IgnoredDatabaseNames</see> list.
-    /// </summary>
-    public List<Database> RelevantDatabases
-    {
-      get
-      {
-        return this.Where(db => !this.IgnoredDatabaseNames.Exists(dbname => String.Equals(db.Name, dbname, StringComparison.CurrentCultureIgnoreCase))).ToList();
-      }
-    }
-
     public Databases(Configuration configuration)
       : base()
     {
@@ -835,7 +780,7 @@ namespace Utilities.Sql
     }
   }
 
-  public class Database : SqlAbstractBase, INameable
+  public class Database : SqlAbstractBase
   {
     /// <summary>
     /// The database name as it appears on the database server.
@@ -860,7 +805,7 @@ namespace Utilities.Sql
     }
   }
 
-  public class Schemas : NameableList<Schema>
+  public class Schemas : List<Schema>
   {
     public Schemas(Configuration configuration, String databaseName)
       : base()
@@ -883,7 +828,7 @@ SELECT
     }
   }
 
-  public class Schema : SqlAbstractBase, INameable
+  public class Schema : SqlAbstractBase
   {
     /// <summary>
     /// The schema's database name as it appears on the database server.
@@ -913,7 +858,7 @@ SELECT
     }
   }
 
-  public class Tables : NameableList<Table>
+  public class Tables : List<Table>
   {
     public Tables(Configuration configuration, String schemaName)
       : base()
@@ -936,7 +881,7 @@ SELECT
     }
   }
 
-  public class Table : SqlAbstractBase, INameable
+  public class Table : SqlAbstractBase
   {
     /// <summary>
     /// The table's database name as it appears on the database server.
@@ -1003,7 +948,7 @@ SELECT
     }
   }
 
-  public class Columns : NameableList<Column>
+  public class Columns : List<Column>
   {
     private Configuration _configuration = null;
 
@@ -1503,7 +1448,7 @@ SELECT
   /// The Column class contains the majority of primitive properties and methds needed to generate
   /// TSQL, C#, F# and VB target code.
   /// </summary>
-  public class Column : SqlAbstractBase, INameable
+  public class Column : SqlAbstractBase
   {
     /// <summary>
     /// The column's name as it appears on the database server.
