@@ -1,4 +1,43 @@
-﻿/* See UNLICENSE.txt file for license details. */
+﻿/*
+ 
+todo
+----
+
+
+
+mappings
+--------
+
+* go through existing generated c#, f#, vb and tsql code and determine how the names of database objects are used in generated code.
+
+
+
+for database, schema, table, and column objects, add methods that allow the addition of a single mapping or a list of mappings to the object.
+
+database mapping:
+
+  name -> abbreviation for use in stored procedures
+
+schema mapping:
+
+  name -> identifier name?
+
+table mapping:
+
+  name -> identifier name?
+
+column mapping:
+
+  name -> identifier name?, tsql parameter name, c#/f#/vb parameter name
+
+
+
+ 
+ 
+ 
+ */
+
+/* See UNLICENSE.txt file for license details. */
 
 using System;
 using System.Collections.Generic;
@@ -62,11 +101,16 @@ namespace Utilities.Sql
     /// Columns with the TIMESTAMP type and ID columns cannot appear in an INSERT statement.
     /// </summary>
     CanAppearInInsertStatement = 64,
+
+    /// <summary>
+    /// Combination of CanAppearInInsertStatement and CanAppearInUpdateSetClause.
+    /// </summary>
+    CanAppearInMergeSelectList = CanAppearInUpdateSetClause | CanAppearInInsertStatement,
     
     /// <summary>
     /// All column types.
     /// </summary>
-    All = NonKeyAndNonID | PrimaryKey | ForeignKey | ID | CanAppearInSqlWhereClause | CanAppearInUpdateSetClause | CanAppearInInsertStatement
+    All = NonKeyAndNonID | PrimaryKey | ForeignKey | ID | CanAppearInSqlWhereClause | CanAppearInUpdateSetClause | CanAppearInInsertStatement | CanAppearInMergeSelectList
   }
   
   /// <summary>
@@ -292,9 +336,9 @@ namespace Utilities.Sql
     public IsTargetLanguageCaseSensitive IsTargetLanguageCaseSensitive { get; set; }
   }
 
-  public abstract class SqlAbstractBase
+  public static class IdentifierHelper
   {
-    private List<String> _csharpKeywords =
+    private static List<String> _csharpKeywords =
       new List<String>()
       {
         /* Keywords. */
@@ -404,7 +448,7 @@ namespace Utilities.Sql
         "yield"
       };
 
-    private List<String> _fsharpKeywords =
+    private static List<String> _fsharpKeywords =
       new List<String>()
       {
         /* Keywords. */
@@ -503,7 +547,7 @@ namespace Utilities.Sql
         "volatile"
       };
 
-    private List<String> _visualBasicKeywords =
+    private static List<String> _visualBasicKeywords =
       new List<String>()
       {
         /* Keywords. */
@@ -660,23 +704,21 @@ namespace Utilities.Sql
         "Where"
       };
 
-    private List<String> _targetLanguageKeywords;
+    private static List<String> _targetLanguageKeywords;
+    private static Configuration _configuration;
 
-    protected Configuration _configuration = null;
-
-    public SqlAbstractBase(Configuration configuration)
-      : base()
+    public static void Init(Configuration configuration)
     {
-      this._configuration = configuration;
+      _configuration = configuration;
 
-      if (this._configuration.TargetLanguage.IsCSharp())
-        this._targetLanguageKeywords = this._csharpKeywords;
-      else if (this._configuration.TargetLanguage.IsFSharp())
-        this._targetLanguageKeywords = this._fsharpKeywords;
-      else if (this._configuration.TargetLanguage.IsVisualBasic())
-        this._targetLanguageKeywords = this._visualBasicKeywords;
+      if (configuration.TargetLanguage.IsCSharp())
+        _targetLanguageKeywords = _csharpKeywords;
+      else if (configuration.TargetLanguage.IsFSharp())
+        _targetLanguageKeywords = _fsharpKeywords;
+      else if (configuration.TargetLanguage.IsVisualBasic())
+        _targetLanguageKeywords = _visualBasicKeywords;
       else
-        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
+        throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, configuration.TargetLanguage));
     }
 
     /// <summary>
@@ -686,7 +728,7 @@ namespace Utilities.Sql
     /// </summary>
     /// <param name="sqlIdentifier"></param>
     /// <returns></returns>
-    public String GetTargetLanguageIdentifier(String sqlIdentifier)
+    public static String GetTargetLanguageIdentifier(String sqlIdentifier)
     {
       var result = sqlIdentifier.Replace(" ", "_").Replace(".", "_");
 
@@ -694,11 +736,11 @@ namespace Utilities.Sql
         result = "_" + result;
 
       var stringComparison = 
-        (this._configuration.IsTargetLanguageCaseSensitive == IsTargetLanguageCaseSensitive.Yes)
+        (_configuration.IsTargetLanguageCaseSensitive == IsTargetLanguageCaseSensitive.Yes)
           ? StringComparison.CurrentCulture
           : StringComparison.CurrentCultureIgnoreCase;
 
-      if (this._targetLanguageKeywords.Exists(keyword => String.Equals(keyword, result, stringComparison)))
+      if (_targetLanguageKeywords.Exists(keyword => String.Equals(keyword, result, stringComparison)))
         result = "_" + result;
 
       return result;
@@ -741,7 +783,15 @@ namespace Utilities.Sql
   /// tables, and columns on that server.
   /// <code>
   /// // Find a specific table in a database:
-  /// var personTable = server.Databases["AdventureWorks2012"].Schemas["Person"].Tables["Person"];
+  /// var personTable =
+  ///   server
+  ///   .Databases
+  ///   .Where(db => db.Name.EqualsCI("AdventureWorks2012"))
+  ///   .Schemas
+  ///   .Where(db => db.Name.EqualsCI("Person"))
+  ///   .Tables
+  ///   .Where(db => db.Name.EqualsCI("Person"))
+  ///   .First();
   ///   
   /// // Get a ready-made list of target language method parameter declarations
   /// // for use in an update method:
@@ -749,43 +799,49 @@ namespace Utilities.Sql
   /// </code>
   /// </example>
   /// </summary>
-  public class Server : SqlAbstractBase
+  public class Server
   {
+    public Configuration Configuration { get; private set; }
+
     private Databases _databases = null;
     public Databases Databases
     {
       get
       {
         if (this._databases == null)
-          this._databases = new Databases(this._configuration);
+          this._databases = new Databases(this);
 
         return this._databases;
       }
     }
 
     public Server(Configuration configuration)
-      : base(configuration)
+      : base()
     {
+      IdentifierHelper.Init(configuration);
+      this.Configuration = configuration;
     }
   }
 
   public class Databases : List<Database>
   {
-    public Databases(Configuration configuration)
+    public Databases(Server server)
       : base()
     {
-      var table = configuration.Connection.GetSchema("Databases");
+      var table = server.Configuration.Connection.GetSchema("Databases");
       foreach (DataRow row in table.Rows)
-        this.Add(new Database(configuration) { Name = row["database_name"].ToString() });
+        this.Add(new Database(server, row["database_name"].ToString()));
     }
   }
 
-  public class Database : SqlAbstractBase
+  public class Database
   {
+    public Server Server { get; private set; }
+
     /// <summary>
     /// The database name as it appears on the database server.
     /// </summary>
-    public String Name { get; set; }
+    public String Name { get; private set; }
 
     private Schemas _schemas = null;
     public Schemas Schemas
@@ -793,21 +849,23 @@ namespace Utilities.Sql
       get
       {
         if (this._schemas == null)
-          this._configuration.Connection.ExecuteUnderDatabaseInvariant(this.Name, () => this._schemas = new Schemas(this._configuration, this.Name));
+          this.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Name, () => this._schemas = new Schemas(this));
 
         return this._schemas;
       }
     }
 
-    public Database(Configuration configuration)
-      : base(configuration)
+    public Database(Server server, String name)
+      : base()
     {
+      this.Server = server;
+      this.Name = name;
     }
   }
 
   public class Schemas : List<Schema>
   {
-    public Schemas(Configuration configuration, String databaseName)
+    public Schemas(Database database)
       : base()
     {
       var sql = @"
@@ -822,23 +880,20 @@ SELECT
     AND DATALENGTH(U.sid) > 0
     AND LOWER(S.[Name]) NOT IN ('sys', 'guest');";
 
-      var schemas = configuration.Connection.GetDataSet(sql).Tables[0];
+      var schemas = database.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
       foreach (DataRow row in schemas.Rows)
-        this.Add(new Schema(configuration) { DatabaseName = databaseName, Name = row["SCHEMA_NAME"].ToString() });
+        this.Add(new Schema(database, row["SCHEMA_NAME"].ToString()));
     }
   }
 
-  public class Schema : SqlAbstractBase
+  public class Schema
   {
-    /// <summary>
-    /// The schema's database name as it appears on the database server.
-    /// </summary>
-    public String DatabaseName { get; set; }
+    public Database Database { get; private set; }
 
     /// <summary>
     /// The schema name as it appears on the database server.
     /// </summary>
-    public String Name { get; set; }
+    public String Name { get; private set; }
 
     private Tables _tables = null;
     public Tables Tables
@@ -846,62 +901,49 @@ SELECT
       get
       {
         if (this._tables == null)
-          this._configuration.Connection.ExecuteUnderDatabaseInvariant(this.DatabaseName, () => this._tables = new Tables(this._configuration, this.Name));
+          this.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Database.Name, () => this._tables = new Tables(this));
 
         return this._tables;
       }
     }
 
-    public Schema(Configuration configuration)
-      : base(configuration)
+    public Schema(Database database, String name)
+      : base()
     {
+      this.Database = database;
+      this.Name = name;
     }
   }
 
   public class Tables : List<Table>
   {
-    public Tables(Configuration configuration, String schemaName)
+    public Tables(Schema schema)
       : base()
     {
-      var table = configuration.Connection.GetSchema("Tables");
+      var table = schema.Database.Server.Configuration.Connection.GetSchema("Tables");
       foreach (DataRow row in table.Rows)
       {
-        if (schemaName.Equals(row["table_schema"].ToString(), StringComparison.CurrentCultureIgnoreCase))
+        if (schema.Name.EqualsCI(row["table_schema"].ToString()))
         {
-          this.Add(
-            new Table(configuration)
-            {
-              DatabaseName = row["table_catalog"].ToString(),
-              SchemaName = schemaName,
-              Name = row["table_name"].ToString(),
-              IsView = row["table_type"].ToString().Equals("VIEW", StringComparison.InvariantCultureIgnoreCase)
-            });
+          this.Add(new Table(schema, row["table_name"].ToString(), row["table_type"].ToString().Equals("VIEW", StringComparison.InvariantCultureIgnoreCase)));
         }
       }
     }
   }
 
-  public class Table : SqlAbstractBase
+  public class Table
   {
-    /// <summary>
-    /// The table's database name as it appears on the database server.
-    /// </summary>
-    public String DatabaseName { get; set; }
-
-    /// <summary>
-    /// The table's schema name as it appears on the database server.
-    /// </summary>
-    public String SchemaName { get; set; }
+    public Schema Schema { get; private set; }
 
     /// <summary>
     /// The table name as it appears on the database server.
     /// </summary>
-    public String Name { get; set; }
+    public String Name { get; private set; }
 
     /// <summary>
     /// This class is named Table, but it handles both tables and views.  This property indicates what a Table instance really contains.
     /// </summary>
-    public Boolean IsView { get; set; }
+    public Boolean IsView { get; private set; }
 
     /// <summary>
     /// In SQL Server 2005 and later, a table name in a database is not necessarily unique,
@@ -912,7 +954,7 @@ SELECT
     /// </summary>
     public String SchemaNameAndTableName
     {
-      get { return String.Format("[{0}].[{1}]", this.SchemaName, this.Name); }
+      get { return String.Format("[{0}].[{1}]", this.Schema.Name, this.Name); }
     }
 
     private String _targetLanguageTableIdentifier = null;
@@ -924,7 +966,7 @@ SELECT
       get
       {
         if (this._targetLanguageTableIdentifier == null)
-          this._targetLanguageTableIdentifier = this.GetTargetLanguageIdentifier(this.SchemaName + "_" + this.Name);
+          this._targetLanguageTableIdentifier = IdentifierHelper.GetTargetLanguageIdentifier(this.Schema.Name + "_" + this.Name);
 
         return this._targetLanguageTableIdentifier;
       }
@@ -936,27 +978,26 @@ SELECT
       get
       {
         if (this._columns == null)
-          this._configuration.Connection.ExecuteUnderDatabaseInvariant(this.DatabaseName, () => this._columns = new Columns(this._configuration, this.DatabaseName, this.SchemaName, this.Name, this.IsView));
+          this.Schema.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => this._columns = new Columns(this));
 
         return this._columns;
       }
     }
 
-    public Table(Configuration configuration)
-      : base(configuration)
+    public Table(Schema schema, String name, Boolean isView)
+      : base()
     {
+      this.Schema = schema;
+      this.Name = name;
+      this.IsView = isView;
     }
   }
 
   public class Columns : List<Column>
   {
-    private Configuration _configuration = null;
-
-    public Columns(Configuration configuration, String databaseName, String schemaName, String tableName, Boolean isView)
+    public Columns(Table table)
       : base()
     {
-      this._configuration = configuration;
-
       var sql = @"
 ;WITH foreign_keys_CTE (FOREIGN_KEY_TABLE, FOREIGN_KEY_COLUMN, PRIMARY_KEY_SCHEMA, PRIMARY_KEY_TABLE, PRIMARY_KEY_COLUMN)
 AS
@@ -1038,10 +1079,9 @@ SELECT
     S.[schema_id] = SCHEMA_ID('{1}')
     AND TBL.[name] = '{2}';";
 
-      var select = String.Format(sql, (isView ? "views" : "tables"), schemaName, tableName);
-      var table = configuration.Connection.GetDataSet(select).Tables[0];
+      var select = String.Format(sql, (table.IsView ? "views" : "tables"), table.Schema.Name, table.Name);
 
-      foreach (DataRow row in table.Rows)
+      foreach (DataRow row in table.Schema.Database.Server.Configuration.Connection.GetDataSet(select).Tables[0].Rows)
       {
         var columnType = ColumnType.Unknown;
 
@@ -1066,12 +1106,9 @@ SELECT
           columnType |= ColumnType.CanAppearInSqlWhereClause;
 
         this.Add(
-          new Column(configuration)
+          new Column(table)
           {
             Name = row["COLUMN_NAME"].ToString(),
-            DatabaseName = databaseName,
-            SchemaName = schemaName,
-            TableName = tableName,
             Ordinal = Convert.ToInt32(row["COLUMN_ORDINAL"]),
             ColumnType = columnType,
             ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
@@ -1126,7 +1163,6 @@ SELECT
         .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
         .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
         .ThenBy(column => column.PrimaryKeyOrdinal)
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.ForeignKey))
         .Select(column => column.GetStoredProcedureParameterDeclaration(includeKeyIdentificationComment))
         .ToList();
     }
@@ -1164,6 +1200,67 @@ SELECT
         .ToList();
     }
 
+    private IEnumerable<Column> GetOrderedListBasedOnColumnType(ColumnType columnType)
+    {
+      return
+        this
+        .Where(column => (column.ColumnType & columnType) > 0)
+        .OrderBy(column => column.Name);
+    }
+
+    /// <summary>
+    /// Returns a list of strings that can be used in the SELECT statement of a MERGE statement's CTE USING clause.
+    /// </summary>
+    /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
+    public List<String> GetMergeSelectList()
+    {
+      return
+        this
+        .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInMergeSelectList)
+        .Select(column => String.Format("[{0}] = {1}", column.Name, column.SqlIdentifier))
+        .ToList();
+    }
+
+    /// <summary>
+    /// Returns a list of strings that can be used in column matching logic of a MERGE statement's CTE USING clause.
+    /// </summary>
+    /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
+    public List<String> GetMergeTargetAndSourceMatchingExpressions()
+    {
+      return
+        this
+        .Where(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
+        .OrderBy(column => column.PrimaryKeyOrdinal)
+        .Select(column => String.Format("Target.[{0}] = Source.[{0}]", column.Name))
+        .ToList();
+    }
+
+    /// <summary>
+    /// Returns a list of strings that can be used in the UPDATE statement of a MERGE statement.
+    /// </summary>
+    /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
+    public List<String> GetMergeUpdateColumnList()
+    {
+      return
+        this
+        .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInUpdateSetClause)
+        .Select(column => String.Format("[{0}] = Source.[{0}]", column.Name))
+        .ToList();
+    }
+
+    /// <summary>
+    /// Returns a list of strings that can be used in the INSERT statement's VALUE clause of a MERGE statement.
+    /// </summary>
+    /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
+    public List<String> GetMergeInsertValueList()
+    {
+      return
+        this
+        .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInInsertStatement)
+        .Select(column => String.Format("Source.[{0}]", column.Name))
+        .ToList();
+    }
+
     /// <summary>
     /// Returns a list of strings that can be used in the column list of an SQL Server INSERT statement.
     /// </summary>
@@ -1191,8 +1288,7 @@ SELECT
     {
       return
         this
-        .Where(column => column.ColumnType.HasFlag(ColumnType.CanAppearInInsertStatement))
-        .OrderBy(column => column.Name)
+        .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInInsertStatement)
         .Select(column => String.Format("[{0}]", column.Name))
         .ToList();
     }
@@ -1224,8 +1320,7 @@ SELECT
     {
       return
         this
-        .Where(column => column.ColumnType.HasFlag(ColumnType.CanAppearInInsertStatement))
-        .OrderBy(column => column.Name)
+        .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInInsertStatement)
         .Select(column => String.Format("{0}", column.SqlIdentifier))
         .ToList();
     }
@@ -1257,8 +1352,7 @@ SELECT
     {
       return
         this
-        .Where(column => column.ColumnType.HasFlag(ColumnType.CanAppearInUpdateSetClause))
-        .OrderBy(column => column.Name)
+        .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInUpdateSetClause)
         .Select(column => String.Format("[{0}] = {1}", column.Name, column.SqlIdentifier))
         .ToList();
     }
@@ -1448,27 +1542,14 @@ SELECT
   /// The Column class contains the majority of primitive properties and methds needed to generate
   /// TSQL, C#, F# and VB target code.
   /// </summary>
-  public class Column : SqlAbstractBase
+  public class Column
   {
+    public Table Table { get; private set; }
+
     /// <summary>
     /// The column's name as it appears on the database server.
     /// </summary>
     public String Name { get; set; }
-
-    /// <summary>
-    /// The database name as it appears on the server.
-    /// </summary>
-    public String DatabaseName { get; set; }
-
-    /// <summary>
-    /// The schema name as it appears in the database.
-    /// </summary>
-    public String SchemaName { get; set; }
-
-    /// <summary>
-    /// The table name as it appears in the schema.
-    /// </summary>
-    public String TableName { get; set; }
 
     /// <summary>
     /// The position of this column in the list of columns in the parent table or view.
@@ -1568,7 +1649,7 @@ SELECT
       get
       {
         if (this._targetLanguageIdentifier == null)
-          this._targetLanguageIdentifier = this.GetTargetLanguageIdentifier(this.Name);
+          this._targetLanguageIdentifier = IdentifierHelper.GetTargetLanguageIdentifier(this.Name);
 
         return this._targetLanguageIdentifier;
       }
@@ -1718,9 +1799,13 @@ SELECT
       }
     }
 
-    public Column(Configuration configuration)
-      : base(configuration)
+    private Configuration _configuration;
+
+    public Column(Table table)
+      : base()
     {
+      this.Table = table;
+      this._configuration = table.Schema.Database.Server.Configuration;
     }
 
     /// <summary>
@@ -2084,34 +2169,34 @@ SELECT
     /// <returns>A String.</returns>
     public String GetTargetLanguageSqlParameterText(IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
-      var comment = ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "");
+      var comment = (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? " " + this.KeyIdentificationComment : "");
 
       if (this._configuration.TargetLanguage.IsCSharp())
       {
         if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
-          return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3} }} {4}",
-            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+          return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3} }}{4}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment).Trim();
         else
-          return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, Value = {2} }} {3}",
-            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
+          return String.Format("new SqlParameter() {{ ParameterName = \"{0}\", SqlDbType = {1}, Value = {2} }}{3}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment).Trim();
       }
       else if (this._configuration.TargetLanguage.IsFSharp())
       {
         if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
-          return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3}) {4}",
-            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+          return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, UdtTypeName = \"{2}\", Value = {3}){4}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment).Trim();
         else
-          return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, Value = {2}) {3}",
-            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
+          return String.Format("new SqlParameter(ParameterName = \"{0}\", SqlDbType = {1}, Value = {2}){3}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment).Trim();
       }
       else if (this._configuration.TargetLanguage.IsVisualBasic())
       {
         if (this.SqlDbTypeEnumName == "System.Data.SqlDbType.Udt")
-          return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .UdtTypeName = \"{2}\", .Value = {3} }} {4}",
-            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment);
+          return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .UdtTypeName = \"{2}\", .Value = {3} }}{4}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.NativeServerDataTypeName, this.TargetLanguageSqlParameterValue, comment).Trim();
         else
-          return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .Value = {2} }} {3}",
-            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment);
+          return String.Format("new SqlParameter() With {{ .ParameterName = \"{0}\", .SqlDbType = {1}, .Value = {2} }}{3}",
+            this.SqlIdentifier, this.SqlDbTypeEnumName, this.TargetLanguageSqlParameterValue, comment).Trim();
       }
       else
         throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
@@ -2145,7 +2230,7 @@ SELECT
         comments.Add(String.Format("primary key {0}", this.PrimaryKeyOrdinal));
 
       if (this.ColumnType.HasFlag(ColumnType.ForeignKey))
-        comments.Add(String.Format("foreign key ({0}.{1}, {2})", this.PrimaryKeySchema, this.PrimaryKeyTable, this.PrimaryKeyColumn));
+        comments.Add(String.Format("foreign key ({0}.{1}({2}))", this.PrimaryKeySchema, this.PrimaryKeyTable, this.PrimaryKeyColumn));
 
       var format = "";
 
@@ -2172,16 +2257,16 @@ SELECT
       var format = "";
 
       if (this._configuration.TargetLanguage.IsCSharp())
-        format = "{0} {1} {2}";
+        format = "{0} {1}{2}";
       else if (this._configuration.TargetLanguage.IsFSharp())
-        format = "({1} : {0} {2})";
+        format = "({1} : {0}{2})";
       else if (this._configuration.TargetLanguage.IsVisualBasic())
-        format = "{1} As {0} {2}";
+        format = "{1} As {0}{2}";
       else
         throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
       return String.Format(format, this.ClrTypeName, this.TargetLanguageIdentifier,
-        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "")).Trim();
+        (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? " " + this.KeyIdentificationComment : "")).Trim();
     }
 
     private String GetTargetLanguageBackingStoreDeclaration()
@@ -2205,7 +2290,7 @@ SELECT
     /// <returns>A String.</returns>
     public String GetTargetLanguageProperty(String scope, IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
-      var keyIdentificationComment = (includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : "";
+      var keyIdentificationComment = ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? this.KeyIdentificationComment : "";
       var targetLanguage = this._configuration.TargetLanguage;
 
       if (String.IsNullOrWhiteSpace(this.XmlCollectionName) || !this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter))
@@ -2215,7 +2300,7 @@ SELECT
         if (targetLanguage.IsCSharp())
         {
           if (targetLanguage.DoesSupportAutoProperties())
-            format = "{0} {1} {2}{3} {{ get; set; }}";
+            format = "{0} {1} {2} {{ get; set; }} {3}";
           else
             format = @"
 {3}
@@ -2229,7 +2314,7 @@ SELECT
         else if (targetLanguage.IsFSharp())
         {
           if (targetLanguage.DoesSupportAutoProperties())
-            format = "member val {0} {2} = Unchecked.defaultof<{1}> with get, set{3}";
+            format = "member val {0} {2} = Unchecked.defaultof<{1}> with get, set {3}";
           else
             format = @"
 {3}
@@ -2240,7 +2325,7 @@ member {0} this.{2} with set value = {4} <- value
         else if (targetLanguage.IsVisualBasic())
         {
           if (targetLanguage.DoesSupportAutoProperties())
-            format = "{0} Property {2}() As {1}{3}";
+            format = "{0} Property {2}() As {1} {3}";
           else
             format = @"
 {3}
@@ -2327,8 +2412,10 @@ if (xsd != null)
           throw new NotImplementedException(String.Format(Properties.Resources.UnknownXmlSystemValue, this._configuration.XmlSystem));
       }
 
+      var schema = this.Table.Schema;
+
       return String.Format(propertyTemplate, scope, this.GetClrTypeNameFromNativeSqlType(), this.TargetLanguageIdentifier, keyIdentificationComment,
-        this.TargetLanguageBackingStoreIdentifier, this.DatabaseName, this.SchemaName, this.XmlCollectionName, xmlValidationCode.Indent(4));
+        this.TargetLanguageBackingStoreIdentifier, schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4));
     }
 
     private String GetXmlValidatedPropertyForFSharp(String scope, String keyIdentificationComment)
@@ -2373,8 +2460,10 @@ if xsd <> null
           throw new NotImplementedException(String.Format(Properties.Resources.UnknownXmlSystemValue, this._configuration.XmlSystem));
       }
 
+      var schema = this.Table.Schema;
+
       return String.Format(propertyTemplate, keyIdentificationComment, scope, this.TargetLanguageIdentifier, this.TargetLanguageBackingStoreIdentifier,
-        this.DatabaseName, this.SchemaName, this.XmlCollectionName, xmlValidationCode.Indent(4));
+        schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4));
     }
 
     private String GetXmlValidatedPropertyForVisualBasic(String scope, String keyIdentificationComment)
@@ -2426,8 +2515,10 @@ End If
           throw new NotImplementedException(String.Format(Properties.Resources.UnknownXmlSystemValue, this._configuration.XmlSystem));
       }
 
+      var schema = this.Table.Schema;
+
       return String.Format(propertyTemplate, keyIdentificationComment, scope, this.TargetLanguageIdentifier, this.GetClrTypeNameFromNativeSqlType(),
-        this.TargetLanguageBackingStoreIdentifier, this.DatabaseName, this.SchemaName, this.XmlCollectionName, xmlValidationCode.Indent(4));
+        this.TargetLanguageBackingStoreIdentifier, schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4));
     }
 
     /// <summary>
@@ -2438,8 +2529,8 @@ End If
     /// <returns>A String.</returns>
     public String GetStoredProcedureParameterDeclaration(IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
-      return String.Format("{0} {1} {2}", this.SqlIdentifier, this.SqlIdentifierTypeAndSize,
-        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) ? this.KeyIdentificationComment : ""));
+      return String.Format("{0} {1}{2}", this.SqlIdentifier, this.SqlIdentifierTypeAndSize,
+        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? " " + this.KeyIdentificationComment : "");
     }
   }
 }

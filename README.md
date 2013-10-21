@@ -5,7 +5,7 @@ Just a few projects of C# utility code I've accumulated over the years.
 
 I've placed all of the code in the public domain.  See the UNLICENSE.txt file in the root folder of each project for the details.
 
-The projects in this repository are configured to use the latest version of .Net (4.5 as of this writing), but most of the code should work with 3.5 or even earlier.
+The repository contains Visual Studio 2012 projects which are configured to use .Net 4.0, but most of the code should work with 3.5 or even earlier.
 
 Most of the code in Utilities.Core has unit tests in Utilities.Core.Tests.  Unit testing Utilities.Internet proved to be a non-starter.  Instead of mock objects, I like to write integration or system test harnesses.  I've got some floating around for the internet-related code, but it's too raw/unstable/ugly to add to the repo right now.
 

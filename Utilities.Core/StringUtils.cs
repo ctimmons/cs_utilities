@@ -146,6 +146,11 @@ namespace Utilities.Core
         return indentString + value.Replace(Environment.NewLine, Environment.NewLine + indentString);
       }
     }
+
+    public static Boolean EqualsCI(this String value, String other)
+    {
+      return value.Equals(other, StringComparison.CurrentCultureIgnoreCase);
+    }
   }
 
   public class CaseInsensitiveStringComparer : IEqualityComparer<String>
@@ -159,7 +164,7 @@ namespace Utilities.Core
 
     public Boolean Equals(String s1, String s2)
     {
-      return s1.Equals(s2, StringComparison.CurrentCultureIgnoreCase);
+      return s1.EqualsCI(s2);
     }
   }
 }

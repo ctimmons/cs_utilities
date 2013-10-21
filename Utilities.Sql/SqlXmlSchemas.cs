@@ -5,6 +5,8 @@ using System.Data.SqlClient;
 using System.Xml;
 using System.Xml.Schema;
 
+using Utilities.Core;
+
 namespace Utilities.Sql
 {
   /// <summary>
@@ -33,9 +35,9 @@ namespace Utilities.Sql
           return false;
         else
           return
-            x.Item1.Equals(y.Item1, StringComparison.CurrentCultureIgnoreCase) &&
-            x.Item2.Equals(y.Item2, StringComparison.CurrentCultureIgnoreCase) &&
-            x.Item3.Equals(y.Item3, StringComparison.CurrentCultureIgnoreCase);
+            x.Item1.EqualsCI(y.Item1) &&
+            x.Item2.EqualsCI(y.Item2) &&
+            x.Item3.EqualsCI(y.Item3);
       }
 
       public int GetHashCode(Tuple<String, String, String> x)
