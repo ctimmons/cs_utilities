@@ -1,43 +1,4 @@
-﻿/*
- 
-todo
-----
-
-
-
-mappings
---------
-
-* go through existing generated c#, f#, vb and tsql code and determine how the names of database objects are used in generated code.
-
-
-
-for database, schema, table, and column objects, add methods that allow the addition of a single mapping or a list of mappings to the object.
-
-database mapping:
-
-  name -> abbreviation for use in stored procedures
-
-schema mapping:
-
-  name -> identifier name?
-
-table mapping:
-
-  name -> identifier name?
-
-column mapping:
-
-  name -> identifier name?, tsql parameter name, c#/f#/vb parameter name
-
-
-
- 
- 
- 
- */
-
-/* See UNLICENSE.txt file for license details. */
+﻿/* See UNLICENSE.txt file for license details. */
 
 using System;
 using System.Collections.Generic;
@@ -1013,13 +974,17 @@ AS
       INNER JOIN sys.columns AS C ON FKC.parent_column_id = C.column_id AND FKC.parent_object_id = c.object_id
       INNER JOIN sys.columns AS CREF ON FKC.referenced_column_id = CREF.column_id AND FKC.referenced_object_id = cref.object_id
 ),
-primary_keys_CTE (OBJECT_ID, COLUMN_ID, PRIMARY_KEY_ORDINAL)
+primary_keys_CTE (OBJECT_ID, COLUMN_ID, PRIMARY_KEY_ORDINAL, PRIMARY_KEY_DIRECTION)
 AS
 (
   SELECT
       i.object_id,
       c.column_id,
-      ic.key_ordinal
+      ic.key_ordinal,
+      CASE
+        WHEN ic.is_descending_key = 0 THEN 'ASC'
+        ELSE 'DESC'
+      END
     FROM
       sys.indexes AS i
       INNER JOIN sys.index_columns AS ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id and i.is_primary_key = 1
@@ -1063,6 +1028,7 @@ SELECT
     XML_COLLECTION_NAME = COALESCE(XMLCOLL.name, ''),
     IS_PRIMARY_KEY = CASE WHEN (PK_CTE.primary_key_ordinal IS NULL) THEN 'N' ELSE 'Y' END,
     PRIMARY_KEY_ORDINAL = COALESCE(PK_CTE.primary_key_ordinal, -1),
+    PRIMARY_KEY_DIRECTION = COALESCE(PK_CTE.PRIMARY_KEY_DIRECTION, ''),
     IS_FOREIGN_KEY = CASE WHEN (FKCTE.foreign_key_table IS NULL) THEN 'N' ELSE 'Y' END,
     PRIMARY_KEY_SCHEMA = COALESCE(FKCTE.primary_key_schema, ''),
     PRIMARY_KEY_TABLE = COALESCE(FKCTE.primary_key_table, ''),
@@ -1121,6 +1087,7 @@ SELECT
             IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().ToUpper() == "Y",
             XmlCollectionName = row["XML_COLLECTION_NAME"].ToString(),
             PrimaryKeyOrdinal = Convert.ToInt32(row["PRIMARY_KEY_ORDINAL"]),
+            PrimaryKeyDirection = row["PRIMARY_KEY_DIRECTION"].ToString(),
             PrimaryKeySchema = row["PRIMARY_KEY_SCHEMA"].ToString(),
             PrimaryKeyTable = row["PRIMARY_KEY_TABLE"].ToString(),
             PrimaryKeyColumn = row["PRIMARY_KEY_COLUMN"].ToString()
@@ -1164,6 +1131,31 @@ SELECT
         .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
         .ThenBy(column => column.PrimaryKeyOrdinal)
         .Select(column => column.GetStoredProcedureParameterDeclaration(includeKeyIdentificationComment))
+        .ToList();
+    }
+
+    /// <summary>
+    /// Return a list of strings which contain primary key column names, along with their direction -
+    /// ASC for ascending, or DESC for descending.
+    /// </summary>
+    /// <example>
+    /// Executing "String.Join("," + Environment.NewLine, columns.GetTSQLPrimaryKeyColumns())"
+    /// on the AdventureWorks2012 [HumanResources].[EmployeeDepartmentHistory] table will generate this string:
+    /// <code>
+    /// [BusinessEntityID] ASC,
+    /// [DepartmentID] ASC,
+    /// [ShiftID] ASC,
+    /// [StartDate] ASC
+    /// </code>
+    /// </example>
+    /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
+    public List<String> GetTSQLPrimaryKeyColumns()
+    {
+      return
+        this
+        .Where(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
+        .OrderBy(column => column.PrimaryKeyOrdinal)
+        .Select(column => String.Format("[{0}] {1}", column.Name, column.PrimaryKeyDirection))
         .ToList();
     }
 
@@ -1596,6 +1588,12 @@ SELECT
     /// indicates this column's position in the set of columns that make up the primary key.
     /// </summary>
     public Int32 PrimaryKeyOrdinal { get; set; }
+
+    /// <summary>
+    /// 'ASC' for an ascending primary key, 'DESC' for a descending primary key.
+    /// An empty string if this column is not part of a primary key definition.
+    /// </summary>
+    public String PrimaryKeyDirection { get; set; }
 
     /// <summary>
     /// If <see cref="Utilities.Sql.Column.ColumnType">ColumnType</see> contains the ForeignKey flag, the name of the schema that owns the table this foreign key references.
