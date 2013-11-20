@@ -1095,6 +1095,17 @@ SELECT
       }
     }
 
+    public List<String> GetCreateTableColumnDeclarations()
+    {
+      return
+        this
+        .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
+        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
+        .ThenBy(column => column.PrimaryKeyOrdinal)
+        .Select(column => column.GetCreateTableColumnDeclaration())
+        .ToList();
+    }
+
     /// <summary>
     /// Return a list of strings that can be used as a parameter declarations in a stored procedure.
     /// <para>Primary and foreign key columns may optionally be documented with a comment.</para>
@@ -2529,6 +2540,11 @@ End If
     {
       return String.Format("{0} {1}{2}", this.SqlIdentifier, this.SqlIdentifierTypeAndSize,
         ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? " " + this.KeyIdentificationComment : "");
+    }
+
+    public String GetCreateTableColumnDeclaration()
+    {
+      return String.Format("[{0}] {1}{2}", this.Name, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : "");
     }
   }
 }
