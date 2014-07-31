@@ -67,8 +67,6 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Ftp.cs" />
-    <Compile Include="FtpListEntry.cs" />
     <Compile Include="HtmlAgilityUtils.cs" />
     <Compile Include="HttpResponseCodes.cs" />
     <Compile Include="HttpUtils.cs" />
