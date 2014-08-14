@@ -117,6 +117,18 @@ namespace Utilities.Core
       return _whitespaceRegex.Replace(value, String.Empty);
     }
 
+    public static Boolean IsEmpty(this String value)
+    {
+      value.CheckForNull("value");
+      return String.IsNullOrWhiteSpace(value);
+    }
+
+    public static Boolean IsNotEmpty(this String value)
+    {
+      value.CheckForNull("value");
+      return !value.IsEmpty();
+    }
+
     public static Boolean AreAllEmpty(this List<String> strings)
     {
       strings.CheckForNull("strings");

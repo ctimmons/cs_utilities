@@ -1,6 +1,7 @@
 ﻿/* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Linq;
 
 using NUnit.Framework;
 
@@ -36,10 +37,10 @@ namespace Utilities.Core.UnitTests
       this.RunActionOverQuarterDateRanges(
         (quarter, quarterStartDate, quarterEndDate, date) =>
         {
-          Assert.AreEqual((quarter % 4) + 1, DateTimeUtils.GetQuarter(DateTimeUtils.AddQuarters(date, 1)));
-          Assert.AreEqual(((quarter + 1) % 4) + 1, DateTimeUtils.GetQuarter(DateTimeUtils.AddQuarters(date, 2)));
-          Assert.AreEqual(((quarter + 2) % 4) + 1, DateTimeUtils.GetQuarter(DateTimeUtils.AddQuarters(date, 3)));
-          Assert.AreEqual(((quarter + 3) % 4) + 1, DateTimeUtils.GetQuarter(DateTimeUtils.AddQuarters(date, 4)));
+          Assert.AreEqual((quarter % 4) + 1, DateTimeUtils.AddQuarters(date, 1).Quarter());
+          Assert.AreEqual(((quarter + 1) % 4) + 1, DateTimeUtils.AddQuarters(date, 2).Quarter());
+          Assert.AreEqual(((quarter + 2) % 4) + 1, DateTimeUtils.AddQuarters(date, 3).Quarter());
+          Assert.AreEqual(((quarter + 3) % 4) + 1, DateTimeUtils.AddQuarters(date, 4).Quarter());
         });
     }
 
@@ -61,7 +62,7 @@ namespace Utilities.Core.UnitTests
       Assert.AreEqual(new DateTime(2000, 7, 1), DateTimeUtils.GetFirstDayOfQuarter(2000, 3));
       Assert.AreEqual(new DateTime(2000, 10, 1), DateTimeUtils.GetFirstDayOfQuarter(2000, 4));
 
-      this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(quarterStartDate, DateTimeUtils.GetFirstDayOfQuarter(date)));
+      this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(quarterStartDate, date.FirstDayOfQuarter()));
     }
 
     [Test]
@@ -75,13 +76,13 @@ namespace Utilities.Core.UnitTests
       Assert.AreEqual(new DateTime(2000, 9, 30), DateTimeUtils.GetLastDayOfQuarter(2000, 3));
       Assert.AreEqual(new DateTime(2000, 12, 31), DateTimeUtils.GetLastDayOfQuarter(2000, 4));
 
-      this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(quarterEndDate, DateTimeUtils.GetLastDayOfQuarter(date)));
+      this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(quarterEndDate, date.LastDayOfQuarter()));
     }
 
     [Test]
     public void GetQuarterTest()
     {
-      this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(quarter, DateTimeUtils.GetQuarter(date)));
+      this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(quarter, date.Quarter()));
     }
 
     [Test]
@@ -104,6 +105,40 @@ namespace Utilities.Core.UnitTests
     public void MinTest()
     {
       this.RunActionOverQuarterDateRanges((quarter, quarterStartDate, quarterEndDate, date) => Assert.AreEqual(date, DateTimeUtils.Min(date, quarterStartDate.AddYears(1))));
+    }
+
+    [Test]
+    public void ToTest()
+    {
+      var startDateTime = new DateTime(2000, 1, 1);
+      var endDateTime = new DateTime(2000, 1, 1);
+      var days = startDateTime.To(endDateTime);
+
+      /* A start date that is the same as the end date should result
+         in a list of days with one DateTime value, and that value should be
+         the same as the start and end dates. */
+      Assert.AreEqual(days.Count(), 1);
+      Assert.AreEqual(days.First(), startDateTime);
+
+      //////////////////////////////////////////////////////////////////////////////////
+
+      endDateTime = new DateTime(2000, 1, 10);
+      days = startDateTime.To(endDateTime);
+
+      /* A start date that is earlier than the end date should result
+         in a list of DateTimes that fall between those two dates, inclusive. */
+      Assert.AreEqual(days.Count(), 10);
+
+      //////////////////////////////////////////////////////////////////////////////////
+
+      startDateTime = new DateTime(2000, 1, 10);
+      endDateTime = new DateTime(2000, 1, 1);
+      days = startDateTime.To(endDateTime);
+
+      /* A start date that is later than the end date should result
+         in a list of DateTimes that fall between those two dates, inclusive,
+         but in descending order. */
+      Assert.AreEqual(days.Count(), 10);
     }
   }
 }

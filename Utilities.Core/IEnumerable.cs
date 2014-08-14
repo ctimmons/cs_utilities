@@ -38,20 +38,7 @@ namespace Utilities.Core
       values.CheckForNull("values");
       separator.Check("separator", StringAssertion.NotNull);
 
-      var sb = new StringBuilder();
-      var first = true;
-
-      foreach (String value in values)
-      {
-        if (first)
-          first = false;
-        else
-          sb.Append(separator);
-
-        sb.Append(value);
-      }
-
-      return sb.ToString();
+      return String.Join(separator, values);
     }
 
     public static IEnumerable<String> Lines(this TextReader textReader)

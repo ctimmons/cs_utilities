@@ -88,6 +88,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Random.cs" />
+    <Compile Include="ReflectionUtils.cs" />
     <Compile Include="StringUtils.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Win32API.cs" />
