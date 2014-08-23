@@ -106,7 +106,7 @@ namespace Utilities.Core
     public static String RemoveHtml(this String value)
     {
       value.Check("value", StringAssertion.NotNull);
-      return _stripHtmlRegex.Replace(value, String.Empty);
+      return _stripHtmlRegex.Replace(value, "");
     }
 
     private static readonly Regex _whitespaceRegex = new Regex(@"[\p{Z}\p{C}]" /* All Unicode whitespace (Z) and control characters (C). */, RegexOptions.Singleline);
@@ -114,7 +114,7 @@ namespace Utilities.Core
     public static String RemoveWhitespace(this String value)
     {
       value.Check("value", StringAssertion.NotNull);
-      return _whitespaceRegex.Replace(value, String.Empty);
+      return _whitespaceRegex.Replace(value, "");
     }
 
     public static Boolean IsEmpty(this String value)

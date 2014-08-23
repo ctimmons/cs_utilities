@@ -24,7 +24,7 @@ namespace Utilities.Internet
 
     public String GetToken()
     {
-      var result = String.Empty;
+      var result = "";
       while (!Char.IsWhiteSpace(this._text[this.Position]) && !this.IsEndOfLine())
         result += this._text[this.Position++].ToString();
       this.GetWhitespace();

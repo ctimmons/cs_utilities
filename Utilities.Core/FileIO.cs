@@ -288,7 +288,7 @@ namespace Utilities.Core
       if (StrFormatByteSize(fileSize, buffer, maxBufferSize) != IntPtr.Zero)
         return buffer.ToString();
       else
-        return String.Empty;
+        return "";
     }
 
     public static void MoveFileToRecycleBin(String filename)

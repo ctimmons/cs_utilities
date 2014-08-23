@@ -71,7 +71,7 @@ namespace Utilities.Core
     {
       if (ex == null)
       {
-        return String.Empty;
+        return "";
       }
       else
       {

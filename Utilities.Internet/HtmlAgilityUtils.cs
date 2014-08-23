@@ -1,6 +1,7 @@
 ﻿/* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Linq;
 using System.Web;
 
 using Utilities.Core;
@@ -49,9 +50,7 @@ namespace Utilities.Internet
 
     public static String InnerHtml(this HtmlNodeCollection nodes)
     {
-      var innerHtml = String.Empty;
-      nodes.ForEach(node => innerHtml += HttpUtility.HtmlDecode(node.InnerHtml).Trim());
-      return innerHtml;
+      return nodes.Aggregate("", (acc, source) => acc += source);
     }
   }
 }

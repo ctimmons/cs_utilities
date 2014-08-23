@@ -40,7 +40,7 @@ namespace Utilities.Core
       CheckBase(toBase);
 
       var digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".Substring(0, toBase);
-      var result = String.Empty;
+      var result = "";
 
       while (number > 0)
       {

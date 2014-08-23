@@ -165,13 +165,13 @@ namespace Utilities.Core
     public static String GetLastChildsInnerText(this XmlNode node, String xpath)
     {
       var singleNode = node.SelectSingleNode(xpath);
-      return (singleNode == null) ? String.Empty : singleNode.LastChild.InnerText;
+      return (singleNode == null) ? "" : singleNode.LastChild.InnerText;
     }
 
     public static String GetNodesInnerText(this XmlNode node, String xpath)
     {
       var singleNode = node.SelectSingleNode(xpath);
-      return (singleNode == null) ? String.Empty : singleNode.InnerText;
+      return (singleNode == null) ? "" : singleNode.InnerText;
     }
   }
 
@@ -186,14 +186,17 @@ namespace Utilities.Core
 
     public static XmlSerializer GetXmlSerializer(Type type)
     {
-      return _xmlSerializers.GetOrAdd(type, new XmlSerializer(type));
+      if (_xmlSerializers.ContainsKey(type))
+        return _xmlSerializers[type];
+      else
+        return _xmlSerializers.GetOrAdd(type, new XmlSerializer(type));
     }
   }
 
   [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
   public class XmlCommentAttribute : Attribute
   {
-    private String _value = String.Empty;
+    private String _value = "";
 
     public XmlCommentAttribute(String value)
       : base()

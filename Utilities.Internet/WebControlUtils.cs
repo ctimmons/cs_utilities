@@ -1,25 +1,21 @@
 ﻿/* See UNLICENSE.txt file for license details. */
 
 using System;
-using System.Text;
+using System.Linq;
 using System.Web.UI.WebControls;
+
+using Utilities.Core;
 
 namespace Utilities.Internet
 {
   public static class WebControlUtils
   {
-    public static String GetCheckBoxListItems(CheckBoxList checkBoxList)
+    public static String GetCheckedCheckBoxListItems(CheckBoxList checkBoxList)
     {
-      String result = String.Empty;
-
       lock (checkBoxList.Items.SyncRoot)
       {
-        foreach (ListItem item in checkBoxList.Items)
-          if (item.Selected)
-            result += item.Text + ";";
+        return checkBoxList.Items.Cast<ListItem>().Where(li => li.Selected).Select(li => li.Text).Join(";");
       }
-
-      return result.TrimEnd(";".ToCharArray());
     }
 
     public static void SelectFirstItemInListBox(ListBox listBox)
@@ -37,17 +33,21 @@ namespace Utilities.Internet
         listBox.SelectedIndex = previousSelectedIndex;
     }
 
-    public static void MoveItemToListBox(ListBox sourceListBox, ListBox destinationListBox)
+    public static void MoveSelectedItemsToListBox(ListBox sourceListBox, ListBox destinationListBox)
     {
-      Int32 selectedIndex = sourceListBox.SelectedIndex;
-
-      if (selectedIndex == -1)
+      var sourceSelectedIndex = sourceListBox.SelectedIndex;
+      if (sourceSelectedIndex == -1)
         return;
 
-      destinationListBox.SelectedIndex = -1;
-      destinationListBox.Items.Add(new ListItem(sourceListBox.SelectedItem.Text, sourceListBox.SelectedItem.Value));
-      sourceListBox.Items.Remove(sourceListBox.SelectedItem);
-      SelectNextAvailableItemInListBox(sourceListBox, selectedIndex);
+      foreach (ListItem sourceListItem in sourceListBox.Items)
+        if (sourceListItem.Selected)
+          destinationListBox.Items.Add(new ListItem(sourceListBox.SelectedItem.Text, sourceListBox.SelectedItem.Value));
+
+      for (var i = sourceListBox.Items.Count - 1; i >= 0; i--)
+        if (sourceListBox.Items[i].Selected)
+          sourceListBox.Items.Remove(sourceListBox.Items[i]);
+    
+      SelectNextAvailableItemInListBox(sourceListBox, sourceSelectedIndex);
     }
 
     public static void MoveAllItemsToListBox(ListBox sourceListBox, ListBox destinationListBox)
@@ -64,19 +64,18 @@ namespace Utilities.Internet
 
     public static String GetListBoxItemsAsDelimitedString(ListBox listBox)
     {
-      var result = new StringBuilder();
-
-      for (Int32 i = 0; i < listBox.Items.Count; i++)
-        result.Append(listBox.Items[i].Text + "," + listBox.Items[i].Value + ";");
-
-      return result.ToString().Trim(";".ToCharArray());
+      return
+        listBox.Items
+        .Cast<ListItem>()
+        .Select(li => li.Text + "," + li.Value)
+        .Join(";");
     }
 
     public static void PopulateListBoxFromDelimitedString(ListBox listBox, String s)
     {
-      foreach (String item in s.Split(";".ToCharArray()))
+      foreach (var item in s.Split(";".ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
       {
-        String[] parts = item.Split(",".ToCharArray());
+        var parts = item.Split(",".ToCharArray());
         listBox.Items.Add(new ListItem(parts[0], parts[1]));
       }
     }

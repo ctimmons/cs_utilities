@@ -55,7 +55,7 @@ namespace Utilities.Internet
 
     public static String GetSecureApplicationPath()
     {
-      return GetSecureApplicationPath(String.Empty);
+      return GetSecureApplicationPath("");
     }
 
     public static String GetSecureApplicationPath(String partialUrl)
@@ -65,7 +65,7 @@ namespace Utilities.Internet
 
     public static String GetStringQueryParam(String paramName)
     {
-      return GetStringQueryParam(paramName, String.Empty);
+      return GetStringQueryParam(paramName, "");
     }
 
     public static String GetStringQueryParam(String paramName, String defaultValue)
@@ -74,7 +74,7 @@ namespace Utilities.Internet
        * This is to prevent an "HTTP splitting" attack whereby the attacker
        * tries to "split" the HTTP header via embedded cr/lf characters. */
 
-      return Regex.Replace(HttpContext.Current.Request.Params[paramName] ?? defaultValue, @"[\r\n]", String.Empty);
+      return Regex.Replace(HttpContext.Current.Request.Params[paramName] ?? defaultValue, @"[\r\n]", "");
     }
 
     public static Int32 GetIntQueryStringParam(String paramName)
@@ -139,7 +139,11 @@ namespace Utilities.Internet
     public static String GetUrlAsString(String url)
     {
       var request = (HttpWebRequest) WebRequest.Create(new Uri(url));
-      request.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.16) Gecko/20110319 Firefox/3.6.16";
+      request.AllowAutoRedirect = true;
+      /* Some websites only return content for web browsers, and not other applications.
+         So instead of having a user agent like '.Net App', a "real" user agent
+         string that mimics a web browser has to be used. */
+      request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0";
       request.Headers["Accept-Language"] = "en-us";
       request.Credentials = CredentialCache.DefaultNetworkCredentials;
       request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
