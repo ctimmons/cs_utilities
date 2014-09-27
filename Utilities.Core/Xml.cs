@@ -179,7 +179,19 @@ namespace Utilities.Core
      into the current app domain.  When the XmlSerializer instance is garbage collected,
      the assembly it created is not unloaded from the app domain, nor can the assembly
      be re-used, so a memory leak occurs.  This cache class prevents those memory leaks
-     by re-using the XmlSerializers based on they type they were constructed for. */
+     by re-using the XmlSerializers based on they type they were constructed for.
+  
+     There are two exceptions to this:  The XmlSerializer(Type) and  XmlSerializer(Type, String) constructors
+     *will* automatically re-use the dynamically generated assemblies, thereby avoiding any memory leaks.
+     (see the 'Remarks' section in http://msdn.microsoft.com/en-us/library/System.Xml.Serialization.XmlSerializer%28v=vs.110%29.aspx).
+
+     That would seem to make this class unnecessary.  Well, almost.
+
+     I say "almost" because all of the other XmlSerializer constructors (8 out of 10 in .Net 4.5)
+     will not automatically re-use any of the dynamically generated assemblies.  Therefore, this class
+     can be used to wrap those leaky constructors (as well as the non-leaky constructors)
+     in one uniform API.  When necessary, just add an overloaded GetXmlSerializer static method to this
+     class that wraps one of the leaky constructors.  E.g. GetXmlSerializer(XmlTypeMapping). */
   public static class XmlSerializerCache
   {
     private static readonly ConcurrentDictionary<Type, XmlSerializer> _xmlSerializers = new ConcurrentDictionary<Type, XmlSerializer>();
