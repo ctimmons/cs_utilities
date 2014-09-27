@@ -68,7 +68,6 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandLine.cs" />
     <Compile Include="DateTimeUtils.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="IEnumerable.cs" />

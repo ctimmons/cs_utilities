@@ -71,7 +71,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assert.cs" />
-    <Compile Include="CommandLine.cs" />
     <Compile Include="DateTimeUtils.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="Exceptions.cs" />
