@@ -1,6 +1,7 @@
 /* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
@@ -11,6 +12,32 @@ namespace Utilities.Core
 {
   public static class GeneralUtils
   {
+    /* Recursively enumerate the objects params array, building a new XOR-ed hashcode of
+       all of the object instances it contains. */
+    public static Int32 GetHashCode(params Object[] objects)
+    {
+      Func<Int32, Object, Int32> getHashCodeRecursive = null; /* Initially set to null so the lambda can be recursive. */
+      getHashCodeRecursive =
+        (hashcode, obj) =>
+        {
+          if (obj is IEnumerable)
+          {
+            /* Recursive case. */
+            foreach (var o in (obj as IEnumerable))
+              hashcode = getHashCodeRecursive(hashcode, o);
+
+            return hashcode;
+          }
+          else
+          {
+            /* Base case. */
+            return hashcode ^ obj.GetHashCode();
+          }
+        };
+
+      return getHashCodeRecursive(0, objects);
+    }
+
     /* Given an error code returned by System.Runtime.InteropServices.Marshal.GetLastWin32Error,
        get the Windows API String representation of that error code.
        If no error message can be found for the given error code, Marshal.GetLastWin32Error() is returned as a string. */

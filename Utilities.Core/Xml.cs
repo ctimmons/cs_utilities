@@ -191,17 +191,40 @@ namespace Utilities.Core
      will not automatically re-use any of the dynamically generated assemblies.  Therefore, this class
      can be used to wrap those leaky constructors (as well as the non-leaky constructors)
      in one uniform API.  When necessary, just add an overloaded GetXmlSerializer static method to this
-     class that wraps one of the leaky constructors.  E.g. GetXmlSerializer(XmlTypeMapping). */
+     class that wraps one of the leaky constructors.  E.g. GetXmlSerializer(Type, Type[]). */
   public static class XmlSerializerCache
   {
-    private static readonly ConcurrentDictionary<Type, XmlSerializer> _xmlSerializers = new ConcurrentDictionary<Type, XmlSerializer>();
+    private static readonly ConcurrentDictionary<Int32, XmlSerializer> _xmlSerializers = new ConcurrentDictionary<Int32, XmlSerializer>();
 
     public static XmlSerializer GetXmlSerializer(Type type)
     {
-      if (_xmlSerializers.ContainsKey(type))
-        return _xmlSerializers[type];
+      return GetXmlSerializer(type, (String) null);
+    }
+
+    public static XmlSerializer GetXmlSerializer(Type type, String defaultNamespace = null)
+    {
+      // Non-leaky constructor.  Just do a pass-thru.
+      return new XmlSerializer(type, defaultNamespace);
+    }
+
+    public static XmlSerializer GetXmlSerializer(Type type, Type[] types)
+    {
+      var key = GeneralUtils.GetHashCode(type, types);
+
+      if (_xmlSerializers.ContainsKey(key))
+        return _xmlSerializers[key];
       else
-        return _xmlSerializers.GetOrAdd(type, new XmlSerializer(type));
+        return _xmlSerializers.GetOrAdd(key, new XmlSerializer(type, types));
+    }
+
+    public static XmlSerializer GetXmlSerializer(Type type, XmlAttributeOverrides overrides)
+    {
+      var key = GeneralUtils.GetHashCode(type, overrides);
+
+      if (_xmlSerializers.ContainsKey(key))
+        return _xmlSerializers[key];
+      else
+        return _xmlSerializers.GetOrAdd(key, new XmlSerializer(type, overrides));
     }
   }
 
