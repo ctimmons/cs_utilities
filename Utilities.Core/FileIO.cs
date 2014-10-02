@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using ComTypes = System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -388,9 +389,9 @@ namespace Utilities.Core
   public struct WIN32_FIND_DATA
   {
     public FileAttributes dwFileAttributes;
-    public FILETIME ftCreationTime;
-    public FILETIME ftLastAccessTime;
-    public FILETIME ftLastWriteTime;
+    public ComTypes.FILETIME ftCreationTime;
+    public ComTypes.FILETIME ftLastAccessTime;
+    public ComTypes.FILETIME ftLastWriteTime;
     public Int32 nFileSizeHigh;
     public Int32 nFileSizeLow;
     public Int32 dwReserved0;
