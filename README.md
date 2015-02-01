@@ -35,7 +35,7 @@ Utilities.Sql.Tests depends on Utilities.Sql and [NUnit](http://www.nunit.org/) 
 Highlights
 ----------
 
-Utilities.Core includes code for simplifying assertions (Assert.cs), processing command line items (CommandLine.cs) and serializing/deserializing XML (Xml.cs).
+Utilities.Core includes abstractions for easier handling of strings and DateTimes, code for simplifying assertions (Assert.cs), and code for serializing/deserializing XML (Xml.cs).
 
 Utilities.Sql provides a set of classes that read the metadata from one or more SQL Server databases.  The classes expose this metadata so it can be used in T4 templates to generate TSQL stored procedures, and C#/F#/Visual Basic database access code.  In other words, this project can be used to generate your own custom ORM, without the drawbacks of an ORM.  See the [t4_sql_examples](https://github.com/ctimmons/t4_sql_examples) repository for several examples.
 

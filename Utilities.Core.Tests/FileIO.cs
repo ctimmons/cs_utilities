@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+
 using NUnit.Framework;
 
 namespace Utilities.Core.UnitTests
@@ -220,7 +221,7 @@ namespace Utilities.Core.UnitTests
       String filename = null;
       Assert.Throws<ArgumentNullException>(() => FileUtils.SafelyCreateEmptyFile(filename));
 
-      filename = String.Empty;
+      filename = "";
       Assert.Throws<ArgumentException>(() => FileUtils.SafelyCreateEmptyFile(filename));
 
       filename = " ";
@@ -238,7 +239,7 @@ namespace Utilities.Core.UnitTests
       String filename = null;
       Assert.Throws<ArgumentNullException>(() => FileUtils.CreateEmptyFile(filename, Overwrite.No));
 
-      filename = String.Empty;
+      filename = "";
       Assert.Throws<ArgumentException>(() => FileUtils.CreateEmptyFile(filename, Overwrite.No));
 
       filename = " ";
@@ -297,7 +298,7 @@ namespace Utilities.Core.UnitTests
       String rootDir = null;
       Assert.Throws<ArgumentNullException>(() => FileUtils.DeleteEmptyDirectories(rootDir));
 
-      rootDir = String.Empty;
+      rootDir = "";
       Assert.Throws<ArgumentException>(() => FileUtils.DeleteEmptyDirectories(rootDir));
 
       rootDir = " ";
@@ -337,7 +338,7 @@ namespace Utilities.Core.UnitTests
       String rootDir = null;
       Assert.Throws<ArgumentNullException>(() => FileUtils.IsDirectoryEmpty(rootDir));
 
-      rootDir = String.Empty;
+      rootDir = "";
       Assert.Throws<ArgumentException>(() => FileUtils.IsDirectoryEmpty(rootDir));
 
       rootDir = " ";
@@ -407,6 +408,58 @@ namespace Utilities.Core.UnitTests
       Assert.AreEqual(directory, (directory + Path.DirectorySeparatorChar).RemoveTrailingSeparator());
 
       Assert.AreEqual(directory, directory.RemoveTrailingSeparator());
+    }
+
+    [Test]
+    public void AreFilenamesEqualTest()
+    {
+      Assert.IsFalse(FileUtils.AreFilenamesEqual(@"c:\dir1\dir2\file1.txt", @"c:\dir1\dir2\dir3\file1.txt"));
+      Assert.IsTrue(FileUtils.AreFilenamesEqual(@"c:\dir1\dir2\file1.txt", @"c:\dir1\dir2\dir3\..\file1.txt"));
+    }
+
+    [Test]
+    public void CompareFilesTest()
+    {
+      var filename1 = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+      var filename2 = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+      try
+      {
+        /* Neither file exists yet. */
+        Assert.IsFalse(FileUtils.CompareFiles(filename1, filename2));
+
+        File.WriteAllText(filename1, "");
+
+        /* Only one of the files exists. */
+        Assert.IsFalse(FileUtils.CompareFiles(filename1, filename2));
+
+        File.WriteAllText(filename2, "Hello, world!");
+
+        /* Both files exist, but have different lengths and different contents. */
+        Assert.IsFalse(FileUtils.CompareFiles(filename1, filename2));
+
+        File.WriteAllText(filename1, "abcdefghijklm");
+
+        /* Both files exist, and have the same length, but have different contents. */
+        Assert.IsFalse(FileUtils.CompareFiles(filename1, filename2));
+
+        File.WriteAllText(filename1, "");
+        File.WriteAllText(filename2, "");
+
+        /* Both files exist, have the same length, and are both empty. */
+        Assert.IsTrue(FileUtils.CompareFiles(filename1, filename2));
+
+        File.WriteAllText(filename1, "Hello, world!");
+        File.WriteAllText(filename2, "Hello, world!");
+
+        /* Both files exist, have the same length, and have the same content. */
+        Assert.IsTrue(FileUtils.CompareFiles(filename1, filename2));
+      }
+      finally
+      {
+        File.Delete(filename1);
+        File.Delete(filename2);
+      }
     }
   }
 }

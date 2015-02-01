@@ -273,9 +273,12 @@ namespace Utilities.Sql
     {
       return (targetLanguage >= TargetLanguage.VisualBasic_7_0) && (targetLanguage <= TargetLanguage.VisualBasic_Latest);
     }
-  }
 
-  public enum IsTargetLanguageCaseSensitive { No, Yes }
+    public static Boolean IsCaseSensitive(this TargetLanguage targetLanguage)
+    {
+      return targetLanguage.IsCSharp() || targetLanguage.IsFSharp();
+    }
+  }
 
   /// <summary>
   /// An instance of this class is passed into the <see cref="Utilities.Sql.Server">Server</see> constructor.
@@ -303,8 +306,6 @@ namespace Utilities.Sql
     /// If your code only calls methods that return TSQL code, then this setting has no affect.
     /// </summary>
     public TargetLanguage TargetLanguage { get; set; }
-
-    public IsTargetLanguageCaseSensitive IsTargetLanguageCaseSensitive { get; set; }
   }
 
   public static class IdentifierHelper
@@ -723,7 +724,7 @@ namespace Utilities.Sql
         result = "_" + result;
 
       var stringComparison =
-        (_configuration.IsTargetLanguageCaseSensitive == IsTargetLanguageCaseSensitive.Yes)
+        _configuration.TargetLanguage.IsCaseSensitive()
           ? StringComparison.CurrentCulture
           : StringComparison.CurrentCultureIgnoreCase;
 
@@ -755,8 +756,7 @@ namespace Utilities.Sql
   ///     {
   ///       Connection = connection,
   ///       XmlSystem = XmlSystem.Linq_XDocument,
-  ///       TargetLanguage = TargetLanguage.CSharp,
-  ///       IsTargetLanguageCaseSensitive = IsTargetLanguageCaseSensitive.Yes
+  ///       TargetLanguage = TargetLanguage.CSharp
   ///     };
   /// 
   ///   var server = new Server(configuration);
@@ -833,9 +833,9 @@ namespace Utilities.Sql
         {
           this.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Name,
             () =>
-              {
-                this._schemas = new List<Schema>();
-                var sql = @"
+            {
+              this._schemas = new List<Schema>();
+              var sql = @"
 SELECT
     [SCHEMA_NAME] = S.[name]
   FROM
@@ -847,10 +847,10 @@ SELECT
     AND DATALENGTH(U.sid) > 0
     AND LOWER(S.[Name]) NOT IN ('sys', 'guest');";
 
-                var schemas = this.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
-                foreach (DataRow row in schemas.Rows)
-                  this._schemas.Add(new Schema(this, row["SCHEMA_NAME"].ToString()));
-              });
+              var schemas = this.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
+              foreach (DataRow row in schemas.Rows)
+                this._schemas.Add(new Schema(this, row["SCHEMA_NAME"].ToString()));
+            });
         }
 
         return this._schemas;
@@ -1067,13 +1067,13 @@ SELECT
       {
         var columnType = ColumnType.Unknown;
 
-        if (row["IS_IDENTITY"].ToString().ToUpper() == "Y")
+        if (row["IS_IDENTITY"].ToString().EqualsCI("Y"))
           columnType |= ColumnType.ID;
 
-        if (row["IS_PRIMARY_KEY"].ToString().ToUpper() == "Y")
+        if (row["IS_PRIMARY_KEY"].ToString().EqualsCI("Y"))
           columnType |= ColumnType.PrimaryKey;
 
-        if (row["IS_FOREIGN_KEY"].ToString().ToUpper() == "Y")
+        if (row["IS_FOREIGN_KEY"].ToString().EqualsCI("Y"))
           columnType |= ColumnType.ForeignKey;
 
         if (columnType == ColumnType.Unknown)
@@ -1081,7 +1081,7 @@ SELECT
 
         var nativeServerDataTypeName = row["NATIVE_SERVER_DATATYPE_NAME"].ToString();
 
-        if ((nativeServerDataTypeName != "TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
+        if (nativeServerDataTypeName.NotEqualsCI("TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
           columnType |= (ColumnType.CanAppearInInsertStatement | ColumnType.CanAppearInUpdateSetClause);
 
         if (nativeServerDataTypeName != "XML")
@@ -1099,8 +1099,8 @@ SELECT
             LogicalLength = Convert.ToInt32(row["LOGICAL_LENGTH"]),
             Precision = Convert.ToInt32(row["PRECISION"]),
             Scale = Convert.ToInt32(row["SCALE"]),
-            IsNullable = row["IS_NULLABLE"].ToString().ToUpper() == "Y",
-            IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().ToUpper() == "Y",
+            IsNullable = row["IS_NULLABLE"].ToString().EqualsCI("Y"),
+            IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().EqualsCI("Y"),
             XmlCollectionName = row["XML_COLLECTION_NAME"].ToString(),
             PrimaryKeyOrdinal = Convert.ToInt32(row["PRIMARY_KEY_ORDINAL"]),
             PrimaryKeyDirection = row["PRIMARY_KEY_DIRECTION"].ToString(),
@@ -1215,7 +1215,7 @@ SELECT
       return
         this
         .OrderBy(column => column.Name)
-        .Select(column => String.Format("{0}[{1}]", (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias + "."), column.Name))
+        .Select(column => String.Format("{0}[{1}]", (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias.Trim() + "."), column.Name))
         .ToList();
     }
 
@@ -1841,7 +1841,7 @@ SELECT
     /// <returns>A String</returns>
     public String GetSqlWhereClause(String tableAlias = "")
     {
-      String format = "";
+      var format = "";
 
       switch (this.NativeServerDataTypeName)
       {
@@ -2194,7 +2194,10 @@ SELECT
     /// <returns>A String.</returns>
     public String GetTargetLanguageSqlParameterText(IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
-      var comment = (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? " " + this.KeyIdentificationComment : "");
+      var comment =
+        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && !String.IsNullOrWhiteSpace(this.KeyIdentificationComment))
+        ? " " + this.KeyIdentificationComment
+        : "";
 
       if (this._configuration.TargetLanguage.IsCSharp())
       {
@@ -2291,7 +2294,9 @@ SELECT
         throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
       return String.Format(format, this.ClrTypeName, this.TargetLanguageIdentifier,
-        (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? " " + this.KeyIdentificationComment : "")).Trim();
+        (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && !String.IsNullOrWhiteSpace(this.KeyIdentificationComment))
+          ? " " + this.KeyIdentificationComment
+          : "")).Trim();
     }
 
     private String GetTargetLanguageBackingStoreDeclaration()
@@ -2315,7 +2320,10 @@ SELECT
     /// <returns>A String.</returns>
     public String GetTargetLanguageProperty(String scope, IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
     {
-      var keyIdentificationComment = ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.Trim().Any()) ? this.KeyIdentificationComment : "";
+      var keyIdentificationComment =
+        ((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && !String.IsNullOrWhiteSpace(this.KeyIdentificationComment))
+        ? this.KeyIdentificationComment
+        : "";
       var targetLanguage = this._configuration.TargetLanguage;
 
       if (String.IsNullOrWhiteSpace(this.XmlCollectionName) || !this._configuration.XmlValidationLocation.HasFlag(XmlValidationLocation.PropertySetter))
@@ -2508,11 +2516,14 @@ End Property
 ";
       String xmlValidationCode = null;
 
+      /* The awkward "If Not xsd Is Nothing Then" syntax is used instead of
+         of "If xsd IsNot Nothing Then" because this code should be able
+         to be run w/ VB 7.0 and 7.1, neither of which has the IsNot operator. */
       switch (this._configuration.XmlSystem)
       {
         case XmlSystem.AsString:
           xmlValidationCode = @"
-If xsd IsNot Nothing Then
+If Not xsd Is Nothing Then
   Dim xDocument As XDocument = XDocument.Parse(value)
   xDocument.Validate(xsd, Null)
 End If
@@ -2521,7 +2532,7 @@ End If
 
         case XmlSystem.Linq_XDocument:
           xmlValidationCode = @"
-If xsd IsNot Nothing Then
+If Not xsd Is Nothing Then
   value.Validate(xsd, Null)
 End If
 ";
@@ -2529,7 +2540,7 @@ End If
 
         case XmlSystem.NonLinq_XmlDocument:
           xmlValidationCode = @"
-If xsd IsNot Nothing Then
+If Not xsd Is Nothing Then
   value.Schemas = xsd
   value.Validate(Null)
 End If

@@ -163,6 +163,11 @@ namespace Utilities.Core
     {
       return value.Equals(other, StringComparison.CurrentCultureIgnoreCase);
     }
+
+    public static Boolean NotEqualsCI(this String value, String other)
+    {
+      return !value.EqualsCI(other);
+    }
   }
 
   public class CaseInsensitiveStringComparer : IEqualityComparer<String>

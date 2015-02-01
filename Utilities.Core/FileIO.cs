@@ -76,7 +76,7 @@ namespace Utilities.Core
     {
       var exceptions = new List<Exception>();
 
-      Action<String> rec = null;
+      Action<String> rec = null; /* C# oddity: lambda definition must initially be set to null to allow for recursion. */
       rec =
         (directory) =>
         {
@@ -191,7 +191,7 @@ namespace Utilities.Core
 
     public static void DeleteIfEmpty(this DirectoryInfo di)
     {
-      if (!di.EnumerateFileSystemInfos().Any())
+      if (di.IsDirectoryEmpty())
         di.Delete();
     }
 
@@ -258,7 +258,7 @@ namespace Utilities.Core
       return IsDirectoryEmpty(new DirectoryInfo(path));
     }
 
-    public static Boolean IsDirectoryEmpty(DirectoryInfo directoryInfo)
+    public static Boolean IsDirectoryEmpty(this DirectoryInfo directoryInfo)
     {
       directoryInfo.CheckForNull("directoryInfo");
       return !directoryInfo.EnumerateFileSystemInfos().Any();
@@ -310,14 +310,7 @@ namespace Utilities.Core
     {
       stream.CheckForNull("stream");
 
-      Byte[] hash = _md5.ComputeHash(stream);
-
-      /* Convert the byte array to a printable String. */
-      var sb = new StringBuilder(32);
-      foreach (Byte hex in hash)
-        sb.Append(hex.ToString("X2"));
-
-      return sb.ToString().ToUpper();
+      return _md5.ComputeHash(stream).Select(c => c.ToString("X2")).Join("");
     }
 
     public static String GetExecutablePath()
@@ -335,7 +328,7 @@ namespace Utilities.Core
 
     public static String GetTemporarySubfolder()
     {
-      return Path.ChangeExtension(Path.GetTempFileName(), null) + Path.DirectorySeparatorChar;
+      return Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), null)) + Path.DirectorySeparatorChar;
     }
 
     public static String AddTrailingSeparator(this String directory)
@@ -348,6 +341,36 @@ namespace Utilities.Core
     {
       directory.Check("directory", StringAssertion.NotNull);
       return directory.TrimEnd().TrimEnd(DirectorySeparators);
+    }
+
+    public static Boolean AreFilenamesEqual(String filename1, String filename2)
+    {
+      return Path.GetFullPath(filename1).EqualsCI(Path.GetFullPath(filename2));
+    }
+
+    public static Boolean CompareFiles(String filename1, String filename2)
+    {
+      if (!File.Exists(filename1) || !File.Exists(filename2))
+        return false;
+
+      if (AreFilenamesEqual(filename1, filename2))
+        return true;
+
+      using (FileStream fs1 = new FileStream(filename1, FileMode.Open),
+                        fs2 = new FileStream(filename2, FileMode.Open))
+      {
+        if (fs1.Length != fs2.Length)
+          return false;
+
+        Int32 fb1, fb2;
+        do
+        {
+          fb1 = fs1.ReadByte();
+          fb2 = fs2.ReadByte();
+        } while ((fb1 == fb2) && (fb1 != -1));
+
+        return ((fb1 - fb2) == 0);
+      }
     }
   }
 
