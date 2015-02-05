@@ -125,7 +125,6 @@ namespace Utilities.Core
 
     public static Boolean IsNotEmpty(this String value)
     {
-      value.CheckForNull("value");
       return !value.IsEmpty();
     }
 

@@ -817,6 +817,8 @@ namespace Utilities.Sql
 
   public class Database
   {
+    private readonly SqlConnection _connection;
+
     public Server Server { get; private set; }
 
     /// <summary>
@@ -831,13 +833,14 @@ namespace Utilities.Sql
       {
         if (this._schemas == null)
         {
-          this.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Name,
+          this._connection.ExecuteUnderDatabaseInvariant(this.Name,
             () =>
             {
               this._schemas = new List<Schema>();
               var sql = @"
 SELECT
-    [SCHEMA_NAME] = S.[name]
+    [SCHEMA_NAME] = S.[name],
+    is_default_schema = CASE WHEN S.schema_id = SCHEMA_ID() THEN 'Y' ELSE 'N' END
   FROM
     sys.schemas AS S
     INNER JOIN sys.database_principals AS U ON U.principal_id = S.principal_id
@@ -847,9 +850,9 @@ SELECT
     AND DATALENGTH(U.sid) > 0
     AND LOWER(S.[Name]) NOT IN ('sys', 'guest');";
 
-              var schemas = this.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
+              var schemas = this._connection.GetDataSet(sql).Tables[0];
               foreach (DataRow row in schemas.Rows)
-                this._schemas.Add(new Schema(this, row["SCHEMA_NAME"].ToString()));
+                this._schemas.Add(new Schema(this, row["SCHEMA_NAME"].ToString(), row["is_default_schema"].ToString().AsBoolean()));
             });
         }
 
@@ -862,6 +865,8 @@ SELECT
     {
       this.Server = server;
       this.Name = name;
+
+      this._connection = this.Server.Configuration.Connection;
     }
   }
 
@@ -873,6 +878,8 @@ SELECT
     /// The schema name as it appears on the database server.
     /// </summary>
     public String Name { get; private set; }
+
+    public Boolean IsDefaultSchema { get; private set; }
 
     private List<Table> _tables = null;
     public List<Table> Tables
@@ -900,11 +907,12 @@ SELECT
       }
     }
 
-    public Schema(Database database, String name)
+    public Schema(Database database, String name, Boolean isDefaultSchema)
       : base()
     {
       this.Database = database;
       this.Name = name;
+      this.IsDefaultSchema = isDefaultSchema;
     }
   }
 
@@ -1109,6 +1117,11 @@ SELECT
             PrimaryKeyColumn = row["PRIMARY_KEY_COLUMN"].ToString()
           });
       }
+    }
+
+    public Columns(DataTable datatable)
+      : base()
+    {
     }
 
     public List<String> GetCreateTableColumnDeclarations()
@@ -1558,7 +1571,7 @@ SELECT
   }
 
   /// <summary>
-  /// The Column class contains the majority of primitive properties and methds needed to generate
+  /// The Column class contains the majority of primitive properties and methods needed to generate
   /// TSQL, C#, F# and VB target code.
   /// </summary>
   public class Column
