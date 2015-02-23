@@ -27,15 +27,30 @@ namespace Utilities.Sql
     {
       using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.Text, CommandText = sql })
       {
-        var dataSet = new DataSet();
+        using (var adapter = new SqlDataAdapter())
+        {
+          var dataSet = new DataSet();
+          adapter.SelectCommand = command;
+          adapter.Fill(dataSet);
+          return dataSet;
+        }
+      }
+    }
+
+    public static DataSet GetDataSet(this SqlConnection connection, String storedProcedureName, SqlParameter[] sqlParameters)
+    {
+      using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.StoredProcedure, CommandText = storedProcedureName })
+      {
+        command.Parameters.Clear();
+        command.Parameters.AddRange(sqlParameters);
 
         using (var adapter = new SqlDataAdapter())
         {
+          var dataSet = new DataSet();
           adapter.SelectCommand = command;
           adapter.Fill(dataSet);
+          return dataSet;
         }
-
-        return dataSet;
       }
     }
 

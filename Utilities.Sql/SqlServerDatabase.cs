@@ -772,12 +772,9 @@ namespace Utilities.Sql
   /// // Find a specific table in a database:
   /// var personTable =
   ///   server
-  ///   .Databases
-  ///   .Where(db => db.Name.EqualsCI("AdventureWorks2012"))
-  ///   .Schemas
-  ///   .Where(db => db.Name.EqualsCI("Person"))
-  ///   .Tables
-  ///   .Where(db => db.Name.EqualsCI("Person"))
+  ///   .Databases["AdventureWorks2012"] // Case-insensitive names.
+  ///   .Schemas["Person"]
+  ///   .Tables["Person"]
   ///   .First();
   ///   
   /// // Get a ready-made list of target language method parameter declarations
@@ -790,14 +787,14 @@ namespace Utilities.Sql
   {
     public Configuration Configuration { get; private set; }
 
-    private List<Database> _databases = null;
-    public List<Database> Databases
+    private Databases _databases = null;
+    public Databases Databases
     {
       get
       {
         if (this._databases == null)
         {
-          this._databases = new List<Database>();
+          this._databases = new Databases();
           var table = this.Configuration.Connection.GetSchema("Databases");
           foreach (DataRow row in table.Rows)
             this._databases.Add(new Database(this, row["database_name"].ToString()));
@@ -815,6 +812,22 @@ namespace Utilities.Sql
     }
   }
 
+  public class Databases : List<Database>
+  {
+    public Database this[String name]
+    {
+      get
+      {
+        return this.Where(db => db.Name.EqualsCI(name)).FirstOrDefault();
+      }
+    }
+
+    internal Databases()
+      : base()
+    {
+    }
+  }
+
   public class Database
   {
     private readonly SqlConnection _connection;
@@ -826,8 +839,8 @@ namespace Utilities.Sql
     /// </summary>
     public String Name { get; private set; }
 
-    private List<Schema> _schemas = null;
-    public List<Schema> Schemas
+    private Schemas _schemas = null;
+    public Schemas Schemas
     {
       get
       {
@@ -836,7 +849,7 @@ namespace Utilities.Sql
           this._connection.ExecuteUnderDatabaseInvariant(this.Name,
             () =>
             {
-              this._schemas = new List<Schema>();
+              this._schemas = new Schemas();
               var sql = @"
 SELECT
     [SCHEMA_NAME] = S.[name],
@@ -868,6 +881,66 @@ SELECT
 
       this._connection = this.Server.Configuration.Connection;
     }
+
+    public StoredProcedure AddStoredProcedure(String name, params SqlParameter[] sqlParameters)
+    {
+      return AddStoredProcedure(name, 1, sqlParameters);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="versionNumber"></param>
+    /// <param name="sqlParameters"></param>
+    public StoredProcedure AddStoredProcedure(String name, Int32 versionNumber, params SqlParameter[] sqlParameters)
+    {
+      name.Check("name");
+      if (versionNumber < 1)
+        throw new ArgumentOutOfRangeExceptionFmt("versionNumber must be greater than zero.", versionNumber);
+
+      var indexOfDot = name.IndexOf('.');
+      if (indexOfDot == -1)
+      {
+        return this.Schemas.DefaultSchema.AddStoredProcedure(name, versionNumber, sqlParameters);
+      }
+      else
+      {
+        var storedProcedureSchemaName = name.Substring(0, indexOfDot);
+        var storedProcedureName = name.Substring(indexOfDot + 1);
+        var schema = this.Schemas[storedProcedureSchemaName];
+
+        if (schema == null)
+          throw new ExceptionFmt("The '{0}' schema does not exist.", storedProcedureSchemaName);
+        else
+          return schema.AddStoredProcedure(storedProcedureName, versionNumber, sqlParameters);
+      }
+    }
+  }
+
+  public class Schemas : List<Schema>
+  {
+    public Schema this[String name]
+    {
+      get
+      {
+        return this.Where(schema => schema.Name.EqualsCI(name)).FirstOrDefault();
+      }
+    }
+
+    public Schema DefaultSchema
+    {
+      get
+      {
+        /* There's always at least one schema in a database, and one of those schemas is a default schema, so this should always work. */
+        return this.Where(s => s.IsDefaultSchema).First();
+      }
+    }
+
+    internal Schemas()
+      : base()
+    {
+    }
   }
 
   public class Schema
@@ -880,9 +953,10 @@ SELECT
     public String Name { get; private set; }
 
     public Boolean IsDefaultSchema { get; private set; }
+    public StoredProcedures StoredProcedures { get; private set; }
 
-    private List<Table> _tables = null;
-    public List<Table> Tables
+    private Tables _tables = null;
+    public Tables Tables
     {
       get
       {
@@ -891,7 +965,7 @@ SELECT
           this.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Database.Name,
             () =>
             {
-              this._tables = new List<Table>();
+              this._tables = new Tables();
               var table = this.Database.Server.Configuration.Connection.GetSchema("Tables");
               foreach (DataRow row in table.Rows)
               {
@@ -913,6 +987,100 @@ SELECT
       this.Database = database;
       this.Name = name;
       this.IsDefaultSchema = isDefaultSchema;
+      this.StoredProcedures = new StoredProcedures();
+    }
+
+    public StoredProcedure AddStoredProcedure(String name, params SqlParameter[] sqlParameters)
+    {
+      return this.AddStoredProcedure(name, 1, sqlParameters);
+    }
+
+    public StoredProcedure AddStoredProcedure(String name, Int32 versionNumber, params SqlParameter[] sqlParameters)
+    {
+      if (this.StoredProcedures[name, versionNumber] == null)
+      {
+        var sp = new StoredProcedure(this, name, versionNumber, sqlParameters);
+        this.StoredProcedures.Add(sp);
+        return sp;
+      }
+      else
+      {
+        throw new ExceptionFmt("The stored procedure '{0}', version {1} already exists.  If you have a stored procedure that has multiple versions, make sure the version numbers don't conflict.", name, versionNumber);
+      }
+    }
+  }
+
+  public class StoredProcedures : List<StoredProcedure>
+  {
+    public StoredProcedure this[String name]
+    {
+      get
+      {
+        return this[name, 1];
+      }
+    }
+
+    public StoredProcedure this[String name, Int32 versionNumber]
+    {
+      get
+      {
+        return this.Where(sp => sp.Name.EqualsCI(name) && (sp.VersionNumber == versionNumber)).FirstOrDefault();
+      }
+    }
+
+    internal StoredProcedures()
+      : base()
+    {
+    }
+  }
+
+  public class StoredProcedure
+  {
+    public Schema Schema { get; private set; }
+    public String Name { get; private set; }
+    public Int32 VersionNumber { get; private set; }
+    public SqlParameter[] SqlParameters { get; private set; }
+
+    private Columns _columns = null;
+    public Columns Columns
+    {
+      get
+      {
+        if (this._columns == null)
+          this.Schema.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => this._columns = new Columns(this));
+
+        return this._columns;
+      }
+    }
+
+    private StoredProcedure()
+      : base()
+    {
+    }
+
+    public StoredProcedure(Schema schema, String name, Int32 versionNumber, SqlParameter[] sqlParameters)
+      : this()
+    {
+      this.Schema = schema;
+      this.Name = name;
+      this.VersionNumber = versionNumber;
+      this.SqlParameters = sqlParameters;
+    }
+  }
+
+  public class Tables : List<Table>
+  {
+    public Table this[String name]
+    {
+      get
+      {
+        return this.Where(table => table.Name.EqualsCI(name)).FirstOrDefault();
+      }
+    }
+
+    internal Tables()
+      : base()
+    {
     }
   }
 
@@ -980,8 +1148,21 @@ SELECT
 
   public class Columns : List<Column>
   {
-    public Columns(Table table)
+    public Column this[String name]
+    {
+      get
+      {
+        return this.Where(table => table.Name.EqualsCI(name)).FirstOrDefault();
+      }
+    }
+
+    private Columns()
       : base()
+    {
+    }
+
+    public Columns(Table table)
+      : this()
     {
       var sql = @"
 ;WITH foreign_keys_CTE (FOREIGN_KEY_TABLE, FOREIGN_KEY_COLUMN, PRIMARY_KEY_SCHEMA, PRIMARY_KEY_TABLE, PRIMARY_KEY_COLUMN)
@@ -1037,13 +1218,6 @@ SELECT
     SERVER_DATATYPE_NAME = CT_CTE.SERVER_DATATYPE_NAME,
     NATIVE_SERVER_DATATYPE_NAME = CT_CTE.NATIVE_SERVER_DATATYPE_NAME,
     PHYSICAL_LENGTH = C.max_length,
-    LOGICAL_LENGTH = 
-      CASE
-        WHEN ((CT_CTE.SERVER_DATATYPE_NAME = 'NCHAR') OR (CT_CTE.SERVER_DATATYPE_NAME = 'NVARCHAR')) AND (C.max_length > -1) THEN
-          C.max_length / 2
-        ELSE
-          C.max_length
-      END,
     C.[precision],
     C.scale,
     IS_NULLABLE = CASE C.is_nullable WHEN 0 THEN 'N' ELSE 'Y' END,
@@ -1053,16 +1227,16 @@ SELECT
     IS_PRIMARY_KEY = CASE WHEN (PK_CTE.primary_key_ordinal IS NULL) THEN 'N' ELSE 'Y' END,
     PRIMARY_KEY_ORDINAL = COALESCE(PK_CTE.primary_key_ordinal, -1),
     PRIMARY_KEY_DIRECTION = COALESCE(PK_CTE.PRIMARY_KEY_DIRECTION, ''),
-    IS_FOREIGN_KEY = CASE WHEN (FKCTE.foreign_key_table IS NULL) THEN 'N' ELSE 'Y' END,
-    PRIMARY_KEY_SCHEMA = COALESCE(FKCTE.primary_key_schema, ''),
-    PRIMARY_KEY_TABLE = COALESCE(FKCTE.primary_key_table, ''),
-    PRIMARY_KEY_COLUMN = COALESCE(FKCTE.primary_key_column, '')
+    IS_FOREIGN_KEY = CASE WHEN (FK_CTE.foreign_key_table IS NULL) THEN 'N' ELSE 'Y' END,
+    PRIMARY_KEY_SCHEMA = COALESCE(FK_CTE.primary_key_schema, ''),
+    PRIMARY_KEY_TABLE = COALESCE(FK_CTE.primary_key_table, ''),
+    PRIMARY_KEY_COLUMN = COALESCE(FK_CTE.primary_key_column, '')
   FROM
     sys.schemas AS S
     INNER JOIN sys.{0} AS TBL ON TBL.schema_id = S.schema_id
     INNER JOIN sys.columns AS C ON TBL.[object_id] = C.[object_id]
     LEFT OUTER JOIN sys.xml_schema_collections AS XMLCOLL ON XMLCOLL.xml_collection_id = C.xml_collection_id
-    LEFT OUTER JOIN foreign_keys_CTE AS FKCTE ON (FKCTE.foreign_key_table = TBL.[name]) AND (FKCTE.foreign_key_column = C.[name])
+    LEFT OUTER JOIN foreign_keys_CTE AS FK_CTE ON (FK_CTE.foreign_key_table = TBL.[name]) AND (FK_CTE.foreign_key_column = C.[name])
     LEFT OUTER JOIN primary_keys_CTE AS PK_CTE ON PK_CTE.object_id = TBL.object_id AND PK_CTE.column_id = C.column_id
     LEFT OUTER JOIN column_type_CTE AS CT_CTE ON CT_CTE.USER_TYPE_ID = C.user_type_id
   WHERE
@@ -1070,8 +1244,8 @@ SELECT
     AND TBL.[name] = '{2}';";
 
       var select = String.Format(sql, (table.IsView ? "views" : "tables"), table.Schema.Name, table.Name);
-
-      foreach (DataRow row in table.Schema.Database.Server.Configuration.Connection.GetDataSet(select).Tables[0].Rows)
+      var t = table.Schema.Database.Server.Configuration.Connection.GetDataSet(select).Tables[0];
+      foreach (DataRow row in t.Rows)
       {
         var columnType = ColumnType.Unknown;
 
@@ -1095,6 +1269,8 @@ SELECT
         if (nativeServerDataTypeName != "XML")
           columnType |= ColumnType.CanAppearInSqlWhereClause;
 
+        var physicalLength = Convert.ToInt32(row["PHYSICAL_LENGTH"]);
+
         this.Add(
           new Column(table)
           {
@@ -1103,8 +1279,8 @@ SELECT
             ColumnType = columnType,
             ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
             NativeServerDataTypeName = nativeServerDataTypeName,
-            PhysicalLength = Convert.ToInt32(row["PHYSICAL_LENGTH"]),
-            LogicalLength = Convert.ToInt32(row["LOGICAL_LENGTH"]),
+            PhysicalLength = physicalLength,
+            LogicalLength = GetLogicalLength(nativeServerDataTypeName, physicalLength),
             Precision = Convert.ToInt32(row["PRECISION"]),
             Scale = Convert.ToInt32(row["SCALE"]),
             IsNullable = row["IS_NULLABLE"].ToString().EqualsCI("Y"),
@@ -1119,9 +1295,104 @@ SELECT
       }
     }
 
-    public Columns(DataTable datatable)
-      : base()
+    public Columns(StoredProcedure storedProcedure)
+      : this()
     {
+      var spName = String.Format("[{0}].[{1}]", storedProcedure.Schema.Name, storedProcedure.Name);
+      var dataset = storedProcedure.Schema.Database.Server.Configuration.Connection.GetDataSet(spName, storedProcedure.SqlParameters);
+      foreach (DataTable table in dataset.Tables)
+      {
+        foreach (DataColumn column in table.Columns)
+        {
+          var columnType = ColumnType.NonKeyAndNonID;
+
+          var nativeServerDataTypeName = this.GetSqlServerDataTypeFromDataColumn(column);
+
+          if (nativeServerDataTypeName.NotEqualsCI("TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
+            columnType |= (ColumnType.CanAppearInInsertStatement | ColumnType.CanAppearInUpdateSetClause);
+
+          if (nativeServerDataTypeName != "XML")
+            columnType |= ColumnType.CanAppearInSqlWhereClause;
+
+          this.Add(
+            new Column(storedProcedure)
+            {
+              Name = column.ColumnName,
+              Ordinal = column.Ordinal,
+              ColumnType = columnType,
+              ServerDataTypeName = nativeServerDataTypeName,
+              NativeServerDataTypeName = nativeServerDataTypeName,
+              PhysicalLength = column.MaxLength,
+              LogicalLength = GetLogicalLength(nativeServerDataTypeName, column.MaxLength),
+              Precision = 0,
+              Scale = 0,
+              IsNullable = false,
+              IsXmlDocument = false,
+              XmlCollectionName = "",
+              PrimaryKeyOrdinal = -1,
+              PrimaryKeyDirection = "",
+              PrimaryKeySchema = "",
+              PrimaryKeyTable = "",
+              PrimaryKeyColumn = ""
+            });
+        }
+      }
+    }
+
+    private Int32 GetLogicalLength(String serverDataTypeName, Int32 maxLength)
+    {
+      if ((serverDataTypeName.EqualsCI("CHAR") || serverDataTypeName.StartsWithCI("VARCHAR")) && (maxLength > -1))
+        return maxLength / 2;
+      else
+        return maxLength;
+    }
+
+    private String GetSqlServerDataTypeFromDataColumn(DataColumn column)
+    {
+      /* The convertable CLR types are those allowed in the DataColumn.DataType property
+         (listed in the 'Remarks' section at https://msdn.microsoft.com/en-us/library/system.data.datacolumn.datatype%28v=vs.110%29.aspx).
+      
+         Most of these conversions are taken from the "SQL-CLR Type Mapping"
+         page on MSDN (https://msdn.microsoft.com/en-us/library/bb386947.aspx). */
+
+      if (column.DataType == typeof(Boolean))
+        return "BIT";
+      else if (column.DataType == typeof(Byte))
+        return "TINYINT";
+      else if (column.DataType == typeof(Byte[]))
+        return "BINARY";
+      else if (column.DataType == typeof(Char))
+        return "NCHAR";
+      else if (column.DataType == typeof(DateTime))
+        return "DATETIME";
+      else if (column.DataType == typeof(Decimal))
+        return "DECIMAL(29, 4)";
+      else if (column.DataType == typeof(Double))
+        return "FLOAT";
+      else if (column.DataType == typeof(Guid))
+        return "UNIQUEIDENTIFIER";
+      else if (column.DataType == typeof(Int16))
+        return "SMALLINT";
+      else if (column.DataType == typeof(Int32))
+        return "INT";
+      else if (column.DataType == typeof(Int64))
+        return "BIGINT";
+      else if (column.DataType == typeof(SByte))
+        return "SMALLINT";
+      else if (column.DataType == typeof(Single))
+        return "REAL";
+      else if (column.DataType == typeof(String))
+        return "NVARCHAR";
+      else if (column.DataType == typeof(TimeSpan))
+        return "TIME";
+      else if (column.DataType == typeof(UInt16))
+        return "INT";
+      else if (column.DataType == typeof(UInt32))
+        return "BIGINT";
+      else if (column.DataType == typeof(UInt64))
+        return "DECIMAL(20)";
+      else
+        throw new ExceptionFmt("Unknown conversion from CLR type '{0}' to SQL Server type.", column.DataType.Name);
     }
 
     public List<String> GetCreateTableColumnDeclarations()
@@ -1576,6 +1847,8 @@ SELECT
   /// </summary>
   public class Column
   {
+    /* Only one of these will be the parent of this column. */
+    public StoredProcedure StoredProcedure { get; private set; }
     public Table Table { get; private set; }
 
     /// <summary>
@@ -1839,11 +2112,23 @@ SELECT
 
     private Configuration _configuration;
 
-    public Column(Table table)
+    private Column()
       : base()
+    {
+    }
+
+    public Column(Table table)
+      : this()
     {
       this.Table = table;
       this._configuration = table.Schema.Database.Server.Configuration;
+    }
+
+    public Column(StoredProcedure storedProcedure)
+      : this()
+    {
+      this.StoredProcedure = storedProcedure;
+      this._configuration = storedProcedure.Schema.Database.Server.Configuration;
     }
 
     /// <summary>

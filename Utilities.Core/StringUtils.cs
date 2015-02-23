@@ -45,6 +45,12 @@ namespace Utilities.Core
       return value[value.Length - 1];
     }
 
+    public static String LastWord(this String value)
+    {
+      var lastIndexOfSpace = value.Trim().LastIndexOf(' ');
+      return (lastIndexOfSpace == -1) ? value : value.Substring(lastIndexOfSpace + 1);
+    }
+
     public static String SurroundWith(this String value, String c)
     {
       value.Check("value", StringAssertion.NotNull);
@@ -166,6 +172,11 @@ namespace Utilities.Core
     public static Boolean NotEqualsCI(this String value, String other)
     {
       return !value.EqualsCI(other);
+    }
+
+    public static Boolean StartsWithCI(this String value, String other)
+    {
+      return value.StartsWith(other, StringComparison.CurrentCultureIgnoreCase);
     }
   }
 
