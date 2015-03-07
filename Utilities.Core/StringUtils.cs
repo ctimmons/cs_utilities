@@ -40,7 +40,7 @@ namespace Utilities.Core
     /// </summary>
     public static Int32 IndexOfCI(this String source, String searchValue)
     {
-      return source.IndexOf(searchValue, StringComparison.InvariantCultureIgnoreCase);
+      return source.IndexOf(searchValue, StringComparison.CurrentCultureIgnoreCase);
     }
 
     /// <summary>

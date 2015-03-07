@@ -42,6 +42,24 @@ namespace Utilities.Core.UnitTests
     }
 
     [Test]
+    public void IndexOfCITest()
+    {
+      var str = "abcdef";
+      Assert.AreEqual(str.IndexOfCI("c"), 2);
+      Assert.AreEqual(str.IndexOfCI("C"), 2);
+      Assert.AreEqual(str.IndexOfCI("Z"), -1);
+    }
+
+    [Test]
+    public void ContainsCITest()
+    {
+      var str = "abcdef";
+      Assert.True(str.ContainsCI("c"));
+      Assert.True(str.ContainsCI("C"));
+      Assert.False(str.ContainsCI("Z"));
+    }
+
+    [Test]
     public void RepeatTest()
     {
       String str = null;
