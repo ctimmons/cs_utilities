@@ -23,13 +23,10 @@ namespace Utilities.Core.UnitTests
           GetStringRepresentation(input1), GetStringRepresentation(input2), GetStringRepresentation(expectedOutput), GetStringRepresentation(actualOutput)));
     }
 
-    private static String GetStringRepresentation(Object s)
+    private static String GetStringRepresentation(Object o)
     {
-      return (s == null) ? "NULL" : GetDataFromContainer(s);
-    }
-
-    private static String GetDataFromContainer(Object o)
-    {
+      if (o == null)
+        return null;
       if (o is List<String>)
         return ((List<String>) o).Join(", ");
       else
