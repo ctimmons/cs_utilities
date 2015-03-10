@@ -70,11 +70,11 @@ namespace Utilities.Core.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The parameter is not empty..
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not greater than &apos;{2}&apos;..
         /// </summary>
-        internal static string Assert_ContainerIsNotEmpty_NoVarName {
+        internal static string Assert_NotGreaterThan {
             get {
-                return ResourceManager.GetString("Assert_ContainerIsNotEmpty_NoVarName", resourceCulture);
+                return ResourceManager.GetString("Assert_NotGreaterThan", resourceCulture);
             }
         }
         

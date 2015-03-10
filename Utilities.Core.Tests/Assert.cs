@@ -52,5 +52,16 @@ namespace Utilities.Core.UnitTests
       Assert.Throws<ArgumentException>(() => lst.NotNull().NotEmpty());
       Assert.Throws<ArgumentException>(() => lst.Name("lst").NotNull().NotEmpty());
     }
+
+    [Test]
+    public void GreaterThanTest()
+    {
+      var earlier = new DateTime(2014, 1, 1);
+      var later = new DateTime(2016, 1, 1);
+      Assert.DoesNotThrow(() => later.GreaterThan(earlier));
+      Assert.DoesNotThrow(() => later.Name("later").GreaterThan(earlier));
+      Assert.Throws<ArgumentException>(() => earlier.GreaterThan(later));
+      Assert.Throws<ArgumentException>(() => earlier.Name("later").GreaterThan(later));
+    }
   }
 }

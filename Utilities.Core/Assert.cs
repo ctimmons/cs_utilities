@@ -188,7 +188,7 @@ namespace Utilities.Core
 
     public static AssertionContainer<T> Name<T>(this T value, String name)
     {
-      return new AssertionContainer<T>(name, value);
+      return (new AssertionContainer<T>(value)).Name(name);
     }
 
     public static AssertionContainer<T> Name<T>(this AssertionContainer<T> value, String name)
@@ -200,35 +200,57 @@ namespace Utilities.Core
     public static AssertionContainer<T> NotNull<T>(this T value)
       where T : class
     {
-      if (value == null)
-        throw new ArgumentNullException();
-      else
-        return new AssertionContainer<T>(value);
+      return (new AssertionContainer<T>(value)).NotNull();
     }
 
     public static AssertionContainer<T> NotNull<T>(this AssertionContainer<T> value)
       where T : class
     {
-      if (value.Value == null)
-        throw new ArgumentNullException(value.Name);
-      else
+      if (value.Value != null)
         return value;
+      else
+        throw new ArgumentNullException(value.Name);
     }
 
-    public static AssertionContainer<T> NotEmpty<T>(this T value)
+    public static AssertionContainer<T> NotEmpty<T>(this T values)
       where T : IEnumerable
     {
-      if (!value.GetEnumerator().MoveNext())
-        throw new ArgumentException(Properties.Resources.Assert_ContainerIsNotEmpty_NoVarName);
-      else
-        return new AssertionContainer<T>(value);
+      return (new AssertionContainer<T>(values)).NotEmpty();
     }
 
     public static AssertionContainer<T> NotEmpty<T>(this AssertionContainer<T> value)
       where T : IEnumerable
     {
-      if (!value.Value.GetEnumerator().MoveNext())
-        throw new ArgumentException(String.Format(Properties.Resources.Assert_ContainerIsNotEmpty, value.Name));
+      /* Some non-generic IEnumerator enumerators returned by IEnumerable.GetEnumerator()
+         also implement IDisposable, while others do not.  Those enumerators
+         that do implement IDisposable will need to have their Dispose() method called.
+         
+         A non-generic IEnumerator cannot be used in a "using" statement.
+         So to make sure Dispose() is called, "foreach" can be used
+         because it will generate code to dispose of the IEnumerator
+         if the enumerator also implements IDisposable. */
+
+      /* This loop will execute zero or more times. */
+      foreach (var _ in value.Value)
+        return value; /* Loop executed once.  There is at least one element in the IEnumerable, which means it's not empty. */
+
+      /* Loop executed zero times, which means the IEnumerable is empty. */
+      throw new ArgumentException(String.Format(Properties.Resources.Assert_ContainerIsNotEmpty, value.Name));
+    }
+
+    // gt, gte, lt, lte, eq, neq, between-inclusive, between-exclusive
+
+    public static AssertionContainer<T> GreaterThan<T>(this T value, T other)
+      where T : IComparable<T>
+    {
+      return (new AssertionContainer<T>(value)).GreaterThan(other);
+    }
+
+    public static AssertionContainer<T> GreaterThan<T>(this AssertionContainer<T> value, T other)
+      where T : IComparable<T>
+    {
+      if (value.Value.CompareTo(other) < 0)
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotGreaterThan, value.Name, value.Value, other));
       else
         return value;
     }
