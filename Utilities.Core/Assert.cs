@@ -1,6 +1,9 @@
 ﻿/* See UNLICENSE.txt file for license details. */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Utilities.Core
 {
@@ -176,6 +179,83 @@ namespace Utilities.Core
 
       if (value == null)
         throw new ArgumentNullException(name);
+    }
+
+    //////////////////////////////////////////////////////////////
+    // In the process of converting these methods to a "fluent" API.
+    // Consider the above code obsolete.
+    //////////////////////////////////////////////////////////////
+
+    public static AssertionContainer<T> Name<T>(this T value, String name)
+    {
+      return new AssertionContainer<T>(name, value);
+    }
+
+    public static AssertionContainer<T> Name<T>(this AssertionContainer<T> value, String name)
+    {
+      value.Name = name;
+      return value;
+    }
+
+    public static AssertionContainer<T> NotNull<T>(this T value)
+      where T : class
+    {
+      if (value == null)
+        throw new ArgumentNullException();
+      else
+        return new AssertionContainer<T>(value);
+    }
+
+    public static AssertionContainer<T> NotNull<T>(this AssertionContainer<T> value)
+      where T : class
+    {
+      if (value.Value == null)
+        throw new ArgumentNullException(value.Name);
+      else
+        return value;
+    }
+
+    public static AssertionContainer<T> NotEmpty<T>(this T value)
+      where T : IEnumerable
+    {
+      if (!value.GetEnumerator().MoveNext())
+        throw new ArgumentException(Properties.Resources.Assert_ContainerIsNotEmpty_NoVarName);
+      else
+        return new AssertionContainer<T>(value);
+    }
+
+    public static AssertionContainer<T> NotEmpty<T>(this AssertionContainer<T> value)
+      where T : IEnumerable
+    {
+      if (!value.Value.GetEnumerator().MoveNext())
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_ContainerIsNotEmpty, value.Name));
+      else
+        return value;
+    }
+  }
+
+  public class AssertionContainer<T>
+  {
+    public String Name { get; set; }
+    public T Value { get; set; }
+
+    private AssertionContainer()
+      : base()
+    {
+    }
+
+    internal AssertionContainer(T value)
+      : this()
+    {
+      this.Name = "<Unknown variable name>";
+      this.Value = value;
+    }
+
+    internal AssertionContainer(String name, T value)
+      : this()
+    {
+      this.Name = name;
+      this.Value = value;
     }
   }
 }

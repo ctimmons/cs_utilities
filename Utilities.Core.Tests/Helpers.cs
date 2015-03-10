@@ -23,6 +23,9 @@ namespace Utilities.Core.UnitTests
           GetStringRepresentation(input1), GetStringRepresentation(input2), GetStringRepresentation(expectedOutput), GetStringRepresentation(actualOutput)));
     }
 
+    /// <summary>
+    /// Only useful for primitive types like Int32 and String.  Can also handle List&lt;String&gt;.
+    /// </summary>
     private static String GetStringRepresentation(Object o)
     {
       if (o == null)
