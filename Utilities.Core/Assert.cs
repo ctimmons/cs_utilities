@@ -186,24 +186,24 @@ namespace Utilities.Core
     // Consider the above code obsolete.
     //////////////////////////////////////////////////////////////
 
-    public static AssertionContainer<T> Name<T>(this T value, String name)
+    public static AssertionContext<T> Name<T>(this T value, String name)
     {
-      return (new AssertionContainer<T>(value)).Name(name);
+      return (new AssertionContext<T>(value)).Name(name);
     }
 
-    public static AssertionContainer<T> Name<T>(this AssertionContainer<T> value, String name)
+    public static AssertionContext<T> Name<T>(this AssertionContext<T> value, String name)
     {
       value.Name = name;
       return value;
     }
 
-    public static AssertionContainer<T> NotNull<T>(this T value)
+    public static AssertionContext<T> NotNull<T>(this T value)
       where T : class
     {
-      return (new AssertionContainer<T>(value)).NotNull();
+      return (new AssertionContext<T>(value)).NotNull();
     }
 
-    public static AssertionContainer<T> NotNull<T>(this AssertionContainer<T> value)
+    public static AssertionContext<T> NotNull<T>(this AssertionContext<T> value)
       where T : class
     {
       if (value.Value != null)
@@ -212,13 +212,13 @@ namespace Utilities.Core
         throw new ArgumentNullException(value.Name);
     }
 
-    public static AssertionContainer<T> NotEmpty<T>(this T values)
+    public static AssertionContext<T> NotEmpty<T>(this T values)
       where T : IEnumerable
     {
-      return (new AssertionContainer<T>(values)).NotEmpty();
+      return (new AssertionContext<T>(values)).NotEmpty();
     }
 
-    public static AssertionContainer<T> NotEmpty<T>(this AssertionContainer<T> value)
+    public static AssertionContext<T> NotEmpty<T>(this AssertionContext<T> value)
       where T : IEnumerable
     {
       /* Some non-generic IEnumerator enumerators returned by IEnumerable.GetEnumerator()
@@ -226,7 +226,7 @@ namespace Utilities.Core
          that do implement IDisposable will need to have their Dispose() method called.
          
          A non-generic IEnumerator cannot be used in a "using" statement.
-         So to make sure Dispose() is called, "foreach" can be used
+         So to make sure Dispose() is called (if it exists), "foreach" is used
          because it will generate code to dispose of the IEnumerator
          if the enumerator also implements IDisposable. */
 
@@ -238,42 +238,115 @@ namespace Utilities.Core
       throw new ArgumentException(String.Format(Properties.Resources.Assert_ContainerIsNotEmpty, value.Name));
     }
 
-    // gt, gte, lt, lte, eq, neq, between-inclusive, between-exclusive
-
-    public static AssertionContainer<T> GreaterThan<T>(this T value, T other)
+    public static AssertionContext<T> GreaterThan<T>(this T value, T other)
       where T : IComparable<T>
     {
-      return (new AssertionContainer<T>(value)).GreaterThan(other);
+      return (new AssertionContext<T>(value)).GreaterThan(other);
     }
 
-    public static AssertionContainer<T> GreaterThan<T>(this AssertionContainer<T> value, T other)
+    public static AssertionContext<T> GreaterThan<T>(this AssertionContext<T> value, T other)
+      where T : IComparable<T>
+    {
+      if (value.Value.CompareTo(other) > 0)
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotGreaterThan, value.Name, value.Value, other));
+    }
+
+    public static AssertionContext<T> GreaterThanOrEqualTo<T>(this T value, T other)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).GreaterThanOrEqualTo(other);
+    }
+
+    public static AssertionContext<T> GreaterThanOrEqualTo<T>(this AssertionContext<T> value, T other)
+      where T : IComparable<T>
+    {
+      if (value.Value.CompareTo(other) >= 0)
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotGreaterThanOrEqualTo, value.Name, value.Value, other));
+    }
+
+    public static AssertionContext<T> LessThan<T>(this T value, T other)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).LessThan(other);
+    }
+
+    public static AssertionContext<T> LessThan<T>(this AssertionContext<T> value, T other)
       where T : IComparable<T>
     {
       if (value.Value.CompareTo(other) < 0)
-        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotGreaterThan, value.Name, value.Value, other));
-      else
         return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotLessThan, value.Name, value.Value, other));
+    }
+
+    public static AssertionContext<T> LessThanOrEqualTo<T>(this T value, T other)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).LessThanOrEqualTo(other);
+    }
+
+    public static AssertionContext<T> LessThanOrEqualTo<T>(this AssertionContext<T> value, T other)
+      where T : IComparable<T>
+    {
+      if (value.Value.CompareTo(other) <= 0)
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotLessThanOrEqualTo, value.Name, value.Value, other));
+    }
+
+    public static AssertionContext<T> EqualTo<T>(this T value, T other)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).EqualTo(other);
+    }
+
+    public static AssertionContext<T> EqualTo<T>(this AssertionContext<T> value, T other)
+      where T : IComparable<T>
+    {
+      if (value.Value.CompareTo(other) == 0)
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_NotEqualTo, value.Name, value.Value, other));
+    }
+
+    public static AssertionContext<T> NotEqualTo<T>(this T value, T other)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).NotEqualTo(other);
+    }
+
+    public static AssertionContext<T> NotEqualTo<T>(this AssertionContext<T> value, T other)
+      where T : IComparable<T>
+    {
+      if (value.Value.CompareTo(other) != 0)
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_EqualTo, value.Name, value.Value, other));
     }
   }
 
-  public class AssertionContainer<T>
+  public class AssertionContext<T>
   {
     public String Name { get; set; }
     public T Value { get; set; }
 
-    private AssertionContainer()
+    private AssertionContext()
       : base()
     {
     }
 
-    internal AssertionContainer(T value)
+    internal AssertionContext(T value)
       : this()
     {
       this.Name = "<Unknown variable name>";
       this.Value = value;
     }
 
-    internal AssertionContainer(String name, T value)
+    internal AssertionContext(String name, T value)
       : this()
     {
       this.Name = name;

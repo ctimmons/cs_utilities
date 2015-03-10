@@ -61,7 +61,70 @@ namespace Utilities.Core.UnitTests
       Assert.DoesNotThrow(() => later.GreaterThan(earlier));
       Assert.DoesNotThrow(() => later.Name("later").GreaterThan(earlier));
       Assert.Throws<ArgumentException>(() => earlier.GreaterThan(later));
-      Assert.Throws<ArgumentException>(() => earlier.Name("later").GreaterThan(later));
+      Assert.Throws<ArgumentException>(() => earlier.Name("earlier").GreaterThan(later));
+      Assert.Throws<ArgumentException>(() => earlier.GreaterThan(earlier));
+      Assert.Throws<ArgumentException>(() => earlier.Name("earlier").GreaterThan(earlier));
+    }
+
+    [Test]
+    public void GreaterThanOrEqualToTest()
+    {
+      var earlier = new DateTime(2014, 1, 1);
+      var later = new DateTime(2016, 1, 1);
+      Assert.DoesNotThrow(() => later.GreaterThanOrEqualTo(earlier));
+      Assert.DoesNotThrow(() => later.Name("later").GreaterThanOrEqualTo(earlier));
+      Assert.Throws<ArgumentException>(() => earlier.GreaterThanOrEqualTo(later));
+      Assert.Throws<ArgumentException>(() => earlier.Name("earlier").GreaterThanOrEqualTo(later));
+      Assert.DoesNotThrow(() => earlier.GreaterThanOrEqualTo(earlier));
+      Assert.DoesNotThrow(() => earlier.Name("earlier").GreaterThanOrEqualTo(earlier));
+    }
+
+    [Test]
+    public void LessThanTest()
+    {
+      var earlier = new DateTime(2014, 1, 1);
+      var later = new DateTime(2016, 1, 1);
+      Assert.Throws<ArgumentException>(() => later.LessThan(earlier));
+      Assert.Throws<ArgumentException>(() => later.Name("later").LessThan(earlier));
+      Assert.DoesNotThrow(() => earlier.LessThan(later));
+      Assert.DoesNotThrow(() => earlier.Name("earlier").LessThan(later));
+      Assert.Throws<ArgumentException>(() => earlier.LessThan(earlier));
+      Assert.Throws<ArgumentException>(() => earlier.Name("earlier").LessThan(earlier));
+    }
+
+    [Test]
+    public void LessThanOrEqualToTest()
+    {
+      var earlier = new DateTime(2014, 1, 1);
+      var later = new DateTime(2016, 1, 1);
+      Assert.Throws<ArgumentException>(() => later.LessThanOrEqualTo(earlier));
+      Assert.Throws<ArgumentException>(() => later.Name("later").LessThanOrEqualTo(earlier));
+      Assert.DoesNotThrow(() => earlier.LessThanOrEqualTo(later));
+      Assert.DoesNotThrow(() => earlier.Name("earlier").LessThanOrEqualTo(later));
+      Assert.DoesNotThrow(() => earlier.LessThanOrEqualTo(earlier));
+      Assert.DoesNotThrow(() => earlier.Name("earlier").LessThanOrEqualTo(earlier));
+    }
+
+    [Test]
+    public void EqualToTest()
+    {
+      var earlier = new DateTime(2014, 1, 1);
+      var later = new DateTime(2016, 1, 1);
+      Assert.Throws<ArgumentException>(() => later.EqualTo(earlier));
+      Assert.Throws<ArgumentException>(() => later.Name("later").EqualTo(earlier));
+      Assert.DoesNotThrow(() => earlier.EqualTo(earlier));
+      Assert.DoesNotThrow(() => earlier.Name("earlier").EqualTo(earlier));
+    }
+
+    [Test]
+    public void NotEqualToTest()
+    {
+      var earlier = new DateTime(2014, 1, 1);
+      var later = new DateTime(2016, 1, 1);
+      Assert.DoesNotThrow(() => later.NotEqualTo(earlier));
+      Assert.DoesNotThrow(() => later.Name("later").NotEqualTo(earlier));
+      Assert.Throws<ArgumentException>(() => earlier.NotEqualTo(earlier));
+      Assert.Throws<ArgumentException>(() => earlier.Name("earlier").NotEqualTo(earlier));
     }
   }
 }

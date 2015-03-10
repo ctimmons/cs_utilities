@@ -70,11 +70,56 @@ namespace Utilities.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is equal to &apos;{2}&apos;..
+        /// </summary>
+        internal static string Assert_EqualTo {
+            get {
+                return ResourceManager.GetString("Assert_EqualTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not equal to &apos;{2}&apos;..
+        /// </summary>
+        internal static string Assert_NotEqualTo {
+            get {
+                return ResourceManager.GetString("Assert_NotEqualTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not greater than &apos;{2}&apos;..
         /// </summary>
         internal static string Assert_NotGreaterThan {
             get {
                 return ResourceManager.GetString("Assert_NotGreaterThan", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not greater than or equal to &apos;{2}&apos;..
+        /// </summary>
+        internal static string Assert_NotGreaterThanOrEqualTo {
+            get {
+                return ResourceManager.GetString("Assert_NotGreaterThanOrEqualTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not less than &apos;{2}&apos;..
+        /// </summary>
+        internal static string Assert_NotLessThan {
+            get {
+                return ResourceManager.GetString("Assert_NotLessThan", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not less than or equal to &apos;{2}&apos;..
+        /// </summary>
+        internal static string Assert_NotLessThanOrEqualTo {
+            get {
+                return ResourceManager.GetString("Assert_NotLessThanOrEqualTo", resourceCulture);
             }
         }
         
