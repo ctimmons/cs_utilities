@@ -197,6 +197,19 @@ namespace Utilities.Core
       return value;
     }
 
+    public static AssertionContext<String> NotOnlyWhitespace(this String value)
+    {
+      return (new AssertionContext<String>(value)).NotOnlyWhitespace();
+    }
+
+    public static AssertionContext<String> NotOnlyWhitespace(this AssertionContext<String> value)
+    {
+      if (value.Value.Trim() != "")
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringIsAllWhitespace, value.Name));
+    }
+
     public static AssertionContext<T> NotNull<T>(this T value)
       where T : class
     {
@@ -326,6 +339,36 @@ namespace Utilities.Core
         return value;
       else
         throw new ArgumentException(String.Format(Properties.Resources.Assert_EqualTo, value.Name, value.Value, other));
+    }
+
+    public static AssertionContext<T> BetweenInclusive<T>(this T value, T lowerBound, T upperBound)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).BetweenInclusive(lowerBound, upperBound);
+    }
+
+    public static AssertionContext<T> BetweenInclusive<T>(this AssertionContext<T> value, T lowerBound, T upperBound)
+      where T : IComparable<T>
+    {
+      if ((value.Value.CompareTo(lowerBound) >= 0) && (value.Value.CompareTo(upperBound) <= 0))
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_BetweenInclusive, value.Name, value.Value, lowerBound, upperBound));
+    }
+
+    public static AssertionContext<T> BetweenExclusive<T>(this T value, T lowerBound, T upperBound)
+      where T : IComparable<T>
+    {
+      return (new AssertionContext<T>(value)).BetweenExclusive(lowerBound, upperBound);
+    }
+
+    public static AssertionContext<T> BetweenExclusive<T>(this AssertionContext<T> value, T lowerBound, T upperBound)
+      where T : IComparable<T>
+    {
+      if ((value.Value.CompareTo(lowerBound) > 0) && (value.Value.CompareTo(upperBound) < 0))
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_BetweenExclusive, value.Name, value.Value, lowerBound, upperBound));
     }
   }
 

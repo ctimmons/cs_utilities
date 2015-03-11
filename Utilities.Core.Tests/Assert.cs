@@ -2,9 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using NUnit.Framework;
 
@@ -17,8 +14,20 @@ namespace Utilities.Core.UnitTests
     public void NameTest()
     {
       var s = "Hello, world!";
-      var assertionContainer = s.Name("s");
-      Assert.AreEqual("s", assertionContainer.Name);
+      Assert.AreEqual("s", s.Name("s").Name);
+      Assert.AreNotEqual("x", s.Name("s").Name);
+    }
+
+    [Test]
+    public void NotOnlyWhitespaceTest()
+    {
+      var s = "Hello, world!";
+      Assert.DoesNotThrow(() => s.NotOnlyWhitespace());
+      Assert.DoesNotThrow(() => s.Name("s").NotOnlyWhitespace());
+
+      s = "  \t\r\n ";
+      Assert.Throws<ArgumentException>(() => s.NotOnlyWhitespace());
+      Assert.Throws<ArgumentException>(() => s.Name("s").NotOnlyWhitespace());
     }
 
     [Test]
@@ -125,6 +134,52 @@ namespace Utilities.Core.UnitTests
       Assert.DoesNotThrow(() => later.Name("later").NotEqualTo(earlier));
       Assert.Throws<ArgumentException>(() => earlier.NotEqualTo(earlier));
       Assert.Throws<ArgumentException>(() => earlier.Name("earlier").NotEqualTo(earlier));
+    }
+
+    [Test]
+    public void BetweenInclusiveTest()
+    {
+      var lowerBound = 5;
+      var upperBound = 10;
+
+      var value = 7;
+      Assert.DoesNotThrow(() => value.BetweenInclusive(lowerBound, upperBound));
+      Assert.DoesNotThrow(() => value.Name("value").BetweenInclusive(lowerBound, upperBound));
+
+      value = lowerBound;
+      Assert.DoesNotThrow(() => value.BetweenInclusive(lowerBound, upperBound));
+      Assert.DoesNotThrow(() => value.Name("value").BetweenInclusive(lowerBound, upperBound));
+
+      value = upperBound;
+      Assert.DoesNotThrow(() => value.BetweenInclusive(lowerBound, upperBound));
+      Assert.DoesNotThrow(() => value.Name("value").BetweenInclusive(lowerBound, upperBound));
+
+      value = 42;
+      Assert.Throws<ArgumentException>(() => value.BetweenInclusive(lowerBound, upperBound));
+      Assert.Throws<ArgumentException>(() => value.Name("value").BetweenInclusive(lowerBound, upperBound));
+    }
+
+    [Test]
+    public void BetweenExclusiveTest()
+    {
+      var lowerBound = 5;
+      var upperBound = 10;
+
+      var value = 7;
+      Assert.DoesNotThrow(() => value.BetweenExclusive(lowerBound, upperBound));
+      Assert.DoesNotThrow(() => value.Name("value").BetweenExclusive(lowerBound, upperBound));
+
+      value = lowerBound;
+      Assert.Throws<ArgumentException>(() => value.BetweenExclusive(lowerBound, upperBound));
+      Assert.Throws<ArgumentException>(() => value.Name("value").BetweenExclusive(lowerBound, upperBound));
+
+      value = upperBound;
+      Assert.Throws<ArgumentException>(() => value.BetweenExclusive(lowerBound, upperBound));
+      Assert.Throws<ArgumentException>(() => value.Name("value").BetweenExclusive(lowerBound, upperBound));
+
+      value = 42;
+      Assert.Throws<ArgumentException>(() => value.BetweenExclusive(lowerBound, upperBound));
+      Assert.Throws<ArgumentException>(() => value.Name("value").BetweenExclusive(lowerBound, upperBound));
     }
   }
 }

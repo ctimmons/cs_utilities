@@ -216,6 +216,12 @@
   <data name="StringUtils_BadIndent" xml:space="preserve">
     <value>The 'indent' parameter has a value of '{0}'.  It must be between 0 and Int32.MaxValue, inclusive.</value>
   </data>
+  <data name="Assert_BetweenExclusive" xml:space="preserve">
+    <value>The parameter '{0}', which has value '{1}', is not between '{2}' and '{3}' (exclusive).</value>
+  </data>
+  <data name="Assert_BetweenInclusive" xml:space="preserve">
+    <value>The parameter '{0}', which has value '{1}', is not between '{2}' and '{3}' (inclusive).</value>
+  </data>
   <data name="Assert_ContainerIsNotEmpty" xml:space="preserve">
     <value>The parameter '{0}' is not empty.</value>
   </data>
@@ -236,5 +242,8 @@
   </data>
   <data name="Assert_NotLessThanOrEqualTo" xml:space="preserve">
     <value>The parameter '{0}', which has value '{1}', is not less than or equal to '{2}'.</value>
+  </data>
+  <data name="Assert_StringIsAllWhitespace" xml:space="preserve">
+    <value>The string parameter '{0}' consists soley of whitespace.</value>
   </data>
 </root>

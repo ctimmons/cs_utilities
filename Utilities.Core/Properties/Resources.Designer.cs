@@ -61,6 +61,24 @@ namespace Utilities.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not between &apos;{2}&apos; and &apos;{3}&apos; (exclusive)..
+        /// </summary>
+        internal static string Assert_BetweenExclusive {
+            get {
+                return ResourceManager.GetString("Assert_BetweenExclusive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is not between &apos;{2}&apos; and &apos;{3}&apos; (inclusive)..
+        /// </summary>
+        internal static string Assert_BetweenInclusive {
+            get {
+                return ResourceManager.GetString("Assert_BetweenInclusive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The parameter &apos;{0}&apos; is not empty..
         /// </summary>
         internal static string Assert_ContainerIsNotEmpty {
@@ -129,6 +147,15 @@ namespace Utilities.Core.Properties {
         internal static string Assert_StringInconsistentLengthParameters {
             get {
                 return ResourceManager.GetString("Assert_StringInconsistentLengthParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The string parameter &apos;{0}&apos; consists soley of whitespace..
+        /// </summary>
+        internal static string Assert_StringIsAllWhitespace {
+            get {
+                return ResourceManager.GetString("Assert_StringIsAllWhitespace", resourceCulture);
             }
         }
         
