@@ -40,152 +40,29 @@ namespace Utilities.Core
 
       public String GetFileContents(String filename)
       {
-        filename.Check("filename", StringAssertion.NotNull | StringAssertion.NotZeroLength);
+        filename.Name("filename").NotNull().NotEmpty();
               
         // more code here...
       }
 
-    Or even shorter, since checking a string for null-ness and length is so common:
-
-      public String GetFileContents(String filename)
-      {
-        filename.Check("filename");
-              
-        // more code here...
-      }
-
-    That's what this class provides - extension methods on .Net's string type
-    that reduce many of those if/then statements to simple function calls.
+    That's what this class provides - extension methods on .Net's IEnumerable and IComparable
+    interfaces that reduce many of those if/then statements to a simple chain of function calls.
   
-    One thing to note is these string extension methods will work if the string is null and the null has a string type.
+    One thing to note is these string extension methods will work if the type is null.
   
-      // The following three lines of code are equivalent.
+      // The following lines of code are equivalent.
           
-      AssertUtils.Check(null, "s");
+      String s = null;  s.Name("s").NotNull();
           
-      ((String) null).Check("s");
-          
-      String s = null; s.Check("s");
-          
-      // The compiler will emit an error if an untyped null is used.
-      null.Check("s");
+      ((String) null).Name("s").NotNull();
 
-    
-  // Examples ///////////////////////////////////////////////////////////////
 
-    String s = null;
-        
-    // The default is to apply StringAssertion.All.
-    // An ArgumentNullException will be raised because s is null.
-    s.Check("s");
-
-    s = "";
-
-    // An ArgumentException will be raised because s is empty.
-    s.Check("s");
-
-    s = "   ";
-
-    // An ArgumentException will be raised because s consists only of whitespace.
-    s.Check("s");
-
-    // No exception will be raised because, even though
-    // s consists only of whitespace, it has a length
-    // greater than zero.
-    s.Check("s", StringAssertion.NotNull | StringAssertion.NotZeroLength);
-
-    s = "123";
-
-    // An ArgumentException will be raised.
-    // Because StringAssertion.None is specified,
-    // s will not be checked for null-ness, zero length or if it consists only of whitespace.
-    // Instead, s will be checked to see if its length is 5, which fails because
-    // s is only 3 characters long.
-    s.Check("s", StringAssertion.None, 5);
-
-    // The last two Int32 parameters are the minimum and
-    // maximum allowed length (inclusive) of s.
-    // Because s is 3 characters long, no exception will be raised.
-    s.Check("s", StringAssertion.None, 3, 5);
-
-    // Other types can be checked for null-ness with the CheckForNull<T> method.
-    StreamReader sr = null;
-    sr.CheckForNull("sr");
+    See the unit tests in Utilities.Core.Tests/Assert.cs for usage examples.
 
   */
 
   public static class AssertUtils
   {
-    private static void InternalCheckString(Int32 stackFrameLevel, String value, String name, StringAssertion stringAssertion, Int32 minimumLength, Int32 maximumLength)
-    {
-      name.CheckForNull("name");
-
-      if (!stringAssertion.HasFlag(StringAssertion.None))
-      {
-        if (stringAssertion.HasFlag(StringAssertion.NotNull))
-          value.CheckForNull("value");
-
-        if (stringAssertion.HasFlag(StringAssertion.NotOnlyWhitespace))
-          if (String.IsNullOrWhiteSpace(value))
-            throw new ArgumentException(String.Format(Properties.Resources.Assert_StringNotWhitespace, name), name);
-
-        /* value has to be non-null before its length can be checked. */
-        value.CheckForNull("value");
-        if (stringAssertion.HasFlag(StringAssertion.NotZeroLength))
-          if (value.Length == 0)
-            throw new ArgumentException(String.Format(Properties.Resources.Assert_StringNotZeroLength, name), name);
-      }
-
-      if (minimumLength > maximumLength)
-        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringInconsistentLengthParameters, minimumLength, maximumLength));
-
-      /* All of the following checks require value to be non-null. */
-      value.CheckForNull("value");
-
-      if ((minimumLength == maximumLength) && (value.Length != minimumLength))
-        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringLengthsNotEqual, name, value.Length, minimumLength), name);
-
-      if (value.Length < minimumLength)
-        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringLengthLessThanMinimum, name, value.Length, minimumLength), name);
-
-      if (value.Length > maximumLength)
-        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringLengthGreaterThanMaximum, name, value.Length, maximumLength), name);
-    }
-
-    public static void Check(this String value, String name)
-    {
-      InternalCheckString(3, value, name, StringAssertion.All, 0, Int32.MaxValue);
-    }
-
-    public static void Check(this String value, String name, StringAssertion stringAssertion)
-    {
-      InternalCheckString(3, value, name, stringAssertion, 0, Int32.MaxValue);
-    }
-
-    public static void Check(this String value, String name, StringAssertion stringAssertion, Int32 length)
-    {
-      InternalCheckString(3, value, name, stringAssertion, length, length);
-    }
-
-    public static void Check(this String value, String name, StringAssertion stringAssertion, Int32 minimumLength, Int32 maximumLength)
-    {
-      InternalCheckString(3, value, name, stringAssertion, minimumLength, maximumLength);
-    }
-
-    public static void CheckForNull<T>(this T value, String name)
-    {
-      if (name == null)
-        throw new ArgumentNullException("name");
-
-      if (value == null)
-        throw new ArgumentNullException(name);
-    }
-
-    //////////////////////////////////////////////////////////////
-    // In the process of converting these methods to a "fluent" API.
-    // Consider the above code obsolete.
-    //////////////////////////////////////////////////////////////
-
     public static AssertionContext<T> Name<T>(this T value, String name)
     {
       return (new AssertionContext<T>(value)).Name(name);
@@ -208,6 +85,16 @@ namespace Utilities.Core
         return value;
       else
         throw new ArgumentException(String.Format(Properties.Resources.Assert_StringIsAllWhitespace, value.Name));
+    }
+
+    public static AssertionContext<String> NotNullEmptyOrOnlyWhitespace(this String value)
+    {
+      return (new AssertionContext<String>(value)).NotNullEmptyOrOnlyWhitespace();
+    }
+
+    public static AssertionContext<String> NotNullEmptyOrOnlyWhitespace(this AssertionContext<String> value)
+    {
+      return value.NotNull().NotEmpty().NotOnlyWhitespace();
     }
 
     public static AssertionContext<T> NotNull<T>(this T value)
@@ -369,6 +256,77 @@ namespace Utilities.Core
         return value;
       else
         throw new ArgumentException(String.Format(Properties.Resources.Assert_BetweenExclusive, value.Name, value.Value, lowerBound, upperBound));
+    }
+
+    /* Old, obsolete code. */
+    private static void InternalCheckString(Int32 stackFrameLevel, String value, String name, StringAssertion stringAssertion, Int32 minimumLength, Int32 maximumLength)
+    {
+      name.CheckForNull("name");
+
+      if (!stringAssertion.HasFlag(StringAssertion.None))
+      {
+        if (stringAssertion.HasFlag(StringAssertion.NotNull))
+          value.CheckForNull("value");
+
+        if (stringAssertion.HasFlag(StringAssertion.NotOnlyWhitespace))
+          if (String.IsNullOrWhiteSpace(value))
+            throw new ArgumentException(String.Format(Properties.Resources.Assert_StringNotWhitespace, name), name);
+
+        /* value has to be non-null before its length can be checked. */
+        value.CheckForNull("value");
+        if (stringAssertion.HasFlag(StringAssertion.NotZeroLength))
+          if (value.Length == 0)
+            throw new ArgumentException(String.Format(Properties.Resources.Assert_StringNotZeroLength, name), name);
+      }
+
+      if (minimumLength > maximumLength)
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringInconsistentLengthParameters, minimumLength, maximumLength));
+
+      /* All of the following checks require value to be non-null. */
+      value.CheckForNull("value");
+
+      if ((minimumLength == maximumLength) && (value.Length != minimumLength))
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringLengthsNotEqual, name, value.Length, minimumLength), name);
+
+      if (value.Length < minimumLength)
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringLengthLessThanMinimum, name, value.Length, minimumLength), name);
+
+      if (value.Length > maximumLength)
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_StringLengthGreaterThanMaximum, name, value.Length, maximumLength), name);
+    }
+
+    [Obsolete("Use new fluent assertion API instead.")]
+    public static void Check(this String value, String name)
+    {
+      InternalCheckString(3, value, name, StringAssertion.All, 0, Int32.MaxValue);
+    }
+
+    [Obsolete("Use new fluent assertion API instead.")]
+    public static void Check(this String value, String name, StringAssertion stringAssertion)
+    {
+      InternalCheckString(3, value, name, stringAssertion, 0, Int32.MaxValue);
+    }
+
+    [Obsolete("Use new fluent assertion API instead.")]
+    public static void Check(this String value, String name, StringAssertion stringAssertion, Int32 length)
+    {
+      InternalCheckString(3, value, name, stringAssertion, length, length);
+    }
+
+    [Obsolete("Use new fluent assertion API instead.")]
+    public static void Check(this String value, String name, StringAssertion stringAssertion, Int32 minimumLength, Int32 maximumLength)
+    {
+      InternalCheckString(3, value, name, stringAssertion, minimumLength, maximumLength);
+    }
+
+    [Obsolete("Use new fluent assertion API instead.")]
+    public static void CheckForNull<T>(this T value, String name)
+    {
+      if (name == null)
+        throw new ArgumentNullException("name");
+
+      if (value == null)
+        throw new ArgumentNullException(name);
     }
   }
 

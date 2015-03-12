@@ -105,7 +105,7 @@ namespace Utilities.Core
     /// </exception>
     public static void ShellExecute(String command)
     {
-      command.Check("command");
+      command.Name("command").NotNullEmptyOrOnlyWhitespace();
 
       var browser = new Process();
       browser.StartInfo.FileName = command;

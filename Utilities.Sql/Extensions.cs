@@ -129,7 +129,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this String xml)
     {
-      xml.Check("xml");
+      xml.Name("xml").NotNullEmptyOrOnlyWhitespace();
 
       return xml.GetSqlXml(new XmlReaderSettings() { ValidationType = ValidationType.None });
     }
@@ -143,8 +143,8 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this String xml, XmlSchemaSet xmlSchemaSet)
     {
-      xml.Check("xml");
-      xmlSchemaSet.CheckForNull("xmlSchemaSet");
+      xml.Name("xml").NotNullEmptyOrOnlyWhitespace();
+      xmlSchemaSet.Name("xmlSchemaSet").NotNull();
 
       return xml.GetSqlXml(new XmlReaderSettings() { ValidationType = ValidationType.Schema, Schemas = xmlSchemaSet });
     }
@@ -158,8 +158,8 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this String xml, XmlReaderSettings xmlReaderSettings)
     {
-      xml.Check("xml");
-      xmlReaderSettings.CheckForNull("xmlReaderSettings");
+      xml.Name("xml").NotNullEmptyOrOnlyWhitespace();
+      xmlReaderSettings.Name("xmlReaderSettings").NotNull();
 
       using (var stringReader = new StringReader(xml))
         using (var xmlReader = XmlReader.Create(stringReader, xmlReaderSettings))
@@ -174,8 +174,8 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this XElement xElement, XmlSchemaSet xmlSchemaSet)
     {
-      xElement.CheckForNull("xElement");
-      xmlSchemaSet.CheckForNull("xmlSchemaSet");
+      xElement.Name("xElement").NotNull();
+      xmlSchemaSet.Name("xmlSchemaSet").NotNull();
 
       xElement.Validate(xElement.GetSchemaInfo().SchemaElement, xmlSchemaSet, null /* Throw exceptions on validation error. */);
 
@@ -189,7 +189,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this XElement xElement)
     {
-      xElement.CheckForNull("xElement");
+      xElement.Name("xElement").NotNull();
 
       using (var xmlReader = xElement.CreateReader())
         return new SqlXml(xmlReader);
@@ -203,8 +203,8 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this XDocument xDocument, XmlSchemaSet xmlSchemaSet)
     {
-      xDocument.CheckForNull("xDocument");
-      xmlSchemaSet.CheckForNull("xmlSchemaSet");
+      xDocument.Name("xDocument").NotNull();
+      xmlSchemaSet.Name("xmlSchemaSet").NotNull();
 
       xDocument.Validate(xmlSchemaSet, null /* Throw exceptions on validation error. */);
 
@@ -218,7 +218,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this XDocument xDocument)
     {
-      xDocument.CheckForNull("xDocument");
+      xDocument.Name("xDocument").NotNull();
 
       using (var xmlReader = xDocument.CreateReader())
         return new SqlXml(xmlReader);
@@ -232,7 +232,7 @@ namespace Utilities.Sql
     /// <returns></returns>
     public static SqlXml GetSqlXml(this XmlDocument xmlDocument, XmlNodeType xmlNodeType)
     {
-      xmlDocument.CheckForNull("xmlDocument");
+      xmlDocument.Name("xmlDocument").NotNull();
 
       if ((xmlDocument.Schemas != null) && (xmlDocument.Schemas.Count > 0))
         xmlDocument.Validate(null);

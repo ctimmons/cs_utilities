@@ -15,7 +15,7 @@ namespace Utilities.Internet
   {
     public static String GetUrlAsRoot(String url)
     {
-      url.Check("url", StringAssertion.NotNull);
+      url.Name("url").NotNull();
 
       if (url.StartsWith("~/"))
         return url;

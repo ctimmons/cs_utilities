@@ -895,7 +895,8 @@ SELECT
     /// <param name="sqlParameters"></param>
     public StoredProcedure AddStoredProcedure(String name, Int32 versionNumber, params SqlParameter[] sqlParameters)
     {
-      name.Check("name");
+      name.Name("name").NotNullEmptyOrOnlyWhitespace();
+
       if (versionNumber < 1)
         throw new ArgumentOutOfRangeExceptionFmt("versionNumber must be greater than zero.", versionNumber);
 

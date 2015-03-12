@@ -35,7 +35,7 @@ namespace Utilities.Core
 
     public static String GetContentTypeFromFileExtension(String filename)
     {
-      filename.Check("filename");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
 
       var fileExtension = GetFileExtension(filename);
 
@@ -47,7 +47,7 @@ namespace Utilities.Core
 
     public static ImageFormat GetImageFormatFromFileExtension(String filename)
     {
-      filename.Check("filename");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
 
       var fileExtension = GetFileExtension(filename);
 

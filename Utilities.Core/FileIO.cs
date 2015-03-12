@@ -191,19 +191,21 @@ namespace Utilities.Core
 
     public static void DeleteIfEmpty(this DirectoryInfo di)
     {
+      di.Name("di").NotNull();
+
       if (di.IsDirectoryEmpty())
         di.Delete();
     }
 
     public static void SafelyCreateEmptyFile(String filename)
     {
-      filename.Check("filename");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
       CreateEmptyFile(filename, Overwrite.No);
     }
 
     public static void CreateEmptyFile(String filename, Overwrite overwrite)
     {
-      filename.Check("filename");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
 
       if ((overwrite == Overwrite.Yes) || !File.Exists(filename))
       {
@@ -218,7 +220,7 @@ namespace Utilities.Core
 
     public static void Touch(String filename, DateTime timestamp)
     {
-      filename.Check("filename");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
 
       File.SetCreationTime(filename, timestamp);
       File.SetLastAccessTime(filename, timestamp);
@@ -227,8 +229,8 @@ namespace Utilities.Core
 
     public static void WriteMemoryStreamToFile(String filename, MemoryStream ms)
     {
-      filename.Check("filename");
-      ms.CheckForNull("ms");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
+      ms.Name("ms").NotNull();
 
       using (var fs = File.Create(filename))
         ms.WriteTo(fs);
@@ -236,13 +238,13 @@ namespace Utilities.Core
 
     public static void DeleteEmptyDirectories(String path)
     {
-      path.Check("path");
+      path.Name("path").NotNullEmptyOrOnlyWhitespace();
       DeleteEmptyDirectories(new DirectoryInfo(path));
     }
     
     public static void DeleteEmptyDirectories(DirectoryInfo directoryInfo)
     {
-      directoryInfo.CheckForNull("directoryInfo");
+      directoryInfo.Name("directoryInfo").NotNull();
 
       foreach (var subDirectory in directoryInfo.EnumerateDirectories())
       {
@@ -254,13 +256,13 @@ namespace Utilities.Core
 
     public static Boolean IsDirectoryEmpty(String path)
     {
-      path.Check("path");
+      path.Name("path").NotNullEmptyOrOnlyWhitespace();
       return IsDirectoryEmpty(new DirectoryInfo(path));
     }
 
     public static Boolean IsDirectoryEmpty(this DirectoryInfo directoryInfo)
     {
-      directoryInfo.CheckForNull("directoryInfo");
+      directoryInfo.Name("directoryInfo").NotNull();
       return !directoryInfo.EnumerateFileSystemInfos().Any();
     }
 
@@ -301,14 +303,14 @@ namespace Utilities.Core
 
     public static String GetMD5Checksum(String filename)
     {
-      filename.Check("filename");
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
       using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
         return GetMD5Checksum(fs);
     }
 
     public static String GetMD5Checksum(Stream stream)
     {
-      stream.CheckForNull("stream");
+      stream.Name("stream").NotNull();
 
       return _md5.ComputeHash(stream).Select(c => c.ToString("X2")).Join("");
     }
@@ -322,7 +324,7 @@ namespace Utilities.Core
 
     public static String DuplicateSeparators(this String directory)
     {
-      directory.Check("directory", StringAssertion.NotNull);
+      directory.Name("directory").NotNull();
       return _multipleBackslashes.Replace(directory, @"\\");
     }
 
@@ -333,13 +335,13 @@ namespace Utilities.Core
 
     public static String AddTrailingSeparator(this String directory)
     {
-      directory.Check("directory", StringAssertion.NotNull);
+      directory.Name("directory").NotNull();
       return directory.RemoveTrailingSeparator() + Path.DirectorySeparatorChar.ToString();
     }
 
     public static String RemoveTrailingSeparator(this String directory)
     {
-      directory.Check("directory", StringAssertion.NotNull);
+      directory.Name("directory").NotNull();
       return directory.TrimEnd().TrimEnd(DirectorySeparators);
     }
 

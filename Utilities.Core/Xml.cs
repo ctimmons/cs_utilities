@@ -16,7 +16,7 @@ namespace Utilities.Core
   {
     public static String GetFormattedXml(String xml)
     {
-      xml.Check("xml");
+      xml.Name("xml").NotNullEmptyOrOnlyWhitespace();
 
       using (var sw = new StringWriter())
       {
@@ -62,8 +62,6 @@ namespace Utilities.Core
 
     public static XDocument SerializeObjectToXDocument<T>(T value)
     {
-      value.CheckForNull("value");
-
       var doc = new XDocument();
       using (var writer = doc.CreateWriter())
         XmlSerializerCache.GetXmlSerializer(typeof(T)).Serialize(writer, value);

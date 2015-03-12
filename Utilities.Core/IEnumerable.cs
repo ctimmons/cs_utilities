@@ -15,8 +15,8 @@ namespace Utilities.Core
         so this method comes in handy in places besides List<T>. */
     public static void ForEach<T>(this IEnumerable<T> sequence, Action<T> action)
     {
-      sequence.CheckForNull("sequence");
-      action.CheckForNull("action");
+      sequence.Name("sequence").NotNull();
+      action.Name("action").NotNull();
 
       foreach (T item in sequence)
         action(item);
@@ -24,8 +24,8 @@ namespace Utilities.Core
 
     public static void ForEachI<T>(this IEnumerable<T> sequence, Action<T, Int32> action)
     {
-      sequence.CheckForNull("sequence");
-      action.CheckForNull("action");
+      sequence.Name("sequence").NotNull();
+      action.Name("action").NotNull();
 
       var i = 0;
       foreach (T item in sequence)
@@ -34,15 +34,15 @@ namespace Utilities.Core
 
     public static String Join(this IEnumerable<String> values, String separator)
     {
-      values.CheckForNull("values");
-      separator.Check("separator", StringAssertion.NotNull);
+      values.Name("values").NotNull();
+      separator.Name("separator").NotNull();
 
       return String.Join(separator, values);
     }
 
     public static IEnumerable<String> Lines(this TextReader textReader)
     {
-      textReader.CheckForNull("textreader");
+      textReader.Name("textreader").NotNull();
 
       String line = null;
       while ((line = textReader.ReadLine()) != null)

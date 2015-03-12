@@ -41,7 +41,7 @@ namespace Utilities.Core
     public Log(TextWriter writer)
       : this()
     {
-      writer.CheckForNull("writer");
+      writer.Name("writer").NotNull();
       this._writer = writer;
     }
 

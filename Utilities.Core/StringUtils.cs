@@ -40,6 +40,8 @@ namespace Utilities.Core
     /// </summary>
     public static Int32 IndexOfCI(this String source, String searchValue)
     {
+      source.Name("source").NotNull();
+      searchValue.Name("searchValue").NotNull();
       return source.IndexOf(searchValue, StringComparison.CurrentCultureIgnoreCase);
     }
 
@@ -48,6 +50,8 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean ContainsCI(this String source, String searchValue)
     {
+      source.Name("source").NotNull();
+      searchValue.Name("searchValue").NotNull();
       return (source.IndexOfCI(searchValue) > -1);
     }
 
@@ -64,7 +68,7 @@ namespace Utilities.Core
     /// </summary>
     public static String Repeat(this String value, Int32 count)
     {
-      value.Check("value", StringAssertion.NotNull);
+      value.Name("value").NotNull();
       return (count < 1) ? "" : (new StringBuilder(value.Length * count)).Insert(0, value, count).ToString();
     }
 
@@ -76,7 +80,7 @@ namespace Utilities.Core
     /// </summary>
     public static Char LastChar(this String value)
     {
-      value.Check("value", StringAssertion.NotNull | StringAssertion.NotZeroLength);
+      value.Name("value").NotNull().NotEmpty();
       return value[value.Length - 1];
     }
 
@@ -88,7 +92,7 @@ namespace Utilities.Core
     /// </summary>
     public static String LastWord(this String value)
     {
-      value.Check("value", StringAssertion.NotNull | StringAssertion.NotZeroLength);
+      value.Name("value").NotNull().NotEmpty();
       var lastIndexOfSpace = value.Trim().LastIndexOf(' ');
       return (lastIndexOfSpace == -1) ? value : value.Substring(lastIndexOfSpace + 1);
     }
@@ -101,9 +105,9 @@ namespace Utilities.Core
     /// </summary>
     public static String SurroundWith(this String value, String c)
     {
-      value.Check("value", StringAssertion.NotNull);
-      c.Check("c", StringAssertion.NotNull);
-      return c + value + c;
+      value.Name("value").NotNull();
+      c.Name("c").NotNull();
+      return String.Concat(c, value, c);
     }
 
     /// <summary>
@@ -114,7 +118,7 @@ namespace Utilities.Core
     /// </summary>
     public static String MD5Checksum(this String value)
     {
-      value.Check("value", StringAssertion.NotNull);
+      value.Name("value").NotNull();
       return MD5Checksum(value, Encoding.ASCII);
     }
 
@@ -126,8 +130,8 @@ namespace Utilities.Core
     /// </summary>
     public static String MD5Checksum(this String value, Encoding encoding)
     {
-      value.Check("value", StringAssertion.NotNull);
-      encoding.CheckForNull("encoding");
+      value.Name("value").NotNull();
+      encoding.Name("encoding").NotNull();
 
       Byte[] bytes = encoding.GetBytes(value);
       using (var ms = new MemoryStream(bytes))
@@ -142,8 +146,8 @@ namespace Utilities.Core
     /// </summary>
     public static String RemovePrefix(this String value, String prefix)
     {
-      value.Check("value", StringAssertion.NotNull);
-      prefix.Check("prefix", StringAssertion.NotNull);
+      value.Name("value").NotNull();
+      prefix.Name("prefix").NotNull();
 
       if (value.StartsWith(prefix, StringComparison.CurrentCulture))
         return value.Substring(prefix.Length);
@@ -159,8 +163,8 @@ namespace Utilities.Core
     /// </summary>
     public static String RemoveSuffix(this String value, String suffix)
     {
-      value.Check("value", StringAssertion.NotNull);
-      suffix.Check("suffix", StringAssertion.NotNull);
+      value.Name("value").NotNull();
+      suffix.Name("suffix").NotNull();
 
       if ((suffix.Length <= value.Length) && (value.EndsWith(suffix, StringComparison.CurrentCulture)))
         return value.Substring(0, value.Length - suffix.Length);
@@ -187,7 +191,7 @@ namespace Utilities.Core
     /// </summary>
     public static String AddTrailingForwardSlash(this String value)
     {
-      value.Check("value", StringAssertion.NotNull);
+      value.Name("value").NotNull();
       return value.EndsWith("/") ? value : value + "/";
     }
 
@@ -201,7 +205,7 @@ namespace Utilities.Core
     /// </summary>
     public static String RemoveHtml(this String value)
     {
-      value.Check("value", StringAssertion.NotNull);
+      value.Name("value").NotNull();
       return _stripHtmlRegex.Replace(value, "");
     }
 
@@ -215,7 +219,7 @@ namespace Utilities.Core
     /// </summary>
     public static String RemoveWhitespace(this String value)
     {
-      value.Check("value", StringAssertion.NotNull);
+      value.Name("value").NotNull();
       return _whitespaceRegex.Replace(value, "");
     }
 
@@ -227,7 +231,7 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean IsEmpty(this String value)
     {
-      value.CheckForNull("value");
+      value.Name("value").NotNull();
       return String.IsNullOrWhiteSpace(value);
     }
 
@@ -250,7 +254,7 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean AreAllEmpty(this List<String> values)
     {
-      values.CheckForNull("strings");
+      values.Name("values").NotNull();
       return values.All(s => s.IsEmpty());
     }
 
@@ -262,7 +266,7 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean AreAnyEmpty(this List<String> values)
     {
-      values.CheckForNull("strings");
+      values.Name("values").NotNull();
       return values.Any(s => s.IsEmpty());
     }
 
@@ -275,7 +279,7 @@ namespace Utilities.Core
     /// </summary>
     public static String Indent(this String value, Int32 indent)
     {
-      value.Check("value", StringAssertion.NotNull);
+      value.Name("value").NotNull();
       
       /* A string may consist of more than one line (i.e. lines separated by carriage returns).
           Return a string in which all lines are indented by the specified number of spaces. */
@@ -296,6 +300,8 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean EqualsCI(this String value, String other)
     {
+      value.Name("value").NotNull();
+      other.Name("other").NotNull();
       return value.Equals(other, StringComparison.CurrentCultureIgnoreCase);
     }
 
@@ -312,6 +318,8 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean StartsWithCI(this String value, String other)
     {
+      value.Name("value").NotNull();
+      other.Name("other").NotNull();
       return value.StartsWith(other, StringComparison.CurrentCultureIgnoreCase);
     }
   }
