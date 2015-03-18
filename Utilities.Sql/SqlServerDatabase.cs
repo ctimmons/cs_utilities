@@ -310,7 +310,7 @@ namespace Utilities.Sql
 
   public static class IdentifierHelper
   {
-    private static List<String> _csharpKeywords =
+    private static readonly List<String> _csharpKeywords =
       new List<String>()
       {
         /* Keywords. */
@@ -425,16 +425,21 @@ namespace Utilities.Sql
         "await"
       };
 
-    private static List<String> _fsharpKeywords =
+    private static readonly List<String> _fsharpKeywords =
       new List<String>()
       {
         /* Keywords. */
+        "_",
         "abstract",
         "and",
         "as",
         "assert",
+        "asr",
         "base",
         "begin",
+        "bool",
+        "bytearray",
+        "char",
         "class",
         "default",
         "delegate",
@@ -446,9 +451,12 @@ namespace Utilities.Sql
         "else",
         "end",
         "exception",
+        "explicit",
         "extern",
         "false",
         "finally",
+        "float32",
+        "float64",
         "for",
         "fun",
         "function",
@@ -457,17 +465,32 @@ namespace Utilities.Sql
         "in",
         "inherit",
         "inline",
+        "instance",
+        "int",
+        "int8",
+        "int16",
+        "int32",
+        "int64",
         "interface",
         "internal",
+        "land",
         "lazy",
         "let",
+        "lor",
+        "lsl",
+        "lsr",
+        "lxor",
         "match",
         "member",
+        "method",
+        "mod",
         "module",
         "mutable",
         "namespace",
+        "native",
         "new",
         "null",
+        "object",
         "of",
         "open",
         "or",
@@ -478,15 +501,26 @@ namespace Utilities.Sql
         "return",
         "sig",
         "static",
+        "string",
         "struct",
         "then",
         "to",
         "true",
         "try",
         "type",
+        "uint",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+        "unmanaged",
+        "unsigned",
         "upcast",
         "use",
         "val",
+        "value",
+        "valuetype",
+        "vararg",
         "void",
         "when",
         "while",
@@ -524,7 +558,7 @@ namespace Utilities.Sql
         "volatile"
       };
 
-    private static List<String> _visualBasicKeywords =
+    private static readonly List<String> _visualBasicKeywords =
       new List<String>()
       {
         /* Keywords. */
@@ -545,6 +579,8 @@ namespace Utilities.Sql
         "CDec",
         "Char",        "CInt",
         "Class",
+        "Class_Finalize",
+        "Class_Initialize",
         "CLng",
         "CObj",        "Const",
         "Continue",
@@ -707,7 +743,7 @@ namespace Utilities.Sql
     /// to determine if a given string is a valid identifier?</para>
     /// <para>There are several reasons.  One is that .Net does not provide a corresponding F# code provider.
     /// The second reason is that the code providers' CreateValidIdentifier() method
-    /// is written in a very naive way.  CreateValidIdentifier("42 is the answer!") returns "42 is the answer!", which is laughably wrong.
+    /// is written in a very naive way.  C#'s CreateValidIdentifier("42 is the answer!") returns "42 is the answer!", which is laughably wrong.
     /// A third reason is that the code providers' IsValidIdentifier() doesn't recognize all of the keywords/reserved words I think it should, like all of the
     /// LINQ keywords, and new keywords like C#'s async and await. (I understand these aren't really keywords, but they certainly shouldn't
     /// be treated as valid identifiers).</para>
@@ -729,6 +765,12 @@ namespace Utilities.Sql
           : StringComparison.CurrentCultureIgnoreCase;
 
       if (_targetLanguageKeywords.Exists(keyword => String.Equals(keyword, result, stringComparison)))
+        result = "_" + result;
+
+      /* In C#, any identifier that starts with two underscores is assumed to be a special identifier
+         reserved for the compiler.  Prepend another underscore to prevent C# compiler from choking
+         on the generated code. */
+      if (_configuration.TargetLanguage.IsCSharp() && (result.Length > 2) && result.StartsWith("__") && (result[2] != '_'))
         result = "_" + result;
 
       return result;
