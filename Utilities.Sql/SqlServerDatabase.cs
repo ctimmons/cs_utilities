@@ -929,18 +929,10 @@ SELECT
       return AddStoredProcedure(name, 1, sqlParameters);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="versionNumber"></param>
-    /// <param name="sqlParameters"></param>
     public StoredProcedure AddStoredProcedure(String name, Int32 versionNumber, params SqlParameter[] sqlParameters)
     {
       name.Name("name").NotNullEmptyOrOnlyWhitespace();
-
-      if (versionNumber < 1)
-        throw new ArgumentOutOfRangeExceptionFmt("versionNumber must be greater than zero.", versionNumber);
+      versionNumber.Name("versionNumber").GreaterThan(0);
 
       var indexOfDot = name.IndexOf('.');
       if (indexOfDot == -1)
@@ -949,6 +941,7 @@ SELECT
       }
       else
       {
+        name = SqlUtilities.GetNormalizedSqlIdentifier(name);
         var storedProcedureSchemaName = name.Substring(0, indexOfDot);
         var storedProcedureName = name.Substring(indexOfDot + 1);
         var schema = this.Schemas[storedProcedureSchemaName];
@@ -1040,6 +1033,11 @@ SELECT
 
     public StoredProcedure AddStoredProcedure(String name, Int32 versionNumber, params SqlParameter[] sqlParameters)
     {
+      name.Name("name").NotNullEmptyOrOnlyWhitespace();
+      versionNumber.Name("versionNumber").GreaterThan(0);
+
+      name = SqlUtilities.GetNormalizedSqlIdentifier(name);
+
       if (this.StoredProcedures[name, versionNumber] == null)
       {
         var sp = new StoredProcedure(this, name, versionNumber, sqlParameters);
