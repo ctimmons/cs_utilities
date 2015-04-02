@@ -7,7 +7,7 @@ using System.Xml.Schema;
 
 using Utilities.Core;
 
-namespace Utilities.Sql
+namespace Utilities.Sql.SqlServer
 {
   /// <summary>
   /// A cache of all of the XML collection schemas (XmlSchemaSets) in all databases(*) on an SQL Server instance.

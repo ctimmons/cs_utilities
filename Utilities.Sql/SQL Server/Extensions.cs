@@ -12,9 +12,9 @@ using System.Xml.Schema;
 
 using Utilities.Core;
 
-namespace Utilities.Sql
+namespace Utilities.Sql.SqlServer
 {
-  public static class SqlUtilityExtensionMethods
+  public static class SqlServerExtensionMethods
   {
     /// <summary>
     /// Executes the given sql on the connection, and

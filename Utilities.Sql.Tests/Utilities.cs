@@ -4,7 +4,7 @@ using System;
 
 using NUnit.Framework;
 
-namespace Utilities.Sql.Tests
+namespace Utilities.Sql.SqlServer.Tests
 {
   [TestFixture]
   public class SqlUtilitiesTests
@@ -12,9 +12,9 @@ namespace Utilities.Sql.Tests
     [Test]
     public void GetNormalizedSqlIdentifierTest()
     {
-      Assert.Throws<ArgumentNullException>(() => SqlUtilities.GetNormalizedSqlIdentifier(null));
+      Assert.Throws<ArgumentNullException>(() => SqlServerUtilities.GetNormalizedSqlIdentifier(null));
 
-      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, SqlUtilities.GetNormalizedSqlIdentifier(actual));
+      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, SqlServerUtilities.GetNormalizedSqlIdentifier(actual));
 
       areEqual("", "");
 

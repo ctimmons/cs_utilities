@@ -5,9 +5,9 @@ using System.Linq;
 
 using Utilities.Core;
 
-namespace Utilities.Sql
+namespace Utilities.Sql.SqlServer
 {
-  public class SqlUtilities
+  public class SqlServerUtilities
   {
     /// <summary>
     /// Given a T-SQL identifier, return the same identifier with all of its

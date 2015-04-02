@@ -5,7 +5,7 @@ using System.Data;
 
 using NUnit.Framework;
 
-namespace Utilities.Sql.Tests
+namespace Utilities.Sql.SqlServer.Tests
 {
   [TestFixture]
   public class ExtensionsTests
