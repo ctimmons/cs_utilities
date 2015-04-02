@@ -798,7 +798,8 @@ namespace Utilities.Sql
   ///     {
   ///       Connection = connection,
   ///       XmlSystem = XmlSystem.Linq_XDocument,
-  ///       TargetLanguage = TargetLanguage.CSharp
+  ///       TargetLanguage = TargetLanguage.CSharp,
+  ///       XmlValidationLocation = XmlValidationLocation.PropertySetter
   ///     };
   /// 
   ///   var server = new Server(configuration);
@@ -894,7 +895,7 @@ namespace Utilities.Sql
               this._schemas = new Schemas();
               var sql = @"
 SELECT
-    [SCHEMA_NAME] = S.[name],
+    [SCHEMA_NAME] = QUOTENAME(S.[name]),
     is_default_schema = CASE WHEN S.schema_id = SCHEMA_ID() THEN 'Y' ELSE 'N' END
   FROM
     sys.schemas AS S
@@ -929,27 +930,42 @@ SELECT
       return AddStoredProcedure(name, 1, sqlParameters);
     }
 
+    /// <summary>
+    /// Create and add a StoredProcedure instance to this Database.
+    /// <para>The name parameter must be a valid one-part or two-part T-SQL identifier.  Square brackets around the name parts are optional.</para>
+    /// <para>E.g. "my_stored_proc", "[my_stored_proc]", "my_schema.my_stored_proc", and "[my_schema].[my_stored_proc]" are all valid name identifiers.</para>
+    /// <para>Names with more than two parts, or missing parts, are considered errors.</para>
+    /// </summary>
     public StoredProcedure AddStoredProcedure(String name, Int32 versionNumber, params SqlParameter[] sqlParameters)
     {
       name.Name("name").NotNullEmptyOrOnlyWhitespace();
       versionNumber.Name("versionNumber").GreaterThan(0);
 
-      var indexOfDot = name.IndexOf('.');
-      if (indexOfDot == -1)
+      name = SqlUtilities.GetNormalizedSqlIdentifier(name);
+      var nameParts = name.Split(".".ToCharArray(), StringSplitOptions.None);
+
+      /* It's an error if any of the name parts are empty,
+         and this method only accepts one-part ([object name]) or
+         two-part ([schema name].[object name]) T-SQL identifiers. */
+      if (nameParts.Any(s => s.IsEmpty()) || (nameParts.Length > 2))
+        throw new ArgumentExceptionFmt(Properties.Resources.InvalidStoredProcedureName, name);
+
+      /* At this point, all of the name parts have been validated for correct form. */
+
+      if (nameParts.Length == 1)
       {
         return this.Schemas.DefaultSchema.AddStoredProcedure(name, versionNumber, sqlParameters);
       }
       else
       {
-        name = SqlUtilities.GetNormalizedSqlIdentifier(name);
-        var storedProcedureSchemaName = name.Substring(0, indexOfDot);
-        var storedProcedureName = name.Substring(indexOfDot + 1);
+        var storedProcedureSchemaName = nameParts[0];
         var schema = this.Schemas[storedProcedureSchemaName];
-
         if (schema == null)
-          throw new ExceptionFmt("The '{0}' schema does not exist.", storedProcedureSchemaName);
-        else
-          return schema.AddStoredProcedure(storedProcedureName, versionNumber, sqlParameters);
+          throw new ExceptionFmt(Properties.Resources.SchemaNameNotFound, storedProcedureSchemaName);
+
+        var storedProcedureName = nameParts[1];
+
+        return schema.AddStoredProcedure(storedProcedureName, versionNumber, sqlParameters);
       }
     }
   }
@@ -1005,7 +1021,7 @@ SELECT
               var table = this.Database.Server.Configuration.Connection.GetSchema("Tables");
               foreach (DataRow row in table.Rows)
               {
-                if (this.Name.EqualsCI(row["table_schema"].ToString()))
+                if (this.Name.Trim("[]".ToCharArray()).EqualsCI(row["table_schema"].ToString()))
                 {
                   this._tables.Add(new Table(this, row["table_name"].ToString(), row["table_type"].ToString().EqualsCI("VIEW")));
                 }
@@ -1038,6 +1054,9 @@ SELECT
 
       name = SqlUtilities.GetNormalizedSqlIdentifier(name);
 
+      if (name.Contains("."))
+        throw new ArgumentExceptionFmt(Properties.Resources.InvalidStoredProcedureNameForSchema, name);
+
       if (this.StoredProcedures[name, versionNumber] == null)
       {
         var sp = new StoredProcedure(this, name, versionNumber, sqlParameters);
@@ -1046,7 +1065,7 @@ SELECT
       }
       else
       {
-        throw new ExceptionFmt("The stored procedure '{0}', version {1} already exists.  If you have a stored procedure that has multiple versions, make sure the version numbers don't conflict.", name, versionNumber);
+        throw new ExceptionFmt(Properties.Resources.StoredProcedureAlreadyExists, name, versionNumber);
       }
     }
   }
@@ -1082,6 +1101,8 @@ SELECT
     public Int32 VersionNumber { get; private set; }
     public SqlParameter[] SqlParameters { get; private set; }
 
+    private static Char[] _braces = "[]".ToCharArray();
+
     private Columns _columns = null;
     public Columns Columns
     {
@@ -1091,6 +1112,22 @@ SELECT
           this.Schema.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => this._columns = new Columns(this));
 
         return this._columns;
+      }
+    }
+
+    public String SqlIdentifier
+    {
+      get
+      {
+        return String.Concat(this.Schema.Name, ".", this.Name);
+      }
+    }
+
+    public String TargetLanguageIdentifier
+    {
+      get
+      {
+        return String.Concat(this.Schema.Name.Trim(_braces), "_", this.Name.Trim(_braces), "_", this.VersionNumber);
       }
     }
 
@@ -1193,7 +1230,7 @@ SELECT
     {
       get
       {
-        return this.Where(table => table.Name.EqualsCI(name)).FirstOrDefault();
+        return this.Where(column => column.Name.EqualsCI(name)).FirstOrDefault();
       }
     }
 
@@ -1284,7 +1321,7 @@ SELECT
     S.[schema_id] = SCHEMA_ID('{1}')
     AND TBL.[name] = '{2}';";
 
-      var select = String.Format(sql, (table.IsView ? "views" : "tables"), table.Schema.Name, table.Name);
+      var select = String.Format(sql, (table.IsView ? "views" : "tables"), table.Schema.Name.Trim("[]".ToCharArray()), table.Name.Trim("[]".ToCharArray()));
       var t = table.Schema.Database.Server.Configuration.Connection.GetDataSet(select).Tables[0];
       foreach (DataRow row in t.Rows)
       {
@@ -1339,8 +1376,7 @@ SELECT
     public Columns(StoredProcedure storedProcedure)
       : this()
     {
-      var spName = String.Format("[{0}].[{1}]", storedProcedure.Schema.Name, storedProcedure.Name);
-      var dataset = storedProcedure.Schema.Database.Server.Configuration.Connection.GetDataSet(spName, storedProcedure.SqlParameters);
+      var dataset = storedProcedure.Schema.Database.Server.Configuration.Connection.GetDataSet(storedProcedure.SqlIdentifier, storedProcedure.SqlParameters);
       foreach (DataTable table in dataset.Tables)
       {
         foreach (DataColumn column in table.Columns)

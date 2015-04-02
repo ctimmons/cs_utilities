@@ -15,7 +15,7 @@ namespace Utilities.Sql
     /// </summary>
     public static String GetNormalizedSqlIdentifier(String identifier)
     {
-      identifier.Name("identifier").NotNull();
+      identifier.Name("identifier").NotNullEmptyOrOnlyWhitespace();
 
       Func<String, String> wrap = s => s.Any() ? String.Concat("[", s.Trim("[]".ToCharArray()), "]") : "";
 
