@@ -7,14 +7,11 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
-  public class StoredProcedure
+  public class StoredProcedure : BaseSqlServerObject
   {
     public Schema Schema { get; private set; }
-    public String Name { get; private set; }
     public Int32 VersionNumber { get; private set; }
     public SqlParameter[] SqlParameters { get; private set; }
-
-    private static Char[] _braces = "[]".ToCharArray();
 
     private Columns _columns = null;
     public Columns Columns
@@ -32,15 +29,15 @@ namespace Utilities.Sql.SqlServer
     {
       get
       {
-        return String.Concat(this.Schema.Name, ".", this.Name);
+        return String.Concat(this.Schema.BracketedName, ".", this.BracketedName);
       }
     }
 
-    public String TargetLanguageIdentifier
+    public override String TargetLanguageIdentifier
     {
       get
       {
-        return String.Concat(this.Schema.Name.Trim(_braces), "_", this.Name.Trim(_braces), "_", this.VersionNumber);
+        return String.Concat(this.Schema.Name, "_", this.Name, "_", this.VersionNumber.ToString());
       }
     }
 

@@ -8,14 +8,9 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
-  public class Schema
+  public class Schema : BaseSqlServerObject
   {
     public Database Database { get; private set; }
-
-    /// <summary>
-    /// The schema name as it appears on the database server.
-    /// </summary>
-    public String Name { get; private set; }
 
     public Boolean IsDefaultSchema { get; private set; }
     public List<StoredProcedure> StoredProcedures { get; private set; }
@@ -87,12 +82,12 @@ namespace Utilities.Sql.SqlServer
   {
     public static Schema GetByName(this IEnumerable<Schema> schemas, String name)
     {
-      return schemas.Where(s => s.Name.EqualsCI(name)).FirstOrDefault();
+      return schemas.Where(s => SqlServerUtilities.GetStrippedSqlIdentifier(s.Name).EqualsCI(name)).FirstOrDefault();
     }
 
     public static Schema GetDefaultSchema(this IEnumerable<Schema> schemas)
     {
-      // There's always at least one schema in a database, and one of those schemas is a default schema, so this should always work. 
+      /* There's always at least one schema in a database, and one of those schemas is a default schema, so this should always work. */
       return schemas.Where(s => s.IsDefaultSchema).First();
     }
   }

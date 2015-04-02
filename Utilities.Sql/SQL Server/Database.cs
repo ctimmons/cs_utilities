@@ -8,16 +8,11 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
-  public class Database
+  public class Database : BaseSqlServerObject
   {
     private readonly SqlConnection _connection;
 
     public Server Server { get; private set; }
-
-    /// <summary>
-    /// The database name as it appears on the database server.
-    /// </summary>
-    public String Name { get; private set; }
 
     private List<Schema> _schemas = null;
     public List<Schema> Schemas
@@ -32,7 +27,7 @@ namespace Utilities.Sql.SqlServer
               this._schemas = new List<Schema>();
               var sql = @"
 SELECT
-    [SCHEMA_NAME] = QUOTENAME(S.[name]),
+    [SCHEMA_NAME] = S.[name],
     is_default_schema = CASE WHEN S.schema_id = SCHEMA_ID() THEN 'Y' ELSE 'N' END
   FROM
     sys.schemas AS S
@@ -95,10 +90,10 @@ SELECT
       }
       else
       {
-        var storedProcedureSchemaName = nameParts[0];
-        var schema = this.Schemas.GetByName(storedProcedureSchemaName);
+        var schemaName = nameParts[0];
+        var schema = this.Schemas.GetByName(schemaName);
         if (schema == null)
-          throw new ExceptionFmt(Properties.Resources.SchemaNameNotFound, storedProcedureSchemaName);
+          throw new ExceptionFmt(Properties.Resources.SchemaNameNotFound, schemaName);
 
         var storedProcedureName = nameParts[1];
 

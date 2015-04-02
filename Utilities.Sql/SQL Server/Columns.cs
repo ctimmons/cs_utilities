@@ -104,7 +104,7 @@ SELECT
     S.[schema_id] = SCHEMA_ID('{1}')
     AND TBL.[name] = '{2}';";
 
-      var select = String.Format(sql, (table.IsView ? "views" : "tables"), table.Schema.Name.Trim("[]".ToCharArray()), table.Name.Trim("[]".ToCharArray()));
+      var select = String.Format(sql, (table.IsView ? "views" : "tables"), table.Schema.Name, table.Name);
       var t = table.Schema.Database.Server.Configuration.Connection.GetDataSet(select).Tables[0];
       foreach (DataRow row in t.Rows)
       {
@@ -326,7 +326,7 @@ SELECT
         this
         .Where(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
         .OrderBy(column => column.PrimaryKeyOrdinal)
-        .Select(column => String.Format("[{0}] {1}", column.Name, column.PrimaryKeyDirection))
+        .Select(column => String.Format("{0} {1}", column.BracketedName, column.PrimaryKeyDirection))
         .ToList();
     }
 
@@ -359,7 +359,7 @@ SELECT
       return
         this
         .OrderBy(column => column.Name)
-        .Select(column => String.Format("{0}[{1}]", (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias.Trim() + "."), column.Name))
+        .Select(column => String.Format("{0}{1}", (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias.Trim() + "."), column.BracketedName))
         .ToList();
     }
 
@@ -380,7 +380,7 @@ SELECT
       return
         this
         .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInMergeSelectList)
-        .Select(column => String.Format("[{0}] = {1}", column.Name, column.SqlIdentifier))
+        .Select(column => String.Format("{0} = {1}", column.BracketedName, column.SqlIdentifier))
         .ToList();
     }
 
@@ -394,7 +394,7 @@ SELECT
         this
         .Where(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
         .OrderBy(column => column.PrimaryKeyOrdinal)
-        .Select(column => String.Format("Target.[{0}] = Source.[{0}]", column.Name))
+        .Select(column => String.Format("Target.{0} = Source.{0}", column.BracketedName))
         .ToList();
     }
 
@@ -407,7 +407,7 @@ SELECT
       return
         this
         .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInUpdateSetClause)
-        .Select(column => String.Format("[{0}] = Source.[{0}]", column.Name))
+        .Select(column => String.Format("{0} = Source.{0}", column.BracketedName))
         .ToList();
     }
 
@@ -420,7 +420,7 @@ SELECT
       return
         this
         .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInInsertStatement)
-        .Select(column => String.Format("Source.[{0}]", column.Name))
+        .Select(column => String.Format("Source.{0}", column.BracketedName))
         .ToList();
     }
 
@@ -452,7 +452,7 @@ SELECT
       return
         this
         .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInInsertStatement)
-        .Select(column => String.Format("[{0}]", column.Name))
+        .Select(column => String.Format("{0}", column.BracketedName))
         .ToList();
     }
 
@@ -516,7 +516,7 @@ SELECT
       return
         this
         .GetOrderedListBasedOnColumnType(ColumnType.CanAppearInUpdateSetClause)
-        .Select(column => String.Format("[{0}] = {1}", column.Name, column.SqlIdentifier))
+        .Select(column => String.Format("{0} = {1}", column.BracketedName, column.SqlIdentifier))
         .ToList();
     }
 

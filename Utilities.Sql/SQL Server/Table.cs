@@ -2,14 +2,9 @@
 
 namespace Utilities.Sql.SqlServer
 {
-  public class Table
+  public class Table : BaseSqlServerObject
   {
     public Schema Schema { get; private set; }
-
-    /// <summary>
-    /// The table name as it appears on the database server.
-    /// </summary>
-    public String Name { get; private set; }
 
     /// <summary>
     /// This class is named Table, but it handles both tables and views.  This property indicates what a Table instance really contains.
@@ -25,22 +20,7 @@ namespace Utilities.Sql.SqlServer
     /// </summary>
     public String SchemaNameAndTableName
     {
-      get { return String.Format("[{0}].[{1}]", this.Schema.Name, this.Name); }
-    }
-
-    private String _targetLanguageTableIdentifier = null;
-    /// <summary>
-    /// The table name converted for use as a valid identifier in generated target language code.
-    /// </summary>
-    public String TargetLanguageTableIdentifier
-    {
-      get
-      {
-        if (this._targetLanguageTableIdentifier == null)
-          this._targetLanguageTableIdentifier = IdentifierHelper.GetTargetLanguageIdentifier(this.Schema.Name + "_" + this.Name);
-
-        return this._targetLanguageTableIdentifier;
-      }
+      get { return String.Format("{0}.{1}", this.Schema.BracketedName, this.BracketedName); }
     }
 
     private Columns _columns = null;

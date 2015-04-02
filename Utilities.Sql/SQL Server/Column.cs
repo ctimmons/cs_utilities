@@ -74,16 +74,11 @@ namespace Utilities.Sql.SqlServer
   /// The Column class contains the majority of primitive properties and methods needed to generate
   /// TSQL, C#, F# and VB target code.
   /// </summary>
-  public class Column
+  public class Column : BaseSqlServerObject
   {
     /* Only one of these will be the parent of this column. */
     public StoredProcedure StoredProcedure { get; private set; }
     public Table Table { get; private set; }
-
-    /// <summary>
-    /// The column's name as it appears on the database server.
-    /// </summary>
-    public String Name { get; set; }
 
     /// <summary>
     /// The position of this column in the list of columns in the parent table or view.
@@ -178,29 +173,6 @@ namespace Utilities.Sql.SqlServer
 
         return this._sqlDbTypeEnumName;
       }
-    }
-
-    private String _targetLanguageIdentifier = null;
-    /// <summary>
-    /// This column's name, converted to a valid identifier in the target language.
-    /// </summary>
-    public String TargetLanguageIdentifier
-    {
-      get
-      {
-        if (this._targetLanguageIdentifier == null)
-          this._targetLanguageIdentifier = IdentifierHelper.GetTargetLanguageIdentifier(this.Name);
-
-        return this._targetLanguageIdentifier;
-      }
-    }
-
-    /// <summary>
-    /// A simple target language identifier primarily used as the name for a property's backing store (e.g. "_customername" in "private String _customername").
-    /// </summary>
-    public String TargetLanguageBackingStoreIdentifier
-    {
-      get { return "_" + this.TargetLanguageIdentifier; }
     }
 
     private String _targetLanguageBackingStoreDeclaration = null;
@@ -374,22 +346,22 @@ namespace Utilities.Sql.SqlServer
       {
         case "GEOGRAPHY":
         case "GEOMETRY":
-          format = "({0}[{1}].STEquals({2}) = 1)";
+          format = "({0}{1}.STEquals({2}) = 1)";
           break;
         case "HIERARCHYID":
         case "IMAGE":
-          format = "CAST({0}[{1}] AS VARBINARY(MAX)) = CAST({2} AS VARBINARY(MAX))";
+          format = "CAST({0}{1} AS VARBINARY(MAX)) = CAST({2} AS VARBINARY(MAX))";
           break;
         case "NTEXT":
         case "TEXT":
-          format = "CAST({0}[{1}] AS NVARCHAR(MAX)) = CAST({2} AS NVARCHAR(MAX))";
+          format = "CAST({0}{1} AS NVARCHAR(MAX)) = CAST({2} AS NVARCHAR(MAX))";
           break;
         default:
-          format = "{0}[{1}] = {2}";
+          format = "{0}{1} = {2}";
           break;
       }
 
-      return String.Format(format, (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias + "."), this.Name, this.SqlIdentifier);
+      return String.Format(format, (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias + "."), this.BracketedName, this.SqlIdentifier);
     }
 
     private String GetClrTypeNameFromNativeSqlType()
@@ -1098,7 +1070,7 @@ End If
 
     public String GetCreateTableColumnDeclaration()
     {
-      return String.Format("[{0}] {1}{2}", this.Name, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : "");
+      return String.Format("{0} {1}{2}", this.BracketedName, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : "");
     }
   }
 }

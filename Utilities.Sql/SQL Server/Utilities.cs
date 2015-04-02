@@ -27,5 +27,10 @@ namespace Utilities.Sql.SqlServer
         .Select(element => wrap(element))
         .Join(".");
     }
+
+    public static String GetStrippedSqlIdentifier(String identifier)
+    {
+      return identifier.Replace("[", "").Replace("]", "");
+    }
   }
 }
