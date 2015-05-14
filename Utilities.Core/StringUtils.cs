@@ -12,6 +12,20 @@ namespace Utilities.Core
   public static class StringUtils
   {
     /// <summary>
+    /// Returns the beginning portion of s up to, but not including,
+    /// the first occurrence of the character c.  If c is not present in
+    /// s, then s is returned.
+    /// </summary>
+    public static String UpTo(this String s, Char c)
+    {
+      var indexOfC = s.IndexOf(c);
+      return
+        (indexOfC == -1)
+        ? s
+        : s.Substring(0, indexOfC);
+    }
+
+    /// <summary>
     /// Returns Char '1' for true, '0' for false.
     /// </summary>
     public static Char As0Or1(this Boolean value)
@@ -280,19 +294,13 @@ namespace Utilities.Core
     public static String Indent(this String value, Int32 indent)
     {
       value.Name("value").NotNull();
-      
+      indent.Name("indent").GreaterThan(0);
+
       /* A string may consist of more than one line (i.e. lines separated by carriage returns).
           Return a string in which all lines are indented by the specified number of spaces. */
 
-      if ((indent <= 0) || (value == ""))
-      {
-        return value;
-      }
-      else
-      {
-        var indentString = " ".Repeat(indent);
-        return indentString + value.Replace(Environment.NewLine, Environment.NewLine + indentString);
-      }
+      var indentString = " ".Repeat(indent);
+      return indentString + value.Replace(Environment.NewLine, Environment.NewLine + indentString);
     }
 
     /// <summary>

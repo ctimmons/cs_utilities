@@ -52,7 +52,7 @@ SELECT
       : base()
     {
       this.Server = server;
-      this.Name = name;
+      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
 
       this._connection = this.Server.Configuration.Connection;
     }
@@ -73,7 +73,7 @@ SELECT
       name.Name("name").NotNullEmptyOrOnlyWhitespace();
       versionNumber.Name("versionNumber").GreaterThan(0);
 
-      name = SqlServerUtilities.GetNormalizedSqlIdentifier(name);
+      name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
       var nameParts = name.Split(".".ToCharArray(), StringSplitOptions.None);
 
       /* It's an error if any of the name parts are empty,
@@ -99,6 +99,14 @@ SELECT
 
         return schema.AddStoredProcedure(storedProcedureName, versionNumber, sqlParameters);
       }
+    }
+  }
+
+  public static class DatabaseExtensions
+  {
+    public static Database GetByName(this IEnumerable<Database> databases, String name)
+    {
+      return databases.Where(database => database.Name.EqualsCI(name)).FirstOrDefault();
     }
   }
 }

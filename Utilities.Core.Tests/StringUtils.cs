@@ -15,17 +15,42 @@ namespace Utilities.Core.UnitTests
     public StringUtilsTests() : base() { }
 
     [Test]
+    public void UpToTest()
+    {
+      String s = null;
+      Assert.Throws<NullReferenceException>(() => s.UpTo('.'));
+
+      s = "";
+      Assert.AreEqual(s.UpTo('.'), "");
+
+      s = ".";
+      Assert.AreEqual(s.UpTo('.'), "");
+
+      s = ".abc";
+      Assert.AreEqual(s.UpTo('.'), "");
+
+      s = "abc.def";
+      Assert.AreEqual(s.UpTo('.'), "abc");
+
+      s = "abcdef.";
+      Assert.AreEqual(s.UpTo('.'), "abcdef");
+
+      s = "abcdef.";
+      Assert.AreEqual(s.UpTo('x'), "abcdef.");
+    }
+
+    [Test]
     public void As0Or1Test()
     {
-      Helpers.AssertionIsTrue(false, false.As0Or1(), '0');
-      Helpers.AssertionIsTrue(true, true.As0Or1(), '1');
+      Assert.AreEqual(false.As0Or1(), '0');
+      Assert.AreEqual(true.As0Or1(), '1');
     }
 
     [Test]
     public void AsYOrNTest()
     {
-      Helpers.AssertionIsTrue(false, false.AsYOrN(), 'N');
-      Helpers.AssertionIsTrue(true, true.AsYOrN(), 'Y');
+      Assert.AreEqual(false.AsYOrN(), 'N');
+      Assert.AreEqual(true.AsYOrN(), 'Y');
     }
 
     [Test]
@@ -35,10 +60,10 @@ namespace Utilities.Core.UnitTests
          Anything else should return false. */
 
       foreach (var trueInput in new[] { "1", "true", "TRUE", "t", "T", "yes", "YES", "y", "Y" })
-        Helpers.AssertionIsTrue(trueInput, trueInput.AsBoolean(), true);
+        Assert.AreEqual(trueInput.AsBoolean(), true);
 
       foreach (var falseInput in new[] { "", "0", "No", "False", "asfsadfdsf", null })
-        Helpers.AssertionIsTrue(falseInput, falseInput.AsBoolean(), false);
+        Assert.AreEqual(falseInput.AsBoolean(), false);
     }
 
     [Test]
@@ -347,7 +372,7 @@ namespace Utilities.Core.UnitTests
       String input = null;
       Assert.Throws<ArgumentNullException>(() => input.Indent(4));
 
-      Assert.AreEqual("", "".Indent(4));
+      Assert.AreEqual("    ", "".Indent(4));
 
       input = @"one
 two
@@ -359,7 +384,7 @@ three
     three
     ";
 
-      Assert.AreEqual(input, input.Indent(0)); // An indent of zero or less should return the source string unchanged.
+      Assert.Throws<ArgumentException>(() => input.Indent(0));
 
       Assert.AreEqual(input.Indent(4), output);
     }

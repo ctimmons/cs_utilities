@@ -45,7 +45,7 @@ namespace Utilities.Sql.SqlServer
       : base()
     {
       this.Database = database;
-      this.Name = name;
+      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
       this.IsDefaultSchema = isDefaultSchema;
       this.StoredProcedures = new List<StoredProcedure>();
     }
@@ -82,13 +82,13 @@ namespace Utilities.Sql.SqlServer
   {
     public static Schema GetByName(this IEnumerable<Schema> schemas, String name)
     {
-      return schemas.Where(s => SqlServerUtilities.GetStrippedSqlIdentifier(s.Name).EqualsCI(name)).FirstOrDefault();
+      return schemas.Where(schema => schema.Name.EqualsCI(name)).FirstOrDefault();
     }
 
     public static Schema GetDefaultSchema(this IEnumerable<Schema> schemas)
     {
       /* There's always at least one schema in a database, and one of those schemas is a default schema, so this should always work. */
-      return schemas.Where(s => s.IsDefaultSchema).First();
+      return schemas.Where(schema => schema.IsDefaultSchema).First();
     }
   }
 }

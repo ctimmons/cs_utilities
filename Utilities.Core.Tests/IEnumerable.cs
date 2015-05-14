@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 using NUnit.Framework;
 
@@ -37,6 +38,19 @@ namespace Utilities.Core.UnitTests
       var data = new List<String>() { "A", "B", "C", "D", "E" };
       var expected = "A, B, C, D, E";
       var actual = data.Join(", ");
+      Assert.AreEqual(expected, actual);
+    }
+
+    [Test]
+    public void JoinAndIndentTest()
+    {
+      var data = new List<String>() { "A", "B", "C", "D", "E" };
+      var expected = @"   A
+   B
+   C
+   D
+   E";
+      var actual = data.JoinAndIndent(3);
       Assert.AreEqual(expected, actual);
     }
 
@@ -75,6 +89,15 @@ namespace Utilities.Core.UnitTests
       actual = (List<Int32>) null;
       expected = data.Tail();
       Assert.AreEqual(expected, actual);
+    }
+
+    [Test]
+    public void ProductTest()
+    {
+      var data = new List<Int32>() { 2, 3, 4, 5 };
+      BigInteger expected = 120;
+
+      Assert.AreEqual(expected, data.Product());
     }
   }
 }

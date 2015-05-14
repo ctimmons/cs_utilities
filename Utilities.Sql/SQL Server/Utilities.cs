@@ -9,6 +9,8 @@ namespace Utilities.Sql.SqlServer
 {
   public class SqlServerUtilities
   {
+    private readonly static Char[] _brackets = "[]".ToCharArray();
+
     /// <summary>
     /// Given a T-SQL identifier, return the same identifier with all of its
     /// constituent parts wrapped in square brackets.
@@ -17,7 +19,7 @@ namespace Utilities.Sql.SqlServer
     {
       identifier.Name("identifier").NotNullEmptyOrOnlyWhitespace();
 
-      Func<String, String> wrap = s => s.Any() ? String.Concat("[", s.Trim("[]".ToCharArray()), "]") : "";
+      Func<String, String> wrap = s => s.Any() ? String.Concat("[", s.Trim(_brackets), "]") : "";
 
       return
         identifier

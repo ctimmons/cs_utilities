@@ -9,14 +9,6 @@ namespace Utilities.Sql.SqlServer
 {
   public class Columns : List<Column>
   {
-    public Column this[String name]
-    {
-      get
-      {
-        return this.Where(column => column.Name.EqualsCI(name)).FirstOrDefault();
-      }
-    }
-
     private Columns()
       : base()
     {
@@ -133,9 +125,8 @@ SELECT
         var physicalLength = Convert.ToInt32(row["PHYSICAL_LENGTH"]);
 
         this.Add(
-          new Column(table)
+          new Column(table, row["COLUMN_NAME"].ToString())
           {
-            Name = row["COLUMN_NAME"].ToString(),
             Ordinal = Convert.ToInt32(row["COLUMN_ORDINAL"]),
             ColumnType = columnType,
             ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
@@ -175,9 +166,8 @@ SELECT
             columnType |= ColumnType.CanAppearInSqlWhereClause;
 
           this.Add(
-            new Column(storedProcedure)
+            new Column(storedProcedure, column.ColumnName)
             {
-              Name = column.ColumnName,
               Ordinal = column.Ordinal,
               ColumnType = columnType,
               ServerDataTypeName = nativeServerDataTypeName,

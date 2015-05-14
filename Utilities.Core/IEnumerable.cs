@@ -40,6 +40,15 @@ namespace Utilities.Core
       return String.Join(separator, values);
     }
 
+    public static String JoinAndIndent(this IEnumerable<String> values, Int32 indent)
+    {
+      values.Name("values").NotNull();
+      indent.Name("indent").GreaterThan(0);
+
+      var indentString = " ".Repeat(indent);
+      return indentString + String.Join(Environment.NewLine + indentString, values);
+    }
+
     public static IEnumerable<String> Lines(this TextReader textReader)
     {
       textReader.Name("textreader").NotNull();
@@ -59,14 +68,12 @@ namespace Utilities.Core
       return (items == null) ? null : items.Skip(1).Take(items.Count() - 1);
     }
 
+    // IEnumerable has a Sum method, but not a Product method.
     public static BigInteger Product(this IEnumerable<Int32> ints)
     {
-      var result = new BigInteger(1);
+      ints.Name("ints").NotNull();
 
-      foreach (var i in ints)
-        result *= i;
-
-      return result;
+      return ints.Aggregate((BigInteger) 1, (acc, next) => acc * next);
     }
   }
 }

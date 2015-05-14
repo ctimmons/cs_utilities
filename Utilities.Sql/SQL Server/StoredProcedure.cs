@@ -50,7 +50,7 @@ namespace Utilities.Sql.SqlServer
       : this()
     {
       this.Schema = schema;
-      this.Name = name;
+      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
       this.VersionNumber = versionNumber;
       this.SqlParameters = sqlParameters;
     }

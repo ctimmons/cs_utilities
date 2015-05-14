@@ -247,11 +247,10 @@ namespace Utilities.Core
       directoryInfo.Name("directoryInfo").NotNull();
 
       foreach (var subDirectory in directoryInfo.EnumerateDirectories())
-      {
         DeleteEmptyDirectories(subDirectory);
-        if (IsDirectoryEmpty(subDirectory))
-          subDirectory.Delete(false /* Don't recurse. */);
-      }
+
+      if (IsDirectoryEmpty(directoryInfo))
+        directoryInfo.Delete(false /* Don't recurse. */);
     }
 
     public static Boolean IsDirectoryEmpty(String path)

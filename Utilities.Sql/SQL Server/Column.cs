@@ -318,17 +318,19 @@ namespace Utilities.Sql.SqlServer
     {
     }
 
-    public Column(Table table)
+    public Column(Table table, String name)
       : this()
     {
       this.Table = table;
+      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
       this._configuration = table.Schema.Database.Server.Configuration;
     }
 
-    public Column(StoredProcedure storedProcedure)
+    public Column(StoredProcedure storedProcedure, String name)
       : this()
     {
       this.StoredProcedure = storedProcedure;
+      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
       this._configuration = storedProcedure.Schema.Database.Server.Configuration;
     }
 
@@ -1071,6 +1073,14 @@ End If
     public String GetCreateTableColumnDeclaration()
     {
       return String.Format("{0} {1}{2}", this.BracketedName, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : "");
+    }
+  }
+
+  public static class ColumnExtensions
+  {
+    public static Column GetByName(this IEnumerable<Column> columns, String name)
+    {
+      return columns.Where(column => column.Name.EqualsCI(name)).FirstOrDefault();
     }
   }
 }

@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
@@ -39,8 +43,16 @@ namespace Utilities.Sql.SqlServer
       : base()
     {
       this.Schema = schema;
-      this.Name = name;
+      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
       this.IsView = isView;
+    }
+  }
+
+  public static class TableExtensions
+  {
+    public static Table GetByName(this IEnumerable<Table> tables, String name)
+    {
+      return tables.Where(table => table.Name.EqualsCI(name)).FirstOrDefault();
     }
   }
 }
