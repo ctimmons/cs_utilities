@@ -18,7 +18,7 @@ namespace Utilities.Sql.SqlServer
       get
       {
         if (this._bracketedName == null)
-          this._bracketedName = SqlServerUtilities.GetNormalizedSqlIdentifier(this.Name);
+          this._bracketedName = IdentifierHelper.GetNormalizedSqlIdentifier(this.Name);
 
         return this._bracketedName;
       }

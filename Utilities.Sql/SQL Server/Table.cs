@@ -43,7 +43,7 @@ namespace Utilities.Sql.SqlServer
       : base()
     {
       this.Schema = schema;
-      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
+      this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
       this.IsView = isView;
     }
   }

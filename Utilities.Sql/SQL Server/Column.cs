@@ -322,7 +322,7 @@ namespace Utilities.Sql.SqlServer
       : this()
     {
       this.Table = table;
-      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
+      this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
       this._configuration = table.Schema.Database.Server.Configuration;
     }
 
@@ -330,7 +330,7 @@ namespace Utilities.Sql.SqlServer
       : this()
     {
       this.StoredProcedure = storedProcedure;
-      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
+      this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
       this._configuration = storedProcedure.Schema.Database.Server.Configuration;
     }
 

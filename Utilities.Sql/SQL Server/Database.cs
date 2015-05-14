@@ -52,7 +52,7 @@ SELECT
       : base()
     {
       this.Server = server;
-      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
+      this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
 
       this._connection = this.Server.Configuration.Connection;
     }
@@ -73,7 +73,7 @@ SELECT
       name.Name("name").NotNullEmptyOrOnlyWhitespace();
       versionNumber.Name("versionNumber").GreaterThan(0);
 
-      name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
+      name = IdentifierHelper.GetStrippedSqlIdentifier(name);
       var nameParts = name.Split(".".ToCharArray(), StringSplitOptions.None);
 
       /* It's an error if any of the name parts are empty,

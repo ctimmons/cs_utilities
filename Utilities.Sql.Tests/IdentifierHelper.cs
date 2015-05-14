@@ -7,14 +7,14 @@ using NUnit.Framework;
 namespace Utilities.Sql.SqlServer.Tests
 {
   [TestFixture]
-  public class SqlUtilitiesTests
+  public class IdentifierHelperTests
   {
     [Test]
     public void GetNormalizedSqlIdentifierTest()
     {
-      Assert.Throws<ArgumentNullException>(() => SqlServerUtilities.GetNormalizedSqlIdentifier(null));
+      Assert.Throws<ArgumentNullException>(() => IdentifierHelper.GetNormalizedSqlIdentifier(null));
 
-      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, SqlServerUtilities.GetNormalizedSqlIdentifier(actual));
+      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, IdentifierHelper.GetNormalizedSqlIdentifier(actual));
 
       areEqual("", "");
 

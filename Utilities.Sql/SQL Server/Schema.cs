@@ -45,7 +45,7 @@ namespace Utilities.Sql.SqlServer
       : base()
     {
       this.Database = database;
-      this.Name = SqlServerUtilities.GetStrippedSqlIdentifier(name);
+      this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
       this.IsDefaultSchema = isDefaultSchema;
       this.StoredProcedures = new List<StoredProcedure>();
     }
@@ -60,7 +60,7 @@ namespace Utilities.Sql.SqlServer
       name.Name("name").NotNullEmptyOrOnlyWhitespace();
       versionNumber.Name("versionNumber").GreaterThan(0);
 
-      name = SqlServerUtilities.GetNormalizedSqlIdentifier(name);
+      name = IdentifierHelper.GetNormalizedSqlIdentifier(name);
 
       if (name.Contains("."))
         throw new ArgumentExceptionFmt(Properties.Resources.InvalidStoredProcedureNameForSchema, name);
