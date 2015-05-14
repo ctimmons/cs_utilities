@@ -70,6 +70,15 @@ namespace Utilities.Sql.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The IdentifierHelper.Init() method must be called before this method is called for the first time..
+        /// </summary>
+        internal static string IdentiferHelperInitNotCalled {
+            get {
+                return ResourceManager.GetString("IdentiferHelperInitNotCalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The &apos;name&apos; parameter has an invalid form (&apos;{0}&apos;).  Only one-part ([object name]) or two-part ([schema name].[object name]) T-SQL identifiers are allowed as a stored procedure name..
         /// </summary>
         internal static string InvalidStoredProcedureName {

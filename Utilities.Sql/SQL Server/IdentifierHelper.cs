@@ -417,6 +417,7 @@ namespace Utilities.Sql.SqlServer
 
     private static List<String> _targetLanguageKeywords;
     private static Configuration _configuration;
+    private static Boolean _isInitialized = false;
 
     public static void Init(Configuration configuration)
     {
@@ -430,12 +431,15 @@ namespace Utilities.Sql.SqlServer
         _targetLanguageKeywords = _visualBasicKeywords;
       else
         throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, configuration.TargetLanguage));
+
+      _isInitialized = true;
     }
 
     /// <summary>
     /// Convert an SQL identifier, like a database name or column name, into a valid
     /// identifier for the target language (C#, F#, etc.) that was set in
     /// the configuration.
+    /// <para>NOTE: IdentifierHelper.Init() must be called before this method is called for the first time, otherwise an exception will be thrown.</para>
     /// <para>System.dll has code providers for both C# (Microsoft.CSharp.CSharpCodeProvider) and
     /// Visual Basic (Microsoft.VisualBasic.VBCodeProvider).  Why not use code from those classes
     /// to determine if a given string is a valid identifier?</para>
@@ -452,6 +456,11 @@ namespace Utilities.Sql.SqlServer
     /// <returns></returns>
     public static String GetTargetLanguageIdentifier(String sqlIdentifier)
     {
+      if (!_isInitialized)
+        throw new Exception(Properties.Resources.IdentiferHelperInitNotCalled);
+
+      sqlIdentifier.Name("sqlIdentifier").NotNullEmptyOrOnlyWhitespace();
+
       var result = sqlIdentifier.Replace(" ", "_").Replace(".", "_");
 
       if (Char.IsDigit(result[0]))

@@ -133,7 +133,7 @@ namespace Utilities.Core
         return value; /* Loop executed once.  There is at least one element in the IEnumerable, which means it's not empty. */
 
       /* Loop executed zero times, which means the IEnumerable is empty. */
-      throw new ArgumentException(String.Format(Properties.Resources.Assert_ContainerIsNotEmpty, value.Name));
+      throw new ArgumentException(String.Format(Properties.Resources.Assert_ContainerIsEmpty, value.Name));
     }
 
     public static AssertionContext<T> GreaterThan<T>(this T value, T other)

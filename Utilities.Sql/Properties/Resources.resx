@@ -147,4 +147,7 @@
   <data name="StoredProcedureAlreadyExists" xml:space="preserve">
     <value>The stored procedure '{0}', version {1} already exists.  If you have a stored procedure that has multiple versions, make sure the version numbers don't conflict.</value>
   </data>
+  <data name="IdentiferHelperInitNotCalled" xml:space="preserve">
+    <value>The IdentifierHelper.Init() method must be called before this method is called for the first time.</value>
+  </data>
 </root>

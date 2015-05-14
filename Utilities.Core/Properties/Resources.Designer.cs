@@ -79,11 +79,11 @@ namespace Utilities.Core.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The parameter &apos;{0}&apos; is not empty..
+        ///   Looks up a localized string similar to The parameter &apos;{0}&apos; is empty..
         /// </summary>
-        internal static string Assert_ContainerIsNotEmpty {
+        internal static string Assert_ContainerIsEmpty {
             get {
-                return ResourceManager.GetString("Assert_ContainerIsNotEmpty", resourceCulture);
+                return ResourceManager.GetString("Assert_ContainerIsEmpty", resourceCulture);
             }
         }
         
