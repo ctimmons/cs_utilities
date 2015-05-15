@@ -7,11 +7,19 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
+  /*
+    multiple result sets
+    HasResultSet property
+    Func<Boolean, T> booleanConverter
+  
+  */
+
   public class StoredProcedure : BaseSqlServerObject
   {
     public Schema Schema { get; private set; }
     public Int32 VersionNumber { get; private set; }
     public SqlParameter[] SqlParameters { get; private set; }
+    public Boolean HasResultSet { get; private set; }
 
     private Columns _columns = null;
     public Columns Columns

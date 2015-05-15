@@ -32,6 +32,14 @@ namespace Utilities.Core
         action(item, i++);
     }
 
+    public static Boolean ContainsCI(this IEnumerable<String> values, String searchValue)
+    {
+      values.Name("values").NotNull();
+      searchValue.Name("searchValue").NotNull().NotEmpty();
+
+      return values.Any(s => s.ContainsCI(searchValue));
+    }
+
     public static String Join(this IEnumerable<String> values, String separator)
     {
       values.Name("values").NotNull();

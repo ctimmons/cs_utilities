@@ -26,22 +26,24 @@ namespace Utilities.Sql.SqlServer.Tests
 
       IdentifierHelper.Init(configuration);
 
-      /* After initialization, bad data should throw these exceptions... */
+      /* After initialization, bad inputs should throw these exceptions... */
 
       Assert.Throws<ArgumentNullException>(() => IdentifierHelper.GetTargetLanguageIdentifier(null));
       Assert.Throws<ArgumentException>(() => IdentifierHelper.GetTargetLanguageIdentifier(""));
       Assert.Throws<ArgumentException>(() => IdentifierHelper.GetTargetLanguageIdentifier(" "));
 
-      /* ...and good data should pass these tests. */
+      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, IdentifierHelper.GetTargetLanguageIdentifier(actual));
 
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("valid_identifier"), "valid_identifier");      // Already a valid identifier.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("valid identifier"), "valid_identifier");      // Spaces converted to underscores.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("valid.identifier"), "valid_identifier");      // Dots converted to underscores.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("42valid identifier"), "_42valid_identifier"); // Spaces converted to underscores, and starts with a number.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("delegate"), "_delegate");                     // Keyword.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("_delegate"), "_delegate");                    // Already starts with an underscore.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("__delegate"), "___delegate");                 // C# specific: Starts with two underscores, so prepend a third one.
-      Assert.AreEqual(IdentifierHelper.GetTargetLanguageIdentifier("42delegate"), "_42delegate");                 // Starts with a number.
+      /* ...and good inputs should pass these tests. */
+
+      areEqual("valid_identifier", "valid_identifier");      // Already a valid identifier.
+      areEqual("valid_identifier", "valid identifier");      // Spaces converted to underscores.
+      areEqual("valid_identifier", "valid.identifier");      // Dots converted to underscores.
+      areEqual("_42valid_identifier", "42valid identifier"); // Spaces converted to underscores, and starts with a number.
+      areEqual("_delegate", "delegate");                     // Keyword.
+      areEqual("_delegate", "_delegate");                    // Already starts with an underscore.
+      areEqual("___delegate", "__delegate");                 // C# specific: Starts with two underscores, so prepend a third one.
+      areEqual("_42delegate", "42delegate");                 // Starts with a number.
     }
 
     [Test]
