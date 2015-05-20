@@ -33,6 +33,14 @@ namespace Utilities.Core.UnitTests
     }
 
     [Test]
+    public void ContainsTest()
+    {
+      var values = new String[] { "one", "two", "three" };
+      Assert.IsTrue(values.ContainsCI("one"));
+      Assert.IsFalse(values.ContainsCI("tw"));
+    }
+
+    [Test]
     public void JoinTest()
     {
       var data = new List<String>() { "A", "B", "C", "D", "E" };

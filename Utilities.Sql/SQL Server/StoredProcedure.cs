@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-
 using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
@@ -12,6 +12,11 @@ namespace Utilities.Sql.SqlServer
     HasResultSet property
     Func<Boolean, T> booleanConverter
   
+  ResultSets
+    contains List<Columns> (hidden)
+    index by [Int32]
+    constructor takes a DataSet?
+
   */
 
   public class StoredProcedure : BaseSqlServerObject
@@ -19,17 +24,25 @@ namespace Utilities.Sql.SqlServer
     public Schema Schema { get; private set; }
     public Int32 VersionNumber { get; private set; }
     public SqlParameter[] SqlParameters { get; private set; }
-    public Boolean HasResultSet { get; private set; }
+    public Boolean DoesReturnResultSet { get; private set; }
 
-    private Columns _columns = null;
-    public Columns Columns
+    private List<Columns> _resultSets = null;
+    public List<Columns> ResultSets
     {
       get
       {
-        if (this._columns == null)
-          this.Schema.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => this._columns = new Columns(this));
+        if (this._resultSets == null)
+        {
+          this._resultSets = new List<Columns>();
 
-        return this._columns;
+          DataSet dataset = null;
+          var connection = this.Schema.Database.Server.Configuration.Connection;
+          connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters));
+          foreach (DataTable table in dataset.Tables)
+            this._resultSets.Add(new Columns(this, table));
+        }
+
+        return this._resultSets;
       }
     }
 
@@ -61,6 +74,12 @@ namespace Utilities.Sql.SqlServer
       this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
       this.VersionNumber = versionNumber;
       this.SqlParameters = sqlParameters;
+      this.DoesReturnResultSet = true;
+    }
+
+    public StoredProcedure(Schema schema, String name, Int32 versionNumber)
+      : this(schema, name, versionNumber, new SqlParameter[] { })
+    {
     }
   }
 

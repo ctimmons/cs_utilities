@@ -37,7 +37,7 @@ namespace Utilities.Core
       values.Name("values").NotNull();
       searchValue.Name("searchValue").NotNull().NotEmpty();
 
-      return values.Any(s => s.ContainsCI(searchValue));
+      return values.Any(s => s.EqualsCI(searchValue));
     }
 
     public static String Join(this IEnumerable<String> values, String separator)
@@ -48,13 +48,18 @@ namespace Utilities.Core
       return String.Join(separator, values);
     }
 
-    public static String JoinAndIndent(this IEnumerable<String> values, Int32 indent)
+    public static String JoinAndIndent(this IEnumerable<String> values, String separator, Int32 indent)
     {
       values.Name("values").NotNull();
       indent.Name("indent").GreaterThan(0);
 
       var indentString = " ".Repeat(indent);
-      return indentString + String.Join(Environment.NewLine + indentString, values);
+      return indentString + String.Join(separator + indentString, values);
+    }
+
+    public static String JoinAndIndent(this IEnumerable<String> values, Int32 indent)
+    {
+      return values.JoinAndIndent(Environment.NewLine, indent);
     }
 
     public static IEnumerable<String> Lines(this TextReader textReader)

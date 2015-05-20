@@ -9,14 +9,42 @@ namespace Utilities.Sql.SqlServer
 {
   public class Columns : List<Column>
   {
+    private static Int32 _setNumber = 1;
+
+    /// <summary>
+    /// A parent might contain multiple instances of this class (e.g. StoredProcedure contains multiple Columns).
+    /// This property automatically gives each set of Columns a unique number.
+    /// </summary>
+    public Int32 SetNumber { get; private set; }
+
+    public String Name { get; set; }
+
+    private String _targetLanguageIdentifier = null;
+    /// <summary>
+    /// This columns' name, converted to a valid identifier in the target language.
+    /// </summary>
+    public virtual String TargetLanguageIdentifier
+    {
+      get
+      {
+        if (this._targetLanguageIdentifier == null)
+          this._targetLanguageIdentifier = IdentifierHelper.GetTargetLanguageIdentifier(this.Name);
+
+        return this._targetLanguageIdentifier;
+      }
+    }
+
     private Columns()
       : base()
     {
+      this.SetNumber = _setNumber++;
     }
 
     public Columns(Table table)
       : this()
     {
+      this.Name = "";
+
       var sql = @"
 ;WITH foreign_keys_CTE (FOREIGN_KEY_TABLE, FOREIGN_KEY_COLUMN, PRIMARY_KEY_SCHEMA, PRIMARY_KEY_TABLE, PRIMARY_KEY_COLUMN)
 AS
@@ -132,7 +160,7 @@ SELECT
             ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
             NativeServerDataTypeName = nativeServerDataTypeName,
             PhysicalLength = physicalLength,
-            LogicalLength = GetLogicalLength(nativeServerDataTypeName, physicalLength),
+            LogicalLength = this.GetLogicalLength(nativeServerDataTypeName, physicalLength),
             Precision = Convert.ToInt32(row["PRECISION"]),
             Scale = Convert.ToInt32(row["SCALE"]),
             IsNullable = row["IS_NULLABLE"].ToString().EqualsCI("Y"),
@@ -147,45 +175,43 @@ SELECT
       }
     }
 
-    public Columns(StoredProcedure storedProcedure)
+    public Columns(StoredProcedure storedProcedure, DataTable table)
       : this()
     {
-      var dataset = storedProcedure.Schema.Database.Server.Configuration.Connection.GetDataSet(storedProcedure.SqlIdentifier, storedProcedure.SqlParameters);
-      foreach (DataTable table in dataset.Tables)
+      this.Name = String.Format("{0}_ResultSet_{1}", storedProcedure.TargetLanguageIdentifier, this.SetNumber);
+
+      foreach (DataColumn column in table.Columns)
       {
-        foreach (DataColumn column in table.Columns)
-        {
-          var columnType = ColumnType.NonKeyAndNonID;
+        var columnType = ColumnType.NonKeyAndNonID;
 
-          var nativeServerDataTypeName = this.GetSqlServerDataTypeFromDataColumn(column);
+        var nativeServerDataTypeName = this.GetSqlServerDataTypeFromDataColumn(column);
 
-          if (nativeServerDataTypeName.NotEqualsCI("TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
-            columnType |= (ColumnType.CanAppearInInsertStatement | ColumnType.CanAppearInUpdateSetClause);
+        if (nativeServerDataTypeName.NotEqualsCI("TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
+          columnType |= (ColumnType.CanAppearInInsertStatement | ColumnType.CanAppearInUpdateSetClause);
 
-          if (nativeServerDataTypeName != "XML")
-            columnType |= ColumnType.CanAppearInSqlWhereClause;
+        if (nativeServerDataTypeName != "XML")
+          columnType |= ColumnType.CanAppearInSqlWhereClause;
 
-          this.Add(
-            new Column(storedProcedure, column.ColumnName)
-            {
-              Ordinal = column.Ordinal,
-              ColumnType = columnType,
-              ServerDataTypeName = nativeServerDataTypeName,
-              NativeServerDataTypeName = nativeServerDataTypeName,
-              PhysicalLength = column.MaxLength,
-              LogicalLength = GetLogicalLength(nativeServerDataTypeName, column.MaxLength),
-              Precision = 0,
-              Scale = 0,
-              IsNullable = false,
-              IsXmlDocument = false,
-              XmlCollectionName = "",
-              PrimaryKeyOrdinal = -1,
-              PrimaryKeyDirection = "",
-              PrimaryKeySchema = "",
-              PrimaryKeyTable = "",
-              PrimaryKeyColumn = ""
-            });
-        }
+        this.Add(
+          new Column(storedProcedure, column.ColumnName)
+          {
+            Ordinal = column.Ordinal,
+            ColumnType = columnType,
+            ServerDataTypeName = nativeServerDataTypeName,
+            NativeServerDataTypeName = nativeServerDataTypeName,
+            PhysicalLength = column.MaxLength,
+            LogicalLength = this.GetLogicalLength(nativeServerDataTypeName, column.MaxLength),
+            Precision = 0,
+            Scale = 0,
+            IsNullable = false,
+            IsXmlDocument = false,
+            XmlCollectionName = "",
+            PrimaryKeyOrdinal = -1,
+            PrimaryKeyDirection = "",
+            PrimaryKeySchema = "",
+            PrimaryKeyTable = "",
+            PrimaryKeyColumn = ""
+          });
       }
     }
 
@@ -649,7 +675,6 @@ SELECT
     /// command.Parameters.Add(new SqlParameter() { ParameterName = "@Title", SqlDbType = System.Data.SqlDbType.NVarChar, Value = Title });
     /// </code>
     /// </example>
-    /// <param name="includeKeyIdentificationComment">An enum value indicating whether or not to include
     /// <param name="includeKeyIdentificationComment">An enum value indicating whether or not to include
     /// a comment identifying the column as a primary and/or foreign key (see example code).</param>
     /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
