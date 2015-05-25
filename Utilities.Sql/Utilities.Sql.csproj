@@ -85,6 +85,7 @@
     <Compile Include="SQL Server\TargetLanguage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SQL Server\SqlXmlSchemas.cs" />
+    <Compile Include="SQL Server\UserDefinedTableType.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">

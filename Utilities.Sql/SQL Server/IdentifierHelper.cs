@@ -461,7 +461,7 @@ namespace Utilities.Sql.SqlServer
 
       sqlIdentifier.Name("sqlIdentifier").NotNullEmptyOrOnlyWhitespace();
 
-      var result = sqlIdentifier.Replace(" ", "_").Replace(".", "_");
+      var result = sqlIdentifier.Replace(" ", "_").Replace(".", "_").Replace("@", "");
 
       if (Char.IsDigit(result[0]))
         result = "_" + result;

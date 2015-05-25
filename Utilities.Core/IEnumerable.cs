@@ -48,13 +48,20 @@ namespace Utilities.Core
       return String.Join(separator, values);
     }
 
+    public static String Join(this IEnumerable<String> values)
+    {
+      values.Name("values").NotNull();
+
+      return String.Join(Environment.NewLine, values);
+    }
+
     public static String JoinAndIndent(this IEnumerable<String> values, String separator, Int32 indent)
     {
       values.Name("values").NotNull();
       indent.Name("indent").GreaterThan(0);
 
       var indentString = " ".Repeat(indent);
-      return indentString + String.Join(separator + indentString, values);
+      return values.Select(v => v.Indent(indent)).Join(separator);
     }
 
     public static String JoinAndIndent(this IEnumerable<String> values, Int32 indent)

@@ -215,6 +215,11 @@ SELECT
       }
     }
 
+    public Columns(UserDefinedTableType userDefinedTableType)
+      : this()
+    {
+    }
+
     private Int32 GetLogicalLength(String serverDataTypeName, Int32 maxLength)
     {
       if ((serverDataTypeName.EqualsCI("CHAR") || serverDataTypeName.StartsWithCI("VARCHAR")) && (maxLength > -1))
