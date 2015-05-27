@@ -18,7 +18,6 @@ namespace Utilities.Sql.SqlServer
 
     public Schema Schema { get; private set; }
     public Int32 VersionNumber { get; private set; }
-    // method to transform these into target language parameters suitable for a method call's parameters.
     public SqlParameter[] SqlParameters { get; private set; }
     public Boolean DoesReturnResultSet { get; private set; }
 
@@ -33,7 +32,8 @@ namespace Utilities.Sql.SqlServer
 
           DataSet dataset = null;
           var connection = this._configuration.Connection;
-          connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters));
+          //connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters));
+          dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters);
           foreach (DataTable table in dataset.Tables)
             this._resultSets.Add(new Columns(this, table));
         }

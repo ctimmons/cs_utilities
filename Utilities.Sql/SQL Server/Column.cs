@@ -318,20 +318,23 @@ namespace Utilities.Sql.SqlServer
     {
     }
 
-    public Column(Table table, String name)
+    private Column(Configuration configuration, String name)
       : this()
     {
-      this.Table = table;
       this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
-      this._configuration = table.Schema.Database.Server.Configuration;
+      this._configuration = configuration;
+    }
+
+    public Column(Table table, String name)
+      : this(table.Schema.Database.Server.Configuration, name)
+    {
+      this.Table = table;
     }
 
     public Column(StoredProcedure storedProcedure, String name)
-      : this()
+      : this(storedProcedure.Schema.Database.Server.Configuration, name)
     {
       this.StoredProcedure = storedProcedure;
-      this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
-      this._configuration = storedProcedure.Schema.Database.Server.Configuration;
     }
 
     /// <summary>

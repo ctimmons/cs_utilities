@@ -215,11 +215,55 @@ SELECT
       }
     }
 
+    /*
     public Columns(UserDefinedTableType userDefinedTableType)
       : this()
     {
-    }
+      var sql = String.Format(@"
+SELECT
+    table_type_name = tt.name,
+    column_name = c.name,
+    column_type = t.name,
+    c.column_id,
+    --c.system_type_id,
+    --c.user_type_id,
+    c.max_length,
+    c.[precision],
+    c.scale,
+    c.is_nullable
+  FROM 
+    sys.table_types AS tt
+    INNER JOIN sys.columns AS c ON tt.type_table_object_id = c.object_id
+    INNER JOIN sys.types t ON t.system_type_id = c.system_type_id AND t.user_type_id = c.user_type_id
+  WHERE
+    tt.name = '{0}';", userDefinedTableType.Name);
+      var table = userDefinedTableType.Schema.Database.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
+      foreach (DataRow row in table.Rows)
+      {
 
+        this.Add(
+          new Column(table, row["COLUMN_NAME"].ToString())
+          {
+            Ordinal = Convert.ToInt32(row["COLUMN_ORDINAL"]),
+            ColumnType = ColumnType.All,
+            ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
+            NativeServerDataTypeName = nativeServerDataTypeName,
+            PhysicalLength = physicalLength,
+            LogicalLength = this.GetLogicalLength(nativeServerDataTypeName, physicalLength),
+            Precision = Convert.ToInt32(row["PRECISION"]),
+            Scale = Convert.ToInt32(row["SCALE"]),
+            IsNullable = row["IS_NULLABLE"].ToString().EqualsCI("Y"),
+            IsXmlDocument = row["IS_XML_DOCUMENT"].ToString().EqualsCI("Y"),
+            XmlCollectionName = row["XML_COLLECTION_NAME"].ToString(),
+            PrimaryKeyOrdinal = Convert.ToInt32(row["PRIMARY_KEY_ORDINAL"]),
+            PrimaryKeyDirection = row["PRIMARY_KEY_DIRECTION"].ToString(),
+            PrimaryKeySchema = row["PRIMARY_KEY_SCHEMA"].ToString(),
+            PrimaryKeyTable = row["PRIMARY_KEY_TABLE"].ToString(),
+            PrimaryKeyColumn = row["PRIMARY_KEY_COLUMN"].ToString()
+          });
+      }
+    }
+    */
     private Int32 GetLogicalLength(String serverDataTypeName, Int32 maxLength)
     {
       if ((serverDataTypeName.EqualsCI("CHAR") || serverDataTypeName.StartsWithCI("VARCHAR")) && (maxLength > -1))

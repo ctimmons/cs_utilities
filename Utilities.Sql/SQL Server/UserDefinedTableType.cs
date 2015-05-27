@@ -20,7 +20,7 @@ namespace Utilities.Sql.SqlServer
       get
       {
         if (this._columns == null)
-          this.Schema.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => this._columns = new Columns(this));
+          this.Schema.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => this._columns = null /* new Columns(this) */);
 
         return this._columns;
       }
@@ -39,5 +39,10 @@ namespace Utilities.Sql.SqlServer
     {
     }
 
+    public UserDefinedTableType(String name)
+      : this()
+    {
+      this.Name = name;
+    }
   }
 }

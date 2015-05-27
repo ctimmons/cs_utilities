@@ -41,6 +41,32 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
+    private List<UserDefinedTableType> _userDefinedTableTypes = null;
+    public List<UserDefinedTableType> UserDefinedTableTypes
+    {
+      get
+      {
+        if (this._userDefinedTableTypes == null)
+        {
+          var sql = String.Format(@"
+SELECT
+    T.name
+  FROM
+    sys.types AS T
+    INNER JOIN sys.schemas AS S ON T.schema_id = S.schema_id
+  WHERE
+    T.is_table_type = 1
+    AND S.name = '{0}';", this.Name);
+          var table = this.Database.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
+          this._userDefinedTableTypes = new List<UserDefinedTableType>();
+          foreach (DataRow row in table.Rows)
+            this._userDefinedTableTypes.Add(new UserDefinedTableType(row["name"].ToString()));
+        }
+
+        return this._userDefinedTableTypes;
+      }
+    }
+
     public Schema(Database database, String name, Boolean isDefaultSchema)
       : base()
     {
