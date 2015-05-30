@@ -79,6 +79,7 @@ namespace Utilities.Sql.SqlServer
     /* Only one of these will be the parent of this column. */
     public StoredProcedure StoredProcedure { get; private set; }
     public Table Table { get; private set; }
+    public UserDefinedTableType UserDefinedTableType { get; private set; }
 
     /// <summary>
     /// The position of this column in the list of columns in the parent table or view.
@@ -325,16 +326,22 @@ namespace Utilities.Sql.SqlServer
       this._configuration = configuration;
     }
 
+    public Column(StoredProcedure storedProcedure, String name)
+      : this(storedProcedure.Schema.Database.Server.Configuration, name)
+    {
+      this.StoredProcedure = storedProcedure;
+    }
+
     public Column(Table table, String name)
       : this(table.Schema.Database.Server.Configuration, name)
     {
       this.Table = table;
     }
 
-    public Column(StoredProcedure storedProcedure, String name)
-      : this(storedProcedure.Schema.Database.Server.Configuration, name)
+    public Column(UserDefinedTableType userDefinedTableType, String name)
+      : this(userDefinedTableType.Schema.Database.Server.Configuration, name)
     {
-      this.StoredProcedure = storedProcedure;
+      this.UserDefinedTableType = userDefinedTableType;
     }
 
     /// <summary>

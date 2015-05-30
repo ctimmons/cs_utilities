@@ -48,7 +48,10 @@ namespace Utilities.Sql.SqlServer
       {
         if (this._userDefinedTableTypes == null)
         {
-          var sql = String.Format(@"
+          this.Database.Server.Configuration.Connection.ExecuteUnderDatabaseInvariant(this.Database.Name,
+            () =>
+            {
+              var sql = String.Format(@"
 SELECT
     T.name
   FROM
@@ -57,10 +60,11 @@ SELECT
   WHERE
     T.is_table_type = 1
     AND S.name = '{0}';", this.Name);
-          var table = this.Database.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
-          this._userDefinedTableTypes = new List<UserDefinedTableType>();
-          foreach (DataRow row in table.Rows)
-            this._userDefinedTableTypes.Add(new UserDefinedTableType(row["name"].ToString()));
+              var table = this.Database.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
+              this._userDefinedTableTypes = new List<UserDefinedTableType>();
+              foreach (DataRow row in table.Rows)
+                this._userDefinedTableTypes.Add(new UserDefinedTableType(row["name"].ToString(), this));
+            });
         }
 
         return this._userDefinedTableTypes;

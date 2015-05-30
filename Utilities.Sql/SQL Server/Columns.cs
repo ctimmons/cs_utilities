@@ -215,37 +215,119 @@ SELECT
       }
     }
 
-    /*
     public Columns(UserDefinedTableType userDefinedTableType)
       : this()
     {
-      var sql = String.Format(@"
+      this.Name = "";
+
+      var sql = @"
+;WITH foreign_keys_CTE (FOREIGN_KEY_TABLE, FOREIGN_KEY_COLUMN, PRIMARY_KEY_SCHEMA, PRIMARY_KEY_TABLE, PRIMARY_KEY_COLUMN)
+AS
+(
+  SELECT
+      FOREIGN_KEY_TABLE = OBJECT_NAME(FKC.parent_object_id),
+      FOREIGN_KEY_COLUMN = C.NAME,
+      PRIMARY_KEY_SCHEMA = OBJECT_SCHEMA_NAME(FKC.referenced_object_id),
+      PRIMARY_KEY_TABLE = OBJECT_NAME(FKC.referenced_object_id),
+      PRIMARY_KEY_COLUMN = CREF.NAME
+    FROM
+      sys.foreign_key_columns AS FKC
+      INNER JOIN sys.columns AS C ON FKC.parent_column_id = C.column_id AND FKC.parent_object_id = c.object_id
+      INNER JOIN sys.columns AS CREF ON FKC.referenced_column_id = CREF.column_id AND FKC.referenced_object_id = cref.object_id
+),
+primary_keys_CTE (OBJECT_ID, COLUMN_ID, PRIMARY_KEY_ORDINAL, PRIMARY_KEY_DIRECTION)
+AS
+(
+  SELECT
+      i.object_id,
+      c.column_id,
+      ic.key_ordinal,
+      CASE
+        WHEN ic.is_descending_key = 0 THEN 'ASC'
+        ELSE 'DESC'
+      END
+    FROM
+      sys.indexes AS i
+      INNER JOIN sys.index_columns AS ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id and i.is_primary_key = 1
+      INNER JOIN sys.columns AS C ON C.[object_id] = IC.[object_id] AND c.[column_id] = ic.column_id
+),
+column_type_CTE (USER_TYPE_ID, SERVER_DATATYPE_NAME, NATIVE_SERVER_DATATYPE_NAME)
+AS
+(
+  SELECT
+      T1.user_type_id,
+      SERVER_DATATYPE_NAME = UPPER(T1.name),
+      NATIVE_SERVER_DATATYPE_NAME = UPPER(COALESCE(T2.name, T1.name))
+    FROM
+      sys.types AS T1
+      LEFT OUTER JOIN sys.types AS T2 ON T2.user_type_id = T1.system_type_id AND T1.is_table_type = 0
+)
 SELECT
-    table_type_name = tt.name,
-    column_name = c.name,
-    column_type = t.name,
-    c.column_id,
-    --c.system_type_id,
-    --c.user_type_id,
-    c.max_length,
-    c.[precision],
-    c.scale,
-    c.is_nullable
-  FROM 
-    sys.table_types AS tt
-    INNER JOIN sys.columns AS c ON tt.type_table_object_id = c.object_id
-    INNER JOIN sys.types t ON t.system_type_id = c.system_type_id AND t.user_type_id = c.user_type_id
+  DISTINCT
+    TABLE_TYPE_NAME = TT.name,
+    COLUMN_NAME = C.[name],
+    COLUMN_ORDINAL = C.column_id - 1,
+    C.user_type_id,
+    C.system_type_id,
+    SERVER_DATATYPE_NAME = CT_CTE.SERVER_DATATYPE_NAME,
+    NATIVE_SERVER_DATATYPE_NAME = CT_CTE.NATIVE_SERVER_DATATYPE_NAME,
+    PHYSICAL_LENGTH = C.max_length,
+    C.[precision],
+    C.scale,
+    IS_NULLABLE = CASE C.is_nullable WHEN 0 THEN 'N' ELSE 'Y' END,
+    IS_IDENTITY = CASE C.is_identity WHEN 0 THEN 'N' ELSE 'Y' END,
+    IS_XML_DOCUMENT = CASE C.is_xml_document WHEN 0 THEN 'N' ELSE 'Y' END,
+    XML_COLLECTION_NAME = COALESCE(XMLCOLL.name, ''),
+    IS_PRIMARY_KEY = CASE WHEN (PK_CTE.primary_key_ordinal IS NULL) THEN 'N' ELSE 'Y' END,
+    PRIMARY_KEY_ORDINAL = COALESCE(PK_CTE.primary_key_ordinal, -1),
+    PRIMARY_KEY_DIRECTION = COALESCE(PK_CTE.PRIMARY_KEY_DIRECTION, ''),
+    IS_FOREIGN_KEY = CASE WHEN (FK_CTE.foreign_key_table IS NULL) THEN 'N' ELSE 'Y' END,
+    PRIMARY_KEY_SCHEMA = COALESCE(FK_CTE.primary_key_schema, ''),
+    PRIMARY_KEY_TABLE = COALESCE(FK_CTE.primary_key_table, ''),
+    PRIMARY_KEY_COLUMN = COALESCE(FK_CTE.primary_key_column, '')
+  FROM
+    sys.table_types AS TT
+    INNER JOIN sys.columns AS C ON TT.type_table_object_id = C.object_id
+    LEFT OUTER JOIN sys.xml_schema_collections AS XMLCOLL ON XMLCOLL.xml_collection_id = C.xml_collection_id
+    LEFT OUTER JOIN foreign_keys_CTE AS FK_CTE ON (FK_CTE.foreign_key_table = TT.[name]) AND (FK_CTE.foreign_key_column = C.[name])
+    LEFT OUTER JOIN primary_keys_CTE AS PK_CTE ON PK_CTE.object_id = TT.type_table_object_id AND PK_CTE.column_id = C.column_id
+    LEFT OUTER JOIN column_type_CTE AS CT_CTE ON CT_CTE.USER_TYPE_ID = C.user_type_id
   WHERE
-    tt.name = '{0}';", userDefinedTableType.Name);
-      var table = userDefinedTableType.Schema.Database.Server.Configuration.Connection.GetDataSet(sql).Tables[0];
-      foreach (DataRow row in table.Rows)
+    TT.[name] = '{0}';";
+
+      var select = String.Format(sql, userDefinedTableType.Name);
+      var t = userDefinedTableType.Schema.Database.Server.Configuration.Connection.GetDataSet(select).Tables[0];
+      foreach (DataRow row in t.Rows)
       {
+        var columnType = ColumnType.Unknown;
+
+        if (row["IS_IDENTITY"].ToString().EqualsCI("Y"))
+          columnType |= ColumnType.ID;
+
+        if (row["IS_PRIMARY_KEY"].ToString().EqualsCI("Y"))
+          columnType |= ColumnType.PrimaryKey;
+
+        if (row["IS_FOREIGN_KEY"].ToString().EqualsCI("Y"))
+          columnType |= ColumnType.ForeignKey;
+
+        if (columnType == ColumnType.Unknown)
+          columnType |= ColumnType.NonKeyAndNonID;
+
+        var nativeServerDataTypeName = row["NATIVE_SERVER_DATATYPE_NAME"].ToString();
+
+        if (nativeServerDataTypeName.NotEqualsCI("TIMESTAMP") && !columnType.HasFlag(ColumnType.ID))
+          columnType |= (ColumnType.CanAppearInInsertStatement | ColumnType.CanAppearInUpdateSetClause);
+
+        if (nativeServerDataTypeName != "XML")
+          columnType |= ColumnType.CanAppearInSqlWhereClause;
+
+        var physicalLength = Convert.ToInt32(row["PHYSICAL_LENGTH"]);
 
         this.Add(
-          new Column(table, row["COLUMN_NAME"].ToString())
+          new Column(userDefinedTableType, row["COLUMN_NAME"].ToString())
           {
             Ordinal = Convert.ToInt32(row["COLUMN_ORDINAL"]),
-            ColumnType = ColumnType.All,
+            ColumnType = columnType,
             ServerDataTypeName = row["SERVER_DATATYPE_NAME"].ToString(),
             NativeServerDataTypeName = nativeServerDataTypeName,
             PhysicalLength = physicalLength,
@@ -263,7 +345,7 @@ SELECT
           });
       }
     }
-    */
+
     private Int32 GetLogicalLength(String serverDataTypeName, Int32 maxLength)
     {
       if ((serverDataTypeName.EqualsCI("CHAR") || serverDataTypeName.StartsWithCI("VARCHAR")) && (maxLength > -1))

@@ -25,22 +25,16 @@ namespace Utilities.Sql.SqlServer
     /// <returns></returns>
     public static DataSet GetDataSet(this SqlConnection connection, String sql)
     {
-      var dataSet = new DataSet();
-
-      connection.ExecuteUnderDatabaseInvariant(connection.Database,
-        () =>
+      using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.Text, CommandText = sql })
+      {
+        using (var adapter = new SqlDataAdapter())
         {
-          using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.Text, CommandText = sql })
-          {
-            using (var adapter = new SqlDataAdapter())
-            {
-              adapter.SelectCommand = command;
-              adapter.Fill(dataSet);
-            }
-          }
-        });
-
-      return dataSet;
+          var dataSet = new DataSet();
+          adapter.SelectCommand = command;
+          adapter.Fill(dataSet);
+          return dataSet;
+        }
+      }
     }
 
     public static DataSet GetDataSet(this SqlConnection connection, String storedProcedureName, SqlParameter[] sqlParameters)
