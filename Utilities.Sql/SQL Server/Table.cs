@@ -27,6 +27,14 @@ namespace Utilities.Sql.SqlServer
       get { return String.Format("{0}.{1}", this.Schema.BracketedName, this.BracketedName); }
     }
 
+    public override string TargetLanguageIdentifier
+    {
+      get
+      {
+        return this.Schema.Name + "_" + base.TargetLanguageIdentifier;
+      }
+    }
+
     private Columns _columns = null;
     public Columns Columns
     {

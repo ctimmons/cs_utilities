@@ -8,10 +8,6 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
-  /*
-    Func<Boolean, T> booleanConverter
-  */
-
   public class StoredProcedure : BaseSqlServerObject
   {
     private Configuration _configuration;
@@ -29,13 +25,15 @@ namespace Utilities.Sql.SqlServer
         if (this._resultSets == null)
         {
           this._resultSets = new List<Columns>();
-
-          DataSet dataset = null;
           var connection = this._configuration.Connection;
-          //connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name, () => dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters));
-          dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters);
-          foreach (DataTable table in dataset.Tables)
-            this._resultSets.Add(new Columns(this, table));
+
+          connection.ExecuteUnderDatabaseInvariant(this.Schema.Database.Name,
+            () =>
+            {
+              var dataset = connection.GetDataSet(this.SqlIdentifier, this.SqlParameters);
+              foreach (DataTable table in dataset.Tables)
+                this._resultSets.Add(new Columns(this, table));
+            });
         }
 
         return this._resultSets;

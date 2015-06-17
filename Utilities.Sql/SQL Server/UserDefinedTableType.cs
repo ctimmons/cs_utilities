@@ -4,8 +4,6 @@ namespace Utilities.Sql.SqlServer
 {
   public class UserDefinedTableType : BaseSqlServerObject
   {
-    //private Configuration _configuration;
-
     public Schema Schema { get; private set; }
 
     private Columns _columns = null;
@@ -25,6 +23,14 @@ namespace Utilities.Sql.SqlServer
       get
       {
         return String.Concat(this.Schema.BracketedName, ".", this.BracketedName);
+      }
+    }
+
+    public override string TargetLanguageIdentifier
+    {
+      get
+      {
+        return this.Schema.Name + "_" + base.TargetLanguageIdentifier;
       }
     }
 
