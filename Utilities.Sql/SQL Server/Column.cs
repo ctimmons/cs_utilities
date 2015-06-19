@@ -290,7 +290,12 @@ namespace Utilities.Sql.SqlServer
     {
       get
       {
-        return (this.IsXmlDocument ? XmlNodeType.Document : XmlNodeType.DocumentFragment);
+        if (this.IsXmlDocument)
+          return XmlNodeType.Document;
+        else if (this.NativeServerDataTypeName == "XML")
+          return XmlNodeType.DocumentFragment;
+        else
+          return XmlNodeType.None;
       }
     }
 
@@ -886,7 +891,7 @@ End Property
         else
           throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
-        return String.Format(format, scope, this.ClrTypeName, this.TargetLanguageIdentifier, keyIdentificationComment, this.TargetLanguageBackingStoreIdentifier);
+        return String.Format(format, scope, this.ClrTypeName, this.TargetLanguageIdentifier, keyIdentificationComment, this.TargetLanguageBackingStoreIdentifier).Trim();
       }
       else
       {
@@ -959,7 +964,7 @@ if (xsd != null)
       var schema = this.Table.Schema;
 
       return String.Format(propertyTemplate, scope, this.GetClrTypeNameFromNativeSqlType(), this.TargetLanguageIdentifier, keyIdentificationComment,
-        this.TargetLanguageBackingStoreIdentifier, schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4));
+        this.TargetLanguageBackingStoreIdentifier, schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4)).Trim();
     }
 
     private String GetXmlValidatedPropertyForFSharp(String scope, String keyIdentificationComment)
@@ -1007,7 +1012,7 @@ if xsd <> null
       var schema = this.Table.Schema;
 
       return String.Format(propertyTemplate, keyIdentificationComment, scope, this.TargetLanguageIdentifier, this.TargetLanguageBackingStoreIdentifier,
-        schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4));
+        schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4)).Trim();
     }
 
     private String GetXmlValidatedPropertyForVisualBasic(String scope, String keyIdentificationComment)
@@ -1065,7 +1070,7 @@ End If
       var schema = this.Table.Schema;
 
       return String.Format(propertyTemplate, keyIdentificationComment, scope, this.TargetLanguageIdentifier, this.GetClrTypeNameFromNativeSqlType(),
-        this.TargetLanguageBackingStoreIdentifier, schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4));
+        this.TargetLanguageBackingStoreIdentifier, schema.Database.Name, schema.Name, this.XmlCollectionName, xmlValidationCode.Indent(4)).Trim();
     }
 
     /// <summary>
