@@ -49,11 +49,11 @@ namespace Utilities.Sql.SqlServer.Tests
     [Test]
     public void GetNormalizedSqlIdentifierTest()
     {
-      Assert.Throws<ArgumentNullException>(() => IdentifierHelper.GetNormalizedSqlIdentifier(null));
-      Assert.Throws<ArgumentException>(() => IdentifierHelper.GetNormalizedSqlIdentifier(""));
-      Assert.Throws<ArgumentException>(() => IdentifierHelper.GetNormalizedSqlIdentifier(" "));
+      Assert.Throws<ArgumentNullException>(() => IdentifierHelper.GetBracketedSqlIdentifier(null));
+      Assert.Throws<ArgumentException>(() => IdentifierHelper.GetBracketedSqlIdentifier(""));
+      Assert.Throws<ArgumentException>(() => IdentifierHelper.GetBracketedSqlIdentifier(" "));
 
-      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, IdentifierHelper.GetNormalizedSqlIdentifier(actual));
+      Action<String, String> areEqual = (expected, actual) => Assert.AreEqual(expected, IdentifierHelper.GetBracketedSqlIdentifier(actual));
 
       areEqual(".", ".");
       areEqual("..", "..");

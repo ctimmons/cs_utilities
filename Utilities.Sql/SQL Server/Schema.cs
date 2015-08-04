@@ -90,7 +90,7 @@ SELECT
       name.Name("name").NotNullEmptyOrOnlyWhitespace();
       versionNumber.Name("versionNumber").GreaterThan(0);
 
-      name = IdentifierHelper.GetNormalizedSqlIdentifier(name);
+      name = IdentifierHelper.GetBracketedSqlIdentifier(name);
 
       if (name.Contains("."))
         throw new ArgumentExceptionFmt(Properties.Resources.InvalidStoredProcedureNameForSchema, name);

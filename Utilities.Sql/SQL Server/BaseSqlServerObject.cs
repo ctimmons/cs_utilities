@@ -18,15 +18,30 @@ namespace Utilities.Sql.SqlServer
       get
       {
         if (this._bracketedName == null)
-          this._bracketedName = IdentifierHelper.GetNormalizedSqlIdentifier(this.Name);
+          this._bracketedName = IdentifierHelper.GetBracketedSqlIdentifier(this.Name);
 
         return this._bracketedName;
       }
     }
 
+    private String _sqlIdentifier = null;
+    /// <summary>
+    /// This SQL Server object's name, converted to a valid identifier for use in TSQL.
+    /// </summary>
+    public virtual String SqlIdentifier
+    {
+      get
+      {
+        if (this._sqlIdentifier == null)
+          this._sqlIdentifier = "@" + this.Name.Replace(" ", "_");
+
+        return this._sqlIdentifier;
+      }
+    }
+
     private String _targetLanguageIdentifier = null;
     /// <summary>
-    /// This column's name, converted to a valid identifier in the target language.
+    /// This SQL Server object's name, converted to a valid identifier in the target language.
     /// </summary>
     public virtual String TargetLanguageIdentifier
     {

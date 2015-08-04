@@ -346,9 +346,14 @@ SELECT
       }
     }
 
+    public Column GetByName(String name)
+    {
+      return this.Where(column => column.Name.EqualsCI(name)).FirstOrDefault();
+    }
+
     private Int32 GetLogicalLength(String serverDataTypeName, Int32 maxLength)
     {
-      if ((serverDataTypeName.EqualsCI("CHAR") || serverDataTypeName.StartsWithCI("VARCHAR")) && (maxLength > -1))
+      if ((serverDataTypeName.EqualsCI("NCHAR") || serverDataTypeName.StartsWithCI("NVARCHAR")) && (maxLength > -1))
         return maxLength / 2;
       else
         return maxLength;
@@ -392,6 +397,10 @@ SELECT
         return "NVARCHAR";
       else if (column.DataType == typeof(TimeSpan))
         return "TIME";
+
+      /* The unsigned CLR integer types are mapped to
+         larger SQL Server signed types to preserve the
+         highest order bit in the CLR values. */
       else if (column.DataType == typeof(UInt16))
         return "INT";
       else if (column.DataType == typeof(UInt32))
@@ -406,9 +415,7 @@ SELECT
     {
       return
         this
-        .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
-        .ThenBy(column => column.PrimaryKeyOrdinal)
+        .OrderBy(column => column.Name)
         .Select(column => column.GetCreateTableColumnDeclaration())
         .ToList();
     }
@@ -445,9 +452,7 @@ SELECT
       return
         this
         .Where(column => (column.ColumnType & columnType) > 0)
-        .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
-        .ThenBy(column => column.PrimaryKeyOrdinal)
+        .OrderBy(column => column.Name)
         .Select(column => column.GetStoredProcedureParameterDeclaration(includeKeyIdentificationComment))
         .ToList();
     }
@@ -733,10 +738,7 @@ SELECT
     {
       return
         this
-        .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
-        .ThenBy(column => column.PrimaryKeyOrdinal)
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.ForeignKey))
+        .OrderBy(column => column.Name)
         .Select(column => column.GetTargetLanguageProperty(scope, includeKeyIdentificationComment))
         .ToList();
     }
@@ -774,11 +776,46 @@ SELECT
       return
         this
         .Where(column => (column.ColumnType & columnType) > 0)
-        .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
-        .ThenBy(column => column.PrimaryKeyOrdinal)
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.ForeignKey))
+        .OrderBy(column => column.Name)
         .Select(column => column.GetTargetLanguageMethodParameterNameAndType(includeKeyIdentificationComment))
+        .ToList();
+    }
+
+    /// <summary>
+    /// Returns a list of strings that represent a set of method parameter names in the specified target language,
+    /// one for each column.
+    /// </summary>
+    /// <example>
+    /// Assuming the configuration's XmlSystem is set to Linq_XDocument, and TargetLanguage is set to CSharp,
+    /// executing "String.Join("," + Environment.NewLine, table.Columns.GetTargetLanguageMethodParameterNames())"
+    /// on the AdventureWorks2012 Person.Person table will generate this string:
+    /// <code>
+    /// BusinessEntityID,
+    /// AdditionalContactInfo,
+    /// Demographics,
+    /// EmailPromotion,
+    /// FirstName,
+    /// LastName,
+    /// MiddleName,
+    /// ModifiedDate,
+    /// NameStyle,
+    /// PersonType,
+    /// rowguid,
+    /// Suffix,
+    /// Title
+    /// </code>
+    /// </example>
+    /// <param name="columnType">An enum value indicating what kind of column type(s) to include in the return value.</param>
+    /// <param name="includeKeyIdentificationComment">An enum value indicating whether or not to include
+    /// a comment identifying the column as a primary and/or foreign key (see example code).</param>
+    /// <returns>A <see cref="System.Collections.Generic.List{T}">List&lt;String&gt;</see>.</returns>
+    public List<String> GetTargetLanguageMethodIdentifiers(ColumnType columnType, IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
+    {
+      return
+        this
+        .Where(column => (column.ColumnType & columnType) > 0)
+        .OrderBy(column => column.Name)
+        .Select(column => column.GetTargetLanguageMethodParameterName(includeKeyIdentificationComment))
         .ToList();
     }
 
@@ -814,11 +851,7 @@ SELECT
       return
         this
         .Where(column => (column.ColumnType & columnType) > 0)
-        .OrderByDescending(column => column.ColumnType.HasFlag(ColumnType.ID))
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.PrimaryKey))
-        .ThenBy(column => column.PrimaryKeyOrdinal)
-        .ThenByDescending(column => column.ColumnType.HasFlag(ColumnType.ForeignKey))
-        .ThenBy(column => column.Name)
+        .OrderBy(column => column.Name)
         .Select(column => column.GetTargetLanguageSqlParameterText(includeKeyIdentificationComment))
         .ToList();
     }

@@ -489,7 +489,7 @@ namespace Utilities.Sql.SqlServer
     /// Given a T-SQL identifier, return the same identifier with all of its
     /// constituent parts wrapped in square brackets.
     /// </summary>
-    public static String GetNormalizedSqlIdentifier(String identifier)
+    public static String GetBracketedSqlIdentifier(String identifier)
     {
       identifier.Name("identifier").NotNullEmptyOrOnlyWhitespace();
 

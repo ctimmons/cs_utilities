@@ -54,6 +54,12 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
+    public static Int32 ExecuteNonQuery(this SqlConnection connection, String sql)
+    {
+      using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.Text, CommandText = sql })
+        return command.ExecuteNonQuery();
+    }
+
     public static XDocument GetXDocument(this SqlDataReader sqlDataReader, String columnName)
     {
       return sqlDataReader.GetXDocument(sqlDataReader.GetOrdinal(columnName));
@@ -301,5 +307,7 @@ namespace Utilities.Sql.SqlServer
           connection.ChangeDatabase(previousDatabaseName);
       }
     }
+
+
   }
 }

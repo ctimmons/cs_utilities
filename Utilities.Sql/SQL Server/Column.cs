@@ -211,21 +211,6 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
-    private String _sqlIdentifier = null;
-    /// <summary>
-    /// This column's name, converted to a valid identifier for use in TSQL.
-    /// </summary>
-    public String SqlIdentifier
-    {
-      get
-      {
-        if (this._sqlIdentifier == null)
-          this._sqlIdentifier = "@" + this.Name.Replace(" ", "_");
-
-        return this._sqlIdentifier;
-      }
-    }
-
     private String _sqlIdentifierTypeAndSize = null;
     /// <summary>
     /// This column's SQL Server data type name and size (if applicable).  E.g. VARCHAR(10), INT, DECIMAL(18, 5), etc.
@@ -810,9 +795,20 @@ namespace Utilities.Sql.SqlServer
         throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
 
       return String.Format(format, this.ClrTypeName, this.TargetLanguageIdentifier,
-        (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && !String.IsNullOrWhiteSpace(this.KeyIdentificationComment))
+        (((includeKeyIdentificationComment == IncludeKeyIdentificationComment.Yes) && this.KeyIdentificationComment.IsNotEmpty())
           ? " " + this.KeyIdentificationComment
           : "")).Trim();
+    }
+
+    /// <summary>
+    /// Return a string that can be used in generated code to represent this column as a target language method parameter name.
+    /// </summary>
+    /// <param name="includeKeyIdentificationComment">An enum value indicating whether or not to include
+    /// a comment identifying the column as a primary and/or foreign key.</param>
+    /// <returns>A String.</returns>
+    public String GetTargetLanguageMethodParameterName(IncludeKeyIdentificationComment includeKeyIdentificationComment = IncludeKeyIdentificationComment.Yes)
+    {
+      return String.Concat(this.TargetLanguageIdentifier, " ", this.KeyIdentificationComment).Trim();
     }
 
     private String GetTargetLanguageBackingStoreDeclaration()
@@ -1088,14 +1084,6 @@ End If
     public String GetCreateTableColumnDeclaration()
     {
       return String.Format("{0} {1}{2}", this.BracketedName, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : "");
-    }
-  }
-
-  public static class ColumnExtensions
-  {
-    public static Column GetByName(this IEnumerable<Column> columns, String name)
-    {
-      return columns.Where(column => column.Name.EqualsCI(name)).FirstOrDefault();
     }
   }
 }
