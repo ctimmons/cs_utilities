@@ -88,11 +88,29 @@ namespace Utilities.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The string parameter &apos;{0}&apos; specifies directory &apos;{1}&apos; which does not exist..
+        /// </summary>
+        internal static string Assert_DirectoryExists {
+            get {
+                return ResourceManager.GetString("Assert_DirectoryExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The parameter &apos;{0}&apos;, which has value &apos;{1}&apos;, is equal to &apos;{2}&apos;..
         /// </summary>
         internal static string Assert_EqualTo {
             get {
                 return ResourceManager.GetString("Assert_EqualTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The string parameter &apos;{0}&apos; specifies file &apos;{1}&apos; which does not exist..
+        /// </summary>
+        internal static string Assert_FileExists {
+            get {
+                return ResourceManager.GetString("Assert_FileExists", resourceCulture);
             }
         }
         
@@ -444,6 +462,15 @@ namespace Utilities.Core.Properties {
         internal static string StringUtils_BooleanTruthLiterals {
             get {
                 return ResourceManager.GetString("StringUtils_BooleanTruthLiterals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All of the parameters are either null, have zero length, or consist only of whitespace..
+        /// </summary>
+        internal static string StringUtils_Coalesce {
+            get {
+                return ResourceManager.GetString("StringUtils_Coalesce", resourceCulture);
             }
         }
     }

@@ -12,6 +12,37 @@ namespace Utilities.Core
   public static class StringUtils
   {
     /// <summary>
+    /// Returns the string s with all of the characters in cs removed.
+    /// </summary>
+    public static String Strip(this String s, Char[] cs)
+    {
+      return
+        s
+        .Where(c => !cs.Any(a => a == c))
+        .Join();
+    }
+
+    /// <summary>
+    /// Returns the first string parameter that is not null, has a length greater
+    /// than zero, and does not consist only of whitespace.
+    /// </summary>
+    public static String Coalesce(String s, params String[] defaults)
+    {
+      if (s.IsNullOrEmpty())
+      {
+        foreach (var def in defaults)
+          if (!def.IsNullOrEmpty())
+            return def;
+
+        throw new ArgumentException(Properties.Resources.StringUtils_Coalesce);
+      }
+      else
+      {
+        return s;
+      }
+    }
+
+    /// <summary>
     /// Returns the beginning portion of s up to, but not including,
     /// the first occurrence of the character c.  If c is not present in
     /// s, then s is returned.

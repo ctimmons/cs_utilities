@@ -40,6 +40,11 @@ namespace Utilities.Core
       return values.Any(s => s.EqualsCI(searchValue));
     }
 
+    public static String Join(this IEnumerable<Char> values)
+    {
+      return String.Join("", values);
+    }
+
     public static String Join(this IEnumerable<String> values, String separator)
     {
       values.Name("values").NotNull();
@@ -52,7 +57,7 @@ namespace Utilities.Core
     {
       values.Name("values").NotNull();
 
-      return String.Join(Environment.NewLine, values);
+      return values.Join(Environment.NewLine);
     }
 
     public static String JoinAndIndent(this IEnumerable<String> values, String separator, Int32 indent)

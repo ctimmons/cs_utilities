@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 
 namespace Utilities.Core
 {
@@ -59,7 +60,7 @@ namespace Utilities.Core
 
   */
 
-  public static class AssertUtils
+  public static partial class AssertUtils
   {
     public static AssertionContext<T> Name<T>(this T value, String name)
     {
@@ -256,6 +257,32 @@ namespace Utilities.Core
         throw new ArgumentException(String.Format(Properties.Resources.Assert_BetweenExclusive, value.Name, value.Value, lowerBound, upperBound));
     }
 
+    public static AssertionContext<String> DirectoryExists(this String value)
+    {
+      return (new AssertionContext<String>(value)).DirectoryExists();
+    }
+
+    public static AssertionContext<String> DirectoryExists(this AssertionContext<String> value)
+    {
+      if (Directory.Exists(value.Value))
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_DirectoryExists, value.Name, value.Value));
+    }
+
+    public static AssertionContext<String> FileExists(this String value)
+    {
+      return (new AssertionContext<String>(value)).FileExists();
+    }
+
+    public static AssertionContext<String> FileExists(this AssertionContext<String> value)
+    {
+      if (File.Exists(value.Value))
+        return value;
+      else
+        throw new ArgumentException(String.Format(Properties.Resources.Assert_FileExists, value.Name, value.Value));
+    }
+
     /* Old, obsolete code. */
     private static void InternalCheckString(Int32 stackFrameLevel, String value, String name, StringAssertion stringAssertion, Int32 minimumLength, Int32 maximumLength)
     {
@@ -338,14 +365,14 @@ namespace Utilities.Core
     {
     }
 
-    internal AssertionContext(T value)
+    public AssertionContext(T value)
       : this()
     {
       this.Name = "<Unknown variable name>";
       this.Value = value;
     }
 
-    internal AssertionContext(String name, T value)
+    public AssertionContext(String name, T value)
       : this()
     {
       this.Name = name;

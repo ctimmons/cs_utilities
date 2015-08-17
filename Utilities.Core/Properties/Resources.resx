@@ -246,4 +246,13 @@
   <data name="Assert_StringIsAllWhitespace" xml:space="preserve">
     <value>The string parameter '{0}' consists soley of whitespace.</value>
   </data>
+  <data name="Assert_DirectoryExists" xml:space="preserve">
+    <value>The string parameter '{0}' specifies directory '{1}' which does not exist.</value>
+  </data>
+  <data name="Assert_FileExists" xml:space="preserve">
+    <value>The string parameter '{0}' specifies file '{1}' which does not exist.</value>
+  </data>
+  <data name="StringUtils_Coalesce" xml:space="preserve">
+    <value>All of the parameters are either null, have zero length, or consist only of whitespace.</value>
+  </data>
 </root>

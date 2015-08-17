@@ -150,4 +150,10 @@
   <data name="IdentiferHelperInitNotCalled" xml:space="preserve">
     <value>The IdentifierHelper.Init() method must be called before this method is called for the first time.</value>
   </data>
+  <data name="Assert_IsOpen" xml:space="preserve">
+    <value>The SqlConnection parameter '{0}' is not open.</value>
+  </data>
+  <data name="Make_UnknownFilenameFormat" xml:space="preserve">
+    <value>'{0}' is not a one-, two- or three-part T-SQL identifier.</value>
+  </data>
 </root>
