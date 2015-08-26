@@ -236,6 +236,12 @@ namespace Utilities.Core
         ms.WriteTo(fs);
     }
 
+    public static void DeleteFiles(IEnumerable<String> filenames)
+    {
+      foreach (var filename in filenames)
+        File.Delete(filename);
+    }
+
     public static void DeleteEmptyDirectories(String path)
     {
       path.Name("path").NotNullEmptyOrOnlyWhitespace();
