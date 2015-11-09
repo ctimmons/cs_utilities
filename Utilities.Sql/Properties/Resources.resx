@@ -154,6 +154,39 @@
     <value>The SqlConnection parameter '{0}' is not open.</value>
   </data>
   <data name="Make_UnknownFilenameFormat" xml:space="preserve">
-    <value>'{0}' is not a one-, two- or three-part T-SQL identifier.</value>
+    <value>'{0}' is not a one-, or two-part T-SQL identifier.</value>
+  </data>
+  <data name="Make_CreatedNewItem" xml:space="preserve">
+    <value>Created new item for '{0}'.</value>
+  </data>
+  <data name="Make_Executed" xml:space="preserve">
+    <value>Executed '{0}'.</value>
+  </data>
+  <data name="Make_ItemsDoNotExist" xml:space="preserve">
+    <value>No items exist yet for pathname '{0}'.  Empty item data structure created in memory.</value>
+  </data>
+  <data name="Make_ItemsLoaded" xml:space="preserve">
+    <value>Items loaded from '{0}'.</value>
+  </data>
+  <data name="Make_ItemsSaved" xml:space="preserve">
+    <value>Items saved to '{0}'.</value>
+  </data>
+  <data name="Make_PathnameNotFound" xml:space="preserve">
+    <value>Pathname '{0}' not found in items.</value>
+  </data>
+  <data name="Make_SourceFileDoesNotExist" xml:space="preserve">
+    <value>Source file does not exist for database object [{0}].[{1}] (object type '{2}').</value>
+  </data>
+  <data name="Make_SuccessfullyCompiled" xml:space="preserve">
+    <value>Successfully compiled '{0}'.</value>
+  </data>
+  <data name="Make_UnknownType" xml:space="preserve">
+    <value>Unknown type: '{0}'.</value>
+  </data>
+  <data name="Make_UpdatedExistingItem" xml:space="preserve">
+    <value>Updated existing item for '{0}'.</value>
+  </data>
+  <data name="Make_UpdatedItemForFile" xml:space="preserve">
+    <value>Updated item for file '{0}'.</value>
   </data>
 </root>

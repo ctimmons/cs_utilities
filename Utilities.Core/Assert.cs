@@ -19,7 +19,7 @@ namespace Utilities.Core
   /*
 
     A small collection of extension methods that reduces the code needed to
-    check strings for null-ness, whitespace only and length.
+    check strings for null-ness, whitespace only, and length.
 
     A common idiom in C# methods is using one or more if/then statements to check parameter(s) for validity.
 
@@ -121,7 +121,7 @@ namespace Utilities.Core
       where T : IEnumerable
     {
       /* Some non-generic IEnumerator enumerators returned by IEnumerable.GetEnumerator()
-         also implement IDisposable, while others do not.  Those enumerators
+         implement IDisposable, while others do not.  Those enumerators
          that do implement IDisposable will need to have their Dispose() method called.
          
          A non-generic IEnumerator cannot be used in a "using" statement.
@@ -129,7 +129,8 @@ namespace Utilities.Core
          because it will generate code to dispose of the IEnumerator
          if the enumerator also implements IDisposable. */
 
-      /* This loop will execute zero or more times. */
+      /* This loop will execute zero or more times,
+         and the foreach will dispose the enumerator, if necessary. */
       foreach (var _ in value.Value)
         return value; /* Loop executed once.  There is at least one element in the IEnumerable, which means it's not empty. */
 
@@ -283,7 +284,7 @@ namespace Utilities.Core
         throw new ArgumentException(String.Format(Properties.Resources.Assert_FileExists, value.Name, value.Value));
     }
 
-    /* Old, obsolete code. */
+    #region Old, obsolete code
     private static void InternalCheckString(Int32 stackFrameLevel, String value, String name, StringAssertion stringAssertion, Int32 minimumLength, Int32 maximumLength)
     {
       name.CheckForNull("name");
@@ -353,6 +354,7 @@ namespace Utilities.Core
       if (value == null)
         throw new ArgumentNullException(name);
     }
+    #endregion
   }
 
   public class AssertionContext<T>

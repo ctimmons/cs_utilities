@@ -83,6 +83,9 @@ namespace Utilities.Core
         yield return line;
     }
 
+    /// <summmary>
+    /// Return true if an IEnumerable&lt;T&gt; is null or contains no elements.
+    /// </summmary>
     public static Boolean IsNullOrEmpty<T>(this IEnumerable<T> items)
     {
       return ((items == null) || !items.Any());

@@ -79,6 +79,7 @@
     <Compile Include="SQL Server\Database.cs" />
     <Compile Include="SQL Server\DataGeneration.cs" />
     <Compile Include="SQL Server\IdentifierHelper.cs" />
+    <Compile Include="SQL Server\Make.cs" />
     <Compile Include="SQL Server\Schema.cs" />
     <Compile Include="SQL Server\Server.cs" />
     <Compile Include="SQL Server\StoredProcedure.cs" />
@@ -95,6 +96,8 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="SQL Server\GetUpdatedItems.sql" />
+    <Content Include="SQL Server\Make - Description.txt" />
     <Content Include="UNLICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -103,7 +106,6 @@
       <Name>Utilities.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

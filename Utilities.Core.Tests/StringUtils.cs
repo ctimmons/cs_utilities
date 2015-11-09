@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using NUnit.Framework;
 
@@ -13,6 +14,64 @@ namespace Utilities.Core.UnitTests
   public class StringUtilsTests
   {
     public StringUtilsTests() : base() { }
+
+    [Test]
+    public void CoalesceTest()
+    {
+      /* See comment in Coalesce() method as to why these two similar calls
+         return different exceptions. */
+      Assert.Throws<ArgumentNullException>(() => StringUtils.Coalesce(null));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce((String) null));
+
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce());
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce(""));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("  "));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce(null, null));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("", null));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("  ", null));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("  ", ""));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("", "  "));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("  ", "  "));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce("", ""));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce(null, ""));
+      Assert.Throws<ArgumentException>(() => StringUtils.Coalesce(null, "  "));
+
+      Assert.AreEqual("a", StringUtils.Coalesce("a"));
+      Assert.AreEqual("a", StringUtils.Coalesce("a", null));
+      Assert.AreEqual("a", StringUtils.Coalesce(null, "a"));
+      Assert.AreEqual("a", StringUtils.Coalesce("a", ""));
+      Assert.AreEqual("a", StringUtils.Coalesce("", "a"));
+      Assert.AreEqual("a", StringUtils.Coalesce("a", "  "));
+      Assert.AreEqual("a", StringUtils.Coalesce("  ", "a"));
+    }
+
+    [Test]
+    public void RegexEscapeTest()
+    {
+      String s = null;
+      Assert.Throws<ArgumentNullException>(() => s.RegexEscape());
+
+      s = "";
+      Assert.Throws<ArgumentException>(() => s.RegexEscape());
+
+      s = " ";
+      Assert.Throws<ArgumentException>(() => s.RegexEscape());
+
+      s = "abc";
+      Assert.AreEqual(Regex.Escape(s), s.RegexEscape());
+
+      s = @"ab\c";
+      Assert.AreEqual(Regex.Escape(s), s.RegexEscape());
+
+      s = @"ab\c";
+      Assert.AreEqual(s, s.RegexEscape('\\'));
+
+      s = @"ab\.c";
+      Assert.AreEqual(@"ab\\.c", s.RegexEscape('\\'));
+
+      s = @"ab\.c";
+      Assert.AreEqual(s, s.RegexEscape('\\', '.'));
+    }
 
     [Test]
     public void UpToTest()

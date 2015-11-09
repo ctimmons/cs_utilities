@@ -5,6 +5,8 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -12,6 +14,32 @@ namespace Utilities.Core
 {
   public static class GeneralUtils
   {
+    /* See the Remarks section for Assembly.GetCallingAssembly() as to why
+       MethodImplAttribute is needed.
+       (https://msdn.microsoft.com/en-us/library/system.reflection.assembly.getcallingassembly.aspx)
+       
+       Tip: To get the correct name of the embedded resource, use ILSpy (http://www.ilspy.net/)
+       to open the resource's assembly.  Look in the assembly's "Resources" folder. */
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static String GetEmbeddedTextResource(this String resourceName)
+    {
+      resourceName.Name("resourceName").NotNullEmptyOrOnlyWhitespace();
+
+      using (var sr = new StreamReader(Assembly.GetCallingAssembly().GetManifestResourceStream(resourceName)))
+        return sr.ReadToEnd();
+    }
+
+    public static Boolean IsJITOptimized(this Assembly assembly)
+    {
+      assembly.Name("assembly").NotNull();
+
+      foreach (var attribute in assembly.GetCustomAttributes(typeof(DebuggableAttribute), false))
+        if (attribute is DebuggableAttribute)
+          return !(attribute as DebuggableAttribute).IsJITOptimizerDisabled;
+
+      return true;
+    }
+
     /* Recursively enumerate the objects params array, building a new XOR-ed hashcode of
        all of the object instances it contains. */
     public static Int32 GetHashCode(params Object[] objects)
@@ -129,11 +157,11 @@ namespace Utilities.Core
     /// <exception cref="System.Management.ManagementException">Thrown when the current user does not have sufficient privileges to read the WMI Win32_Session class.</exception>
     public static DateTime GetLastLoginDateTime()
     {
-      var badLoginDateTime = new DateTime(1600, 12, 31, 18, 0, 0);
+      var badLoginDateTime = DateTime.MinValue; // Not sure where I got this from -> new DateTime(1600, 12, 31, 18, 0, 0);
       var loginDateTime = GetWmiPropertyValueAsDateTime("SELECT * FROM Win32_Session", "StartTime");
 
       if (loginDateTime == badLoginDateTime)
-        throw new ManagementException("WMI Error.  The Win32_Session class does not return data unless the caller is running with sufficient permissions.  Alter the user's permissions or run the application as an adminstrator to avoid this error.");
+        throw new ManagementException(Properties.Resources.Utils_BadLoginDateTime);
       else
         return loginDateTime;
     }

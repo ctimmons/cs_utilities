@@ -473,5 +473,14 @@ namespace Utilities.Core.Properties {
                 return ResourceManager.GetString("StringUtils_Coalesce", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to WMI Error.  The Win32_Session class does not return data unless the caller is running with sufficient permissions.  Alter the user&apos;s permissions or run the application as an adminstrator to avoid this error..
+        /// </summary>
+        internal static string Utils_BadLoginDateTime {
+            get {
+                return ResourceManager.GetString("Utils_BadLoginDateTime", resourceCulture);
+            }
+        }
     }
 }

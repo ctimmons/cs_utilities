@@ -18,7 +18,7 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
-    public String SqlIdentifier
+    public override String SqlIdentifier
     {
       get
       {

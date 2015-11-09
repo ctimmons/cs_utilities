@@ -320,6 +320,11 @@ namespace Utilities.Core
       return _md5.ComputeHash(stream).Select(c => c.ToString("X2")).Join("");
     }
 
+    public static String RemoveFileExtension(this String filename)
+    {
+      return Path.ChangeExtension(filename, null);
+    }
+
     public static String GetExecutablePath()
     {
       return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).AddTrailingSeparator();

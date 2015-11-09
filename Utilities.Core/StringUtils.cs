@@ -12,6 +12,55 @@ namespace Utilities.Core
   public static class StringUtils
   {
     /// <summary>
+    /// Extension of the System.Text.RegularExpressions.Regex.Escape() method.
+    /// This method allows selected regex-related characters to remain unescaped.
+    /// <para>If charsToUnescape is empty, this method has the same behavior as
+    /// Regex.Escape().</para>
+    /// </summary>
+    public static String RegexEscape(this String s, params Char[] charsToUnescape)
+    {
+      s.Name("s").NotNullEmptyOrOnlyWhitespace();
+
+      /* Start with a fuly escaped string. */
+      var escapedRegex = Regex.Escape(s);
+
+      if (charsToUnescape.Length == 0)
+      {
+        return escapedRegex;
+      }
+      else
+      {
+        var result = new StringBuilder(escapedRegex.Length);
+        var isRemovingEscapeCharacter = false;
+
+        /* "Unescape" the desired characters. */
+        for (var i = escapedRegex.Length - 1; i >= 0; i--)
+        {
+          var c = escapedRegex[i];
+
+          if (isRemovingEscapeCharacter)
+          {
+            if (c != '\\')
+              result.Insert(0, c);
+
+            isRemovingEscapeCharacter = false;
+          }
+          else if (charsToUnescape.Contains(c))
+          {
+            result.Insert(0, c);
+            isRemovingEscapeCharacter = true;
+          }
+          else
+          {
+            result.Insert(0, c);
+          }
+        }
+
+        return result.ToString();
+      }
+    }
+
+    /// <summary>
     /// Returns the string s with all of the characters in cs removed.
     /// </summary>
     public static String Strip(this String s, Char[] cs)
@@ -26,20 +75,27 @@ namespace Utilities.Core
     /// Returns the first string parameter that is not null, has a length greater
     /// than zero, and does not consist only of whitespace.
     /// </summary>
-    public static String Coalesce(String s, params String[] defaults)
+    public static String Coalesce(params String[] strings)
     {
-      if (s.IsNullOrEmpty())
-      {
-        foreach (var def in defaults)
-          if (!def.IsNullOrEmpty())
-            return def;
+      /* Odd C# behavior.
+      
+         Calling this method with no parameters (i.e. Coalesce())
+         causes the strings parameter to be an empty String[].
+         
+         Calling this method with a strongly typed null (i.e. Coalesce((String) null)
+         causes the strings parameter to be a one element array with that element set to null.
+         
+         One assumes calling this method with an untyped null (i.e. Coalesce(null))
+         would behave the same way, due to type inference. Instead, the strings
+         parameter itself is set to null. */
 
-        throw new ArgumentException(Properties.Resources.StringUtils_Coalesce);
-      }
-      else
-      {
-        return s;
-      }
+      strings.Name("strings").NotNull(); // Throw ArgumentNullException for untyped null parameter.
+
+      foreach (var s in strings)
+        if (!s.IsEmpty())
+          return s;
+
+      throw new ArgumentException(Properties.Resources.StringUtils_Coalesce);
     }
 
     /// <summary>
@@ -276,7 +332,6 @@ namespace Utilities.Core
     /// </summary>
     public static Boolean IsEmpty(this String value)
     {
-      value.Name("value").NotNull();
       return String.IsNullOrWhiteSpace(value);
     }
 

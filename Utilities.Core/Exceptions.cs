@@ -67,7 +67,7 @@ namespace Utilities.Core
        whatever's stored in the Data property, and returns it all as a string.
     
        Useful for logging exception data. */
-    public static String GetAllExceptionMessages(Exception ex)
+    public static String GetAllExceptionMessages(this Exception ex)
     {
       if (ex == null)
       {
@@ -91,7 +91,7 @@ namespace Utilities.Core
         if (ex.StackTrace != null)
           result += String.Format(Properties.Resources.Exceptions_StackTrace, nl, ex.StackTrace.ToString());
 
-        return (String.Concat(result, nl, GetAllExceptionMessages(ex.InnerException))).Trim();
+        return (String.Concat(result, nl, ex.InnerException.GetAllExceptionMessages())).Trim();
       }
     }
   }
