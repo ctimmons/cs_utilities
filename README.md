@@ -39,6 +39,8 @@ Utilities.Core includes abstractions for easier handling of strings and DateTime
 
 Utilities.Sql provides a set of classes that read the metadata from one or more SQL Server databases.  The classes expose this metadata so it can be used in T4 templates to generate TSQL stored procedures, and C#/F#/Visual Basic database access code.  In other words, this project can be used to generate your own custom ORM, without the drawbacks of an ORM.  See the [t4_sql_examples](https://github.com/ctimmons/t4_sql_examples) repository for several examples.
 
+Utilities.Sql also provides a "make" algorithm for compiling T-SQL source files, in the same spirit as GNU Make and Microsoft's NMake utilties.
+
 Pull Requests and Copying
 -------------------------
 
