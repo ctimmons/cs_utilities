@@ -34,7 +34,7 @@ Outputs and Side Effects:
 - One or more "state" data files will either be created or updated in the current user's application data folder.  The data files contain information related to the content and last-compiled date of each SQL file in the folder.
 - Any SQL objects that don't yet exist or have changed since the last compilation run will be compiled on the specified instance of SQL Server.
 - Any errors that occur will NOT throw an exception.  Instead, all exceptions are sent to the Make.ErrorEvent event handler.  The make algorithm will stop after the first exception is sent to the event handler.
-- If a user-defined table type needs to be compiled, any type-related dependencies will be dropped and re-created. If the source file for a dependency is not available, an error will be registered, and make algorithm will stop. (The source for a dependency object is present in sys.sql_modules, but it might not be *all* of the source that was originally executed to compile the object.  Things in the object's original source file preamble like various SETs, and after the object is compiled, like GRANT statements.  Those things need to be executed when the object is recompiled, which can only realisitically be done from the source file, not sys.sql_modules).
+- If a user-defined table type needs to be compiled, any type-related dependencies will be dropped and re-created. If the source file for a dependency is not available, an error will be registered, and make algorithm will stop. (The source for a dependency object is present in sys.sql_modules, but it might not be *all* of the source that was originally executed to compile the object.  Things in the object's original source file preamble like various SETs, and after the object is compiled, like GRANT statements.  Those things need to be executed when the object is recompiled, which can only realistically be done from the source file, not sys.sql_modules).
 
 
 ##A DETAILED INTRODUCTION
@@ -69,7 +69,7 @@ SQL Server has a few quirks.  Therefore, this make algorithm has several limitat
 
 There are all kinds of problems with user-defined types in SQL Server.
 
-Broadly speaking, SQL Server places compilable T-SQL code into two categories: user-defined types ("types") and everything else ("objects").
+Broadly speaking, SQL Server places compilable T-SQL CREATE statements into two categories: user-defined types ("types") and everything else ("objects").
 
 Objects have no compile-time dependencies.  In other words, SQL Server will compile an object if it references another object that doesn't exist at compile time.  For example, a CREATE PROCEDURE statement will successfully compile if it refers to a table that doesn't exist in the database at compile time.  Naturally, a runtime error will occur if the stored procedure is executed and the table doesn't exist at runtime.
 
@@ -77,9 +77,9 @@ However, a missing type will cause a compile-time error.  There's little danger 
 
 SQL Server supports three kinds of user-defined types:  CLR, scalar and table.  See the [help entry for CREATE TYPE](https://msdn.microsoft.com/en-us/library/ms175007%28v=sql.110%29.aspx) for details.
 
-Microsoft's names for these different types are ambiguous.  They call user-defined scalar types "alias types", and CLR types "user-defined types".  MS did manange to correctly name user-defined table types.  Here's a table to add to the confusion:
+Microsoft's names for these different types are ambiguous.  They call user-defined scalar types "alias types", and CLR types "user-defined types".  MS did manage to correctly name user-defined table types.  Here's a table to add to the confusion:
 
-Official MS Term   | How It Appears in SSMS     | Unabmiguous Name That I Insist On Using
+Official MS Term   | How It Appears in SSMS     | Unambiguous Name That I Insist On Using
 ------------------------|-------------------------|-------------------------
 Alias Type              | User-Defined Data Type  | User-Defined Scalar Type 
 User-Defined Type       | User-Defined Type       | User-Defined CLR Type
@@ -193,6 +193,35 @@ This make algorithm's limits are:
 - A T-SQL script file must only have one object definition (i.e. only one CREATE statement)
 - The script file's name must be the same as the object it is creating (ignoring square brackets)
 - Only one- or two-part T-SQL identifier names are allowed for the type or object to create.
+
+
+## THE MAKE ALGORITHM
+
+All make algorithms have the general form:
+
+- Gather source files (inputs).
+- Gather matching object/target files (outputs) and determine their dependencies.
+- For each source file, if the matching target file is missing or out of date, process the source file and update dependencies.
+
+This make algorithm follows the same general form.
+
+As noted above, timestamps cannot be used to determine if a T-SQL file is out of date.  Some other method of detecting source file changes is needed.  This make algorithm checks a source file for out-of-dateness by comparing the contents of that source file with its previous contents.
+
+The first time the make algorithm is run against a source file, an MD5 hash of that file's contents is stored in a file.  Subsequent runs of the make algorithm retrieve that old MD5 hash and compare it to a new MD5 hash of the source file.  If the hashes are different, the file has changed since the last run and needs to be compiled.
+
+One side effect with this approach is that the first time the make algorithm is run, it will unconditionally compile *all* of the source files.
+
+As for dependencies, SQL Server imposes a compile-time dependency on user-defined types.  Before a user-defined type can be compiled, all of its dependencies must be dropped first.  They must also be tracked so they can be re-compiled after the user-defined type is compiled.  After the dependencies are dropped, and because there is no ALTER TYPE statement, the user-defined type is dropped.  Now the user-defined type can be compiled, followed by the compilation of the previously dropped dependent objects.
+
+The make algorithm looks like this:
+
+- Gather source files (inputs).
+- Load old MD5 content hashes for those source files.
+- Compare the source files' MD5 content hashes to see which files need to be compiled.
+- Ask SQL Server for a list of types and objects that don't yet exist on the server, user-defined types and their dependencies that need to be dropped and re-compiled, as well as the order in which the types and dependencies have to be dropped.
+- Drop the required dependencies and user-defined types in the specified order.
+- Save the source files' new MD5 content hashes for use in the next run.
+- Compile all user-defined table types and objects that either don't exist yet on the server, or have been changed since the last run (outputs). The user-defined types and their dependencies are compiled in the reverse order in which they were dropped.
 
 
 ##FUTURE ENHANCEMENTS
