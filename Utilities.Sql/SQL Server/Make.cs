@@ -382,14 +382,14 @@ namespace Utilities.Sql.SqlServer
 
     private void DropDependencies()
     {
-      var itemsToBeDropped =
+      var dropSqlCommands =
         this._allItems
         .Where(item => item.NeedsToBeDropped)
-        .OrderBy(item => item.DropOrder);
+        .OrderBy(item => item.DropOrder)
+        .Select(item => String.Format("DROP {0} [{1}].[{2}]", this.GetTypeName(item.Type), item.SchemaName, item.ObjectName));
 
-      foreach (var item in itemsToBeDropped)
+      foreach (var dropSql in dropSqlCommands)
       {
-        var dropSql = String.Format("DROP {0} [{1}].[{2}]", this.GetTypeName(item.Type), item.SchemaName, item.ObjectName);
         this.Connection.ExecuteNonQuery(dropSql);
         this.RaiseLogEvent(Properties.Resources.Make_Executed, dropSql);
       }
