@@ -386,7 +386,8 @@ namespace Utilities.Sql.SqlServer
         this._allItems
         .Where(item => item.NeedsToBeDropped)
         .OrderBy(item => item.DropOrder)
-        .Select(item => String.Format("DROP {0} [{1}].[{2}]", this.GetTypeName(item.Type), item.SchemaName, item.ObjectName));
+        .Select(item => String.Format("DROP {0} [{1}].[{2}]", this.GetTypeName(item.Type), item.SchemaName, item.ObjectName))
+        .ToList(); // Force GetTypeName() to be evaluated before this list is enumerated.
 
       foreach (var dropSql in dropSqlCommands)
       {
