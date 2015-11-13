@@ -370,8 +370,9 @@ namespace Utilities.Sql.SqlServer
           return "TRIGGER";
         case "TT":
           return "TYPE";
-        case "U":
-          return "TABLE";
+        // Correctly modifying tables is too complex of a problem to tackle right now.
+        //case "U":
+        //  return "TABLE";
         case "V":
           return "VIEW";
         default:

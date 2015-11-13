@@ -97,7 +97,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="SQL Server\GetUpdatedItems.sql" />
-    <Content Include="SQL Server\Make - Description.txt" />
     <Content Include="UNLICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -105,6 +104,9 @@
       <Project>{714ba021-2a07-4d0e-b174-149c41c4b37a}</Project>
       <Name>Utilities.Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SQL Server\Make - Description.md" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
