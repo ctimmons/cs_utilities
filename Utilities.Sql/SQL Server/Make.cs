@@ -14,7 +14,7 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
-  /* See "Make - Description.txt" for details on this algorithm and how to use it. */
+  /* See "Make - Description.md" for details on this algorithm and how to use it. */
 
   public class LogEventArgs : EventArgs
   {

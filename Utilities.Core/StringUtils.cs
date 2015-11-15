@@ -12,6 +12,22 @@ namespace Utilities.Core
   public static class StringUtils
   {
     /// <summary>
+    /// Convert value to a MemoryStream, using a default Unicode encoding.
+    /// </summary>
+    public static MemoryStream ToMemoryStream(this String value)
+    {
+      return value.ToMemoryStream(Encoding.Unicode);
+    }
+
+    /// <summary>
+    /// Convert value to a MemoryStream, using the given encoding.
+    /// </summary>
+    public static MemoryStream ToMemoryStream(this String value, Encoding encoding)
+    {
+      return new MemoryStream(encoding.GetBytes(value ?? ""));
+    }
+
+    /// <summary>
     /// Extension of the System.Text.RegularExpressions.Regex.Escape() method.
     /// This method allows selected regex-related characters to remain unescaped.
     /// <para>If charsToUnescape is empty, this method has the same behavior as

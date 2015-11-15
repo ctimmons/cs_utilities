@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,6 +15,26 @@ namespace Utilities.Core.UnitTests
   public class StringUtilsTests
   {
     public StringUtilsTests() : base() { }
+
+    [Test]
+    public void ToMemoryStreamTest()
+    {
+      String s = null;
+      using (var ms = s.ToMemoryStream())
+        Assert.AreEqual(0, ms.Length);
+
+      s = "";
+      using (var ms = s.ToMemoryStream())
+        Assert.AreEqual(0, ms.Length);
+
+      s = "a";
+      using (var ms = s.ToMemoryStream(Encoding.UTF8))
+      {
+        Assert.AreEqual(1, ms.Length);
+        using (var sr = new StreamReader(ms))
+          Assert.AreEqual(s, sr.ReadToEnd());
+      }
+    }
 
     [Test]
     public void CoalesceTest()
