@@ -258,4 +258,10 @@
   <data name="Utils_BadLoginDateTime" xml:space="preserve">
     <value>WMI Error.  The Win32_Session class does not return data unless the caller is running with sufficient permissions.  Alter the user's permissions or run the application as an adminstrator to avoid this error.</value>
   </data>
+  <data name="Utils_FormatMessageError" xml:space="preserve">
+    <value>The original error code is {0}.  Trying to get a description of the original error by calling the FormatMessage API function returned another error of {1}.</value>
+  </data>
+  <data name="Utils_NoSystemErrorMessageFound" xml:space="preserve">
+    <value>The original error code is {0}.  No description could be found for that error code.</value>
+  </data>
 </root>

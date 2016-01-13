@@ -68,7 +68,8 @@ namespace Utilities.Core
 
     /* Given an error code returned by System.Runtime.InteropServices.Marshal.GetLastWin32Error,
        get the Windows API String representation of that error code.
-       If no error message can be found for the given error code, Marshal.GetLastWin32Error() is returned as a string. */
+       If no error message can be found for the given error code, the original error code and,
+       if the call to FormatMessage fails, Marshal.GetLastWin32Error() are returned in a string. */
     public static String GetSystemErrorMessage(Int32 win32ErrorCode)
     {
       const Int32 formatMessageFromSystem = 0x00001000;
@@ -78,9 +79,17 @@ namespace Utilities.Core
       var numberOfCharactersInBuffer = FormatMessage(formatMessageFromSystem, IntPtr.Zero, win32ErrorCode, defaultLanguageID, buffer, buffer.Capacity, IntPtr.Zero);
 
       if (numberOfCharactersInBuffer > 0)
+      {
         return buffer.ToString().Trim();
+      }
       else
-        return "Unable to retrieve system error message for error " + Marshal.GetLastWin32Error().ToString();
+      {
+        var lastErrorCode = Marshal.GetLastWin32Error();
+        if (lastErrorCode == 0)
+          return String.Format(Properties.Resources.Utils_NoSystemErrorMessageFound, win32ErrorCode);
+        else
+          return String.Format(Properties.Resources.Utils_FormatMessageError, win32ErrorCode, lastErrorCode);
+      }
     }
 
     [DllImport("Kernel32.dll", CharSet = CharSet.Auto, EntryPoint = "FormatMessage", SetLastError = true)]

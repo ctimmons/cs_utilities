@@ -70,5 +70,10 @@ namespace Utilities.Core
 
       this._writer.WriteLine(String.Format("{0} - {1} - {2}", timestamp, type, message));
     }
+
+    public void WriteLine(LogEntryType logEntryType, String message, params Object[] args)
+    {
+      this.WriteLine(logEntryType, String.Format(message, args));
+    }
   }
 }

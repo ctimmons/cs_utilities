@@ -218,13 +218,34 @@ namespace Utilities.Core
       }
     }
 
+    public static void Touch(String filename)
+    {
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
+
+      Touch(filename, DateTime.Now);
+    }
+
     public static void Touch(String filename, DateTime timestamp)
     {
       filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
 
-      File.SetCreationTime(filename, timestamp);
-      File.SetLastAccessTime(filename, timestamp);
-      File.SetLastWriteTime(filename, timestamp);
+      Touch(new FileInfo(filename), timestamp);
+    }
+
+    public static void Touch(FileInfo fi)
+    {
+      fi.Name("fi").NotNull();
+
+      Touch(fi, DateTime.Now);
+    }
+
+    public static void Touch(FileInfo fi, DateTime timestamp)
+    {
+      fi.Name("fi").NotNull();
+
+      fi.CreationTime = timestamp;
+      fi.LastAccessTime = timestamp;
+      fi.LastWriteTime = timestamp;
     }
 
     public static void WriteMemoryStreamToFile(String filename, MemoryStream ms)

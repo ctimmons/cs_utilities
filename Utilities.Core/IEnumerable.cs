@@ -103,5 +103,11 @@ namespace Utilities.Core
 
       return ints.Aggregate((BigInteger) 1, (acc, next) => acc * next);
     }
+
+    public static IEnumerable<IEnumerable<T>> Split<T>(this IEnumerable<T> items, Int32 numOfParts)
+    {
+      var i = 0;
+      return items.GroupBy(x => i++ % numOfParts);
+    }
   }
 }

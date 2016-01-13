@@ -482,5 +482,23 @@ namespace Utilities.Core.Properties {
                 return ResourceManager.GetString("Utils_BadLoginDateTime", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The original error code is {0}.  Trying to get a description of the original error by calling the FormatMessage API function returned another error of {1}..
+        /// </summary>
+        internal static string Utils_FormatMessageError {
+            get {
+                return ResourceManager.GetString("Utils_FormatMessageError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The original error code is {0}.  No description could be found for that error code..
+        /// </summary>
+        internal static string Utils_NoSystemErrorMessageFound {
+            get {
+                return ResourceManager.GetString("Utils_NoSystemErrorMessageFound", resourceCulture);
+            }
+        }
     }
 }
