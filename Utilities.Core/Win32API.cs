@@ -133,6 +133,9 @@ namespace Utilities.Core
     [DllImport("Kernel32.dll", EntryPoint = "RtlMoveMemory", SetLastError = true)]
     public static extern void RtlMoveMemory(IntPtr dest, IntPtr src, Int32 size);
 
+    [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
+    private static extern Int32 memcmp(Byte[] b1, Byte[] b2, UIntPtr count);
+
     public const Int32 CSIDL_DESKTOP = 0x0000;                 // <desktop>
     public const Int32 CSIDL_INTERNET = 0x0001;                // Internet Explorer (icon on desktop)
     public const Int32 CSIDL_PROGRAMS = 0x0002;                // Start Menu\Programs

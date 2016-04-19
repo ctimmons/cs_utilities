@@ -81,6 +81,8 @@ namespace Utilities.Core
     /// </summary>
     public static String Strip(this String s, Char[] cs)
     {
+      s.Name("s").NotNull();
+
       return
         s
         .Where(c => !cs.Any(a => a == c))
@@ -222,9 +224,21 @@ namespace Utilities.Core
     /// </summary>
     public static String SurroundWith(this String value, String c)
     {
+      return value.SurroundWith(c, c);
+    }
+
+    /// <summary>
+    /// Returns 'value' with 'c' pre-pended and appended.
+    /// <para>
+    /// Both 'value' and 'c' must non-null.
+    /// </para>
+    /// </summary>
+    public static String SurroundWith(this String value, String c1, String c2)
+    {
       value.Name("value").NotNull();
-      c.Name("c").NotNull();
-      return String.Concat(c, value, c);
+      c1.Name("c1").NotNull();
+      c2.Name("c2").NotNull();
+      return String.Concat(c1, value, c2);
     }
 
     /// <summary>
