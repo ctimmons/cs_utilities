@@ -209,8 +209,6 @@ namespace Utilities.Core
 
       if ((overwrite == Overwrite.Yes) || !File.Exists(filename))
       {
-        Directory.CreateDirectory(Path.GetDirectoryName(filename));
-
         using (var fs = File.Create(filename))
         {
           /* Create an empty file. */

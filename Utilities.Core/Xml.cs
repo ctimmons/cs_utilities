@@ -41,16 +41,12 @@ namespace Utilities.Core
 
     public static void SerializeObjectToBinaryFile<T>(T value, String filename)
     {
-      Directory.CreateDirectory(Path.GetDirectoryName(filename));
-
       using (var stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
         new BinaryFormatter().Serialize(stream, value);
     }
 
     public static void SerializeObjectToXmlFile<T>(T value, String filename)
     {
-      Directory.CreateDirectory(Path.GetDirectoryName(filename));
-
       SerializeObjectToXDocument(value).Save(filename);
     }
 
