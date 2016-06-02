@@ -1083,7 +1083,7 @@ End If
 
     public String GetCreateTableColumnDeclaration()
     {
-      return String.Format("{0} {1}{2}", this.BracketedName, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : "");
+      return String.Format("{0} {1}{2}", this.BracketedName, this.SqlIdentifierTypeAndSize, this.IsNullable ? " NULL" : " NOT NULL");
     }
   }
 }

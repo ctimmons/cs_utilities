@@ -79,6 +79,11 @@ namespace Utilities.Sql.SqlServer
 
     public event EventHandler<MakeErrorEventArgs> ErrorEvent;
 
+    protected virtual void RaiseErrorEvent(String message, Exception ex)
+    {
+      this.RaiseErrorEvent(new Exception(message, ex));
+    }
+
     protected virtual void RaiseErrorEvent(String format, params Object[] args)
     {
       this.RaiseErrorEvent(new Exception(String.Format(format, args)));
@@ -432,7 +437,7 @@ namespace Utilities.Sql.SqlServer
           }
           catch (Exception ex)
           {
-            this.RaiseErrorEvent(ex);
+            this.RaiseErrorEvent(item.Pathname, ex);
             break;
           }
         }

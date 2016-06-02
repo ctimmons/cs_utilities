@@ -171,7 +171,7 @@ UPDATE @client_items
   SET
     drop_order =
       CASE
-        WHEN ([type] = 'TT' AND needs_to_be_compiled = 'Y') THEN 1
+        WHEN ([type] = 'TT' /* AND needs_to_be_compiled = 'Y' */) THEN 1
         WHEN EXISTS
           (
             SELECT
