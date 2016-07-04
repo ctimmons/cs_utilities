@@ -109,5 +109,20 @@ namespace Utilities.Core
       var i = 0;
       return items.GroupBy(x => i++ % numOfParts);
     }
+
+    private static readonly Random _random = new Random();
+
+    public static IList<T> Randomize<T>(this IList<T> list)
+    {
+      for (var currentIndex = list.Count() - 1; currentIndex >= 1; currentIndex--)
+      {
+        var randomIndex = _random.Next(currentIndex + 1);
+        T value = list[randomIndex];
+        list[randomIndex] = list[currentIndex];
+        list[currentIndex] = value;
+      }
+
+      return list;
+    }
   }
 }

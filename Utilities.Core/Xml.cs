@@ -62,8 +62,14 @@ namespace Utilities.Core
       using (var writer = doc.CreateWriter())
         XmlSerializerCache.GetXmlSerializer(typeof(T)).Serialize(writer, value);
 
+      /* Any XmlCommentAttributes in 'value' are *not* automatically inserted into the
+         XDocument result 'doc' by the call to Serialize().
+         
+         The comments have to be inserted by a separate call to InsertXmlComments(). */
+
       /* This must be executed after writer has been closed. */
       InsertXmlComments(value, doc.Elements(), 1);
+
       return doc;
     }
 
