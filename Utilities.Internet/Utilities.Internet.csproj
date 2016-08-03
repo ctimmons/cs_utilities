@@ -67,7 +67,6 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HtmlAgilityUtils.cs" />
     <Compile Include="HttpResponseCodes.cs" />
     <Compile Include="HttpUtils.cs" />
     <Compile Include="ImageHttpHandler.cs" />
