@@ -97,7 +97,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="SQL Server\GetUpdatedItems.sql" />
-    <Content Include="UNLICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utilities.Core\Utilities.Core.csproj">

@@ -86,9 +86,6 @@
     <Compile Include="Xml.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="UNLICENSE.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Utilities.Core\Utilities.Core.csproj">
       <Project>{714ba021-2a07-4d0e-b174-149c41c4b37a}</Project>
       <Name>Utilities.Core</Name>
