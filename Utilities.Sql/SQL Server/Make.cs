@@ -67,6 +67,7 @@ namespace Utilities.Sql.SqlServer
     private readonly String _itemsFolder;
 
     /* A pathname is an absolute path, i.e. a folder plus filename (e.g. c:\temp\myfile.txt). */
+    //private readonly List<String> _pathnames = new List<String>();
     private readonly List<String> _pathnames = new List<String>();
 
     private IEnumerable<Item> _allItems

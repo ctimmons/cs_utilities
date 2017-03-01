@@ -264,4 +264,7 @@
   <data name="Utils_NoSystemErrorMessageFound" xml:space="preserve">
     <value>The original error code is {0}.  No description could be found for that error code.</value>
   </data>
+  <data name="Utils_UnknownRunProcessType" xml:space="preserve">
+    <value>Unknown RunProcessType value ({0}).</value>
+  </data>
 </root>

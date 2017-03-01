@@ -1,4 +1,4 @@
-﻿##OVERVIEW (TL;DR)
+﻿## OVERVIEW (TL;DR)
 
 This make algorithm will efficiently compile T-SQL source files that conform to the following restrictions:
 
@@ -11,16 +11,16 @@ Given a list of source files and a database connection, this make algorithm will
 Regarding the compilation of a user-defined table type, the algorithm will drop and re-create any objects that depend on the type.
 
 
-##HOW TO USE
+## HOW TO USE
 
-See the ctimmons/cs_tsql_make_example project on GitHub for example code.
+See the [ctimmons/cs_tsql_make_example](https://github.com/ctimmons/cs_tsql_make_example) project on GitHub for example code.
 
 Inputs:
 
 - SQL Server connection object (opened).
 - Folder(s) where the T-SQL files reside, and/or names of the individual T-SQL files.
 - Optional default schema name used when a one-part T-SQL identifier is encountered (default is "dbo").
-- Optional error callback/event handler.  The make algorithm will not stop on an error, but only log the errors that do occur by calling the callback and passing the system.Exception descendant of the error.
+- Optional error callback/event handler.  The make algorithm will not stop on an error, but only log the errors that do occur by calling the callback and passing the System.Exception descendant of the error.
 - Optional logging callback/event handler.
 
 Assumptions:
@@ -37,7 +37,7 @@ Outputs and Side Effects:
 - If a user-defined table type needs to be compiled, any type-related dependencies will be dropped and re-created. If the source file for a dependency is not available, an error will be registered, and make algorithm will stop. (The source for a dependency object is present in sys.sql_modules, but it might not be *all* of the source that was originally executed to compile the object.  Things in the object's original source file preamble like various SETs, and after the object is compiled, like GRANT statements.  Those things need to be executed when the object is recompiled, which can only realistically be done from the source file, not sys.sql_modules).
 
 
-##A DETAILED INTRODUCTION
+## A DETAILED INTRODUCTION
 
 I use T4 templates to generate most of my T-SQL code.  I also sometimes make changes to a lot of T-SQL files.  In both cases I have to manually recompile each file individually.
 
@@ -47,7 +47,7 @@ It would be nice to have some kind of "make" algorithm that could detect which T
 
 A traditional make utility - like GNU Make or Microsoft's NMake - works by comparing the timestamps of related source, object, and compiled files.
 
-The main drawbacks to using a traditional make utility for compiling SQL Server files are the assumptions it makes:
+The main drawbacks to using a traditional make utility for compiling SQL Server files are the assumptions the make utility makes:
 
 First, a traditional make utility assumes everything is in the file system, so source and object files can be compared by their name and timestamp.
     
@@ -55,19 +55,19 @@ For T-SQL code, source files are stored in the file system, and compiled objects
 
 The second assumption is that source files and object files are on the same computer, so comparing their timestamps returns meaningful information because their timestamps were both set by the same clock.
 
-While T-SQL source files are stored in the file system, SQL Server object files are stored in a database on a server. The database may be on a different computer, and might even be in a different time zone. Comparing the timestamps of two entities from different computers will always have a margin of error.
+While T-SQL source files are stored in the file system, SQL Server object files are stored in a database on a server. The database may be on a different computer, and might even be in a different time zone. Comparing two files' timestamps set by different computer clocks will always have a margin of error.
 
 This means a traditional make utility can't deal with how SQL Server does things, so I wrote this little "make" algorithm.
 
 
-##LIMITED SCOPE
+## LIMITED SCOPE
 
 SQL Server has a few quirks.  Therefore, this make algorithm has several limitations.
 
 
-###COMPILE-TIME DEPENDENCIES ON USER-DEFINED TYPES
+### COMPILE-TIME DEPENDENCIES ON USER-DEFINED TYPES
 
-There are all kinds of problems with user-defined types in SQL Server.
+There are all kinds of problems with compiling user-defined types in SQL Server.
 
 Broadly speaking, SQL Server places compilable T-SQL CREATE statements into two categories: user-defined types ("types") and everything else ("objects").
 
@@ -75,7 +75,7 @@ Objects have no compile-time dependencies.  In other words, SQL Server will comp
 
 However, a missing type will cause a compile-time error.  There's little danger of a built-in type not being available at compile-time.  User-defined types are a different (and poorly implemented) story.
 
-SQL Server supports three kinds of user-defined types:  CLR, scalar and table.  See the [help entry for CREATE TYPE](https://msdn.microsoft.com/en-us/library/ms175007%28v=sql.110%29.aspx) for details.
+SQL Server supports three kinds of user-defined types:  CLR, scalar and table.  See the [CREATE TYPE help entry](https://msdn.microsoft.com/en-us/library/ms175007%28v=sql.110%29.aspx) for details.
 
 Microsoft's names for these different types are ambiguous.  They call user-defined scalar types "alias types", and CLR types "user-defined types".  MS did manage to correctly name user-defined table types.  Here's a table to add to the confusion:
 
@@ -96,9 +96,9 @@ That leaves user-defined table types (UDTT).  They suffer from the same limitati
 Because SQL Server throws a compile-time error for missing types, but not for missing objects, the make algorithm makes sure the UDTTs are compiled *before* any objects that rely on them.  The algorithm examines each source file and determine if it contains a UDTT definition.  Then the algorithm drops any objects that rely on the UDTTs so SQL Server doesn't throw an error if a UDTT is dropped with objects still referencing it.  Those dropped objects are tracked so the algorithm can make sure they're re-compiled after the UDTTs are created.  Finally the UDTTs are dropped and compiled.
 
 
-###SCRIPT COMPLEXITY
+### SCRIPT COMPLEXITY
 
-####Multiple Objects and/or Types in a Script
+#### Multiple Objects and/or Types in a Script
 
 A script (i.e. a file containing T-SQL code) can contain any kind of code, including definitions for multiple objects.
 
@@ -106,19 +106,19 @@ The make algorithm's compilation unit is a source file. This poses a problem bec
 
 The algorithm wants to be as efficient as possible and only compile those objects that either don't exist in the database, or have changed since they were last compiled.  If a script contains definitions for multiple objects, it's difficult to determine which objects need to be compiled and which ones don't.  Even if only one of the objects in a script needs to be compiled, the make algorithm will still have to compile the entire script.
 
-It may be *technically* possible to use the ScriptDOM parser library and pick each script apart into its component objects.  But this would only reveal the structure of the code, and not its meaning (See the example below.  Supporting code can have far reaching effects, like revoking/granting permissions, among many other possible changes to the state of the database).  The make algorithm wouldn't know what parts of the script to compile and which ones not to.  Also, ScriptDOM can't parse strings of dynamic SQL.
+Disregarding dynamic SQL for a moment, it may be *technically* possible to use the ScriptDOM parser library and pick each script apart into its component objects.  But this would only reveal the structure of the code, and not its meaning (See the example below.  Supporting code can have far reaching effects, like revoking/granting permissions, among many other possible changes to the state of the database).  The make algorithm wouldn't know what parts of the script to compile and which ones not to.  Also, ScriptDOM can't parse strings of dynamic SQL.
 
 A simple restriction solves this problem.  This make algorithm only works with script files that contain one object or user-defined table type definition (i.e. one CREATE statement).
 
-####Script Name
+#### Script Name
 
 The script's filename must be the same as the object it contains.  If the object name is a one-part name, the script's filename should reflect that.  Ditto for two-part names.  The make algorithm doesn't work with three- or four-part names. Square brackets in the script's filename and object name are ignored by the make algorithm.  This means names like "dbo.myproc" and "[dbo].[myproc]" are treated as equal.
 
 This restriction is necessary to allow the make algorithm to match the T-SQL source file with its corresponding object in the database's sys.objects table, or the user-defined table type in the sys.table_types table.
 
-###Supporting Code in a Script
+### Supporting Code in a Script
 
-A script can contain supporting code, like USE, IF and GRANT statements, but it can only contain one CREATE statement.
+For this make utility to work correctly, a script can contain supporting code, like USE, IF and GRANT statements, but it can only contain one CREATE statement.
 
 For example, here's a simple script named 'dbo.mydb_sp_say_hello.sql'.  Note both the script's filename and CREATE statement are the same, and both use a two-part T-SQL object name.  (Square brackets in filenames are optional/ignored by the make algorithm).
 
@@ -184,7 +184,7 @@ SET NOCOUNT OFF;
 GO
 ```
 
-###SUMMARY OF LIMITATIONS
+### SUMMARY OF LIMITATIONS
 
 This make algorithm's limits are:
 
@@ -224,7 +224,7 @@ The make algorithm looks like this:
 - Compile all user-defined table types and objects that either don't exist yet on the server, or have been changed since the last run (outputs). The user-defined types and their dependencies are compiled in the reverse order in which they were dropped.
 
 
-##FUTURE ENHANCEMENTS
+## FUTURE ENHANCEMENTS
 
 Given the way SQL Server works, I don't see any way around the one-object-or-type-per-file restriction.
 

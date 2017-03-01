@@ -117,6 +117,19 @@ namespace Utilities.Sql.SqlServer
     public Int32 Precision { get; set; }
     public Int32 Scale { get; set; }
     public Boolean IsNullable { get; set; }
+
+    private Boolean? _isNullableClrValueType;
+    public Boolean IsNullableClrValueType
+    {
+      get
+      {
+        if (!this._isNullableClrValueType.HasValue)
+          this._isNullableClrValueType = this.GetIsNullableClrValueType();
+
+        return this._isNullableClrValueType.Value;
+      }
+    }
+
     public Boolean IsXmlDocument { get; set; }
     public String XmlCollectionName { get; set; }
 
@@ -148,10 +161,26 @@ namespace Utilities.Sql.SqlServer
     /// </summary>
     public String PrimaryKeyColumn { get; set; }
 
+    private String _baseClrTypeName = null;
+    /// <summary>
+    /// The fully qualified non-nullable CLR type name for this column's <see cref="Utilities.Sql.Column.NativeServerDataTypeName">NativeServerDataTypeName</see>.
+    /// E.g. this property would contain System.DateTime for a nullable column type of DATETIME.
+    /// </summary>
+    public String BaseClrTypeName
+    {
+      get
+      {
+        if (this._baseClrTypeName == null)
+          this._baseClrTypeName = this.GetBaseClrTypeNameFromNativeSqlType();
+
+        return this._baseClrTypeName;
+      }
+    }
+
     private String _clrTypeName = null;
     /// <summary>
-    /// The fully qualified CLR type name for this column's <see cref="Utilities.Sql.Column.NativeServerDataTypeName">NativeServerDataTypeName</see>.
-    /// E.g. this property would contain System.String for a column type of NVARCHAR(50).
+    /// The fully qualified nullable CLR type name for this column's <see cref="Utilities.Sql.Column.NativeServerDataTypeName">NativeServerDataTypeName</see>.
+    /// E.g. this property would contain System.Nullable&lt;System.DateTime&gt; for a nullable column type of DATETIME.
     /// </summary>
     public String ClrTypeName
     {
@@ -364,6 +393,116 @@ namespace Utilities.Sql.SqlServer
       }
 
       return String.Format(format, (String.IsNullOrWhiteSpace(tableAlias) ? "" : tableAlias + "."), this.BracketedName, this.SqlIdentifier);
+    }
+
+    private Boolean GetIsNullableClrValueType()
+    {
+      switch (this.NativeServerDataTypeName)
+      {
+        case "BIGINT":
+        case "BIT":
+        case "DATE":
+        case "DATETIME":
+        case "DATETIME2":
+        case "DATETIMEOFFSET":
+        case "DECIMAL":
+        case "FLOAT":
+        case "INT":
+        case "MONEY":
+        case "NUMERIC":
+        case "REAL":
+        case "SMALLDATETIME":
+        case "SMALLINT":
+        case "SMALLMONEY":
+        case "TIME":
+        case "TINYINT":
+          return this.IsNullable;
+        default:
+          return false;
+      }
+    }
+
+    private String GetBaseClrTypeNameFromNativeSqlType()
+    {
+      switch (this.NativeServerDataTypeName)
+      {
+        case "BIGINT":
+          return "System.Int64";
+        case "BINARY":
+        case "FILESTREAM":
+        case "IMAGE":
+        case "ROWVERSION":
+        case "TIMESTAMP":
+        case "VARBINARY":
+          if (this._configuration.TargetLanguage.IsCSharp() || this._configuration.TargetLanguage.IsFSharp())
+            return "System.Byte[]";
+          else if (this._configuration.TargetLanguage.IsVisualBasic())
+            return "System.Byte()";
+          else
+            throw new NotImplementedException(String.Format(Properties.Resources.UnknownTargetLanguageValue, this._configuration.TargetLanguage));
+        case "BIT":
+          return "System.Boolean";
+        case "CURSOR":
+          return "";
+        case "DATE":
+        case "DATETIME":
+        case "DATETIME2":
+        case "SMALLDATETIME":
+          return "System.DateTime";
+        case "DATETIMEOFFSET":
+          return "System.DateTimeOffset";
+        case "DECIMAL":
+        case "MONEY":
+        case "NUMERIC":
+        case "SMALLMONEY":
+          return "System.Decimal";
+        case "FLOAT":
+          return "System.Double";
+        case "GEOGRAPHY":
+          return "Microsoft.SqlServer.Types.SqlGeography";
+        case "GEOMETRY":
+          return "Microsoft.SqlServer.Types.SqlGeometry";
+        case "HIERARCHYID":
+          return "Microsoft.SqlServer.Types.SqlHierarchyId";
+        case "INT":
+          return "System.Int32";
+        case "CHAR":
+        case "NCHAR":
+        case "NTEXT":
+        case "NVARCHAR":
+        case "TEXT":
+        case "VARCHAR":
+          return "System.String";
+        case "XML":
+          switch (this._configuration.XmlSystem)
+          {
+            case XmlSystem.AsString:
+              return "System.String";
+            case XmlSystem.Linq_XDocument:
+              if (this.IsXmlDocument)
+                return "System.Xml.Linq.XDocument";
+              else
+                return "System.Xml.Linq.XElement";
+            case XmlSystem.NonLinq_XmlDocument:
+              return "System.Xml.XmlDocument";
+            default:
+              return String.Format(Properties.Resources.UnknownXmlSystemValue, this._configuration.XmlSystem);
+          }
+        case "REAL":
+          return "System.Single";
+        case "SMALLINT":
+          return "System.Int16";
+        case "SQL_VARIANT":
+          return "System.Object";
+        case "TIME":
+          return "System.TimeSpan";
+        case "TINYINT":
+          return "System.Byte";
+        case "UNIQUEIDENTIFIER":
+          return "System.Guid";
+        default:
+          return String.Format("ERROR - Can't find CLR type that corresponds to SQL Server type {0}.", this.NativeServerDataTypeName);
+      }
     }
 
     private String GetClrTypeNameFromNativeSqlType()

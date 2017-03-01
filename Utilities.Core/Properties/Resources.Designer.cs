@@ -500,5 +500,14 @@ namespace Utilities.Core.Properties {
                 return ResourceManager.GetString("Utils_NoSystemErrorMessageFound", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown RunProcessType value ({0})..
+        /// </summary>
+        internal static string Utils_UnknownRunProcessType {
+            get {
+                return ResourceManager.GetString("Utils_UnknownRunProcessType", resourceCulture);
+            }
+        }
     }
 }
