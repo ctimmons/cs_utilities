@@ -1,4 +1,6 @@
-﻿using System.Data.SqlClient;
+﻿/* See the LICENSE.txt file in the root folder for license details. */
+
+using System.Data.SqlClient;
 
 namespace Utilities.Sql.SqlServer
 {

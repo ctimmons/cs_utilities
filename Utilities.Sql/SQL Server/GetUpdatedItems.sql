@@ -1,4 +1,6 @@
-﻿SET NOCOUNT ON;
+﻿/* See the LICENSE.txt file in the root folder for license details. */
+
+SET NOCOUNT ON;
 
 DECLARE @client_items TABLE
   (

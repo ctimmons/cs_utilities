@@ -1,4 +1,4 @@
-/* See UNLICENSE.txt file for license details. */
+/* See the LICENSE.txt file in the root folder for license details. */
 
 using System;
 using System.Collections;

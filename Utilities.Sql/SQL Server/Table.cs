@@ -1,4 +1,6 @@
-﻿using System;
+﻿/* See the LICENSE.txt file in the root folder for license details. */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 

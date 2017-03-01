@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿/* See the LICENSE.txt file in the root folder for license details. */
+
+using System.Collections.Generic;
 using System.Data;
 
 namespace Utilities.Sql.SqlServer
