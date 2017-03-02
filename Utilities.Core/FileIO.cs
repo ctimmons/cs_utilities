@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Microsoft.VisualBasic.FileIO;
+using VB = Microsoft.VisualBasic.FileIO;
 
 namespace Utilities.Core
 {
@@ -23,6 +23,29 @@ namespace Utilities.Core
   public static class FileUtils
   {
     public static readonly Char[] DirectorySeparators = new Char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+
+    /* The CLR library method System.IO.Directory.Delete(<path>, true) recursively deletes
+       files and folders.  However, it will fail on files that have their ReadOnly
+       attribute set.  The DeleteDirectory() methods remove all files' ReadOnly
+       attributes before deleting. */
+    public static void DeleteDirectory(String directory)
+    {
+      DeleteDirectory(new DirectoryInfo(directory));
+    }
+
+    public static void DeleteDirectory(DirectoryInfo directoryInfo)
+    {
+      foreach (var file in directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly))
+      {
+        file.Attributes &= ~FileAttributes.ReadOnly;
+        file.Delete();
+      }
+
+      foreach (var subdirectory in directoryInfo.EnumerateDirectories("*", SearchOption.TopDirectoryOnly))
+        DeleteDirectory(subdirectory);
+
+      directoryInfo.Delete(false /* Not recursive delete. */);
+    }
 
     public static List<Exception> DirectoryWalker(String rootDirectory, Action<FileSystemInfo> action)
     {
@@ -320,7 +343,7 @@ namespace Utilities.Core
 
     public static void MoveFileToRecycleBin(String filename)
     {
-      FileSystem.DeleteFile(filename, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.DoNothing);
+      VB.FileSystem.DeleteFile(filename, VB.UIOption.OnlyErrorDialogs, VB.RecycleOption.SendToRecycleBin, VB.UICancelOption.DoNothing);
     }
 
     private static MD5CryptoServiceProvider _md5 = new MD5CryptoServiceProvider();

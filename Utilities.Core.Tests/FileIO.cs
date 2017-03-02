@@ -62,6 +62,25 @@ namespace Utilities.Core.UnitTests
         Directory.Delete(_testFilesPath, true /* Delete all files and subdirectories also. */);
     }
 
+    [Test]
+    public void DeleteDirectoryTest()
+    {
+      var rootDir = Path.Combine(_testFilesPath, "root/folder1/folder2");
+
+      Directory.CreateDirectory(rootDir);
+
+      var readwriteFilename = Path.Combine(rootDir, "dummy1.txt");
+      File.WriteAllText(readwriteFilename, _testStringFoxAndDog);
+
+      var readonlyFilename = Path.Combine(rootDir, "dummy2.txt");
+      File.WriteAllText(readonlyFilename, _testStringFoxAndDog);
+      File.SetAttributes(readonlyFilename, FileAttributes.ReadOnly);
+
+      FileUtils.DeleteDirectory(rootDir);
+
+      Assert.IsTrue(!Directory.Exists(rootDir));
+    }
+
     private void DirectoryWalkerHarness(Action<FileSystemInfo> action, List<String> expected, List<String> actual)
     {
       var exceptions = FileUtils.DirectoryWalker(_testFilesPath, action, FileSystemTypes.All, DirectoryWalkerErrorHandling.Accumulate);
