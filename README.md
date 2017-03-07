@@ -17,7 +17,7 @@ Most of the code in Utilities.Core has unit tests in Utilities.Core.Tests.  Unit
 
 The majority of methods are short, usually less than five lines of code.  I've tried to make the method and property names clearly state what they do, so the documentation is pretty sparse because I think it would be redundant.  For some classes I've included a comment at the beginning of the class that gives an overview and examples of what the class is all about.  The unit tests give additional usage examples.
 
-There are few XML comments for most of the code, even though C# and Visual Studio have excellent support for that feature.  As I noted above, documenting all of those class members seemed redundant, so I only documented the code that really needed some explanation.  I envision these libraries being used in the same way I use them - as projects in a solution, not as DLLs in the GAC.  When used as projects in a solution, it's a simple matter of pressing F12 to see the code for any of the class members in these projects.  Or, since I put all of the code in the public domain, anyone can copy-n-paste the code into their own projects.  Considering these usage scenarios, writing detailed XML comments didn't seem like a good investment of my time.
+There are few XML comments for most of the code, even though C# and Visual Studio have excellent support for that feature.  As I noted above, documenting all of those class members seemed redundant, so I only documented the code that really needed some explanation.  I envision these libraries being used in the same way I use them - as projects in a solution, not as DLLs in the GAC.  When used as projects in a solution, it's a simple matter of pressing F12 to see the code for any of the class members in these projects.  Considering this usage scenario, writing detailed XML comments didn't seem like a good investment of my time.
 
 The exception to my "no XML comment" approach is the Utilities.Sql project.  I've added XML comments to many of the public members because this code isn't simply a collection of small, independent methods.  Utilities.Sql contains several classes used to generate SQL Server TSQL stored procedures, and the corresponding C#/F#/Visual Basic classes and methods.
 
@@ -32,7 +32,7 @@ Utilities.Sql depends on Utilities.Core.  Note, however, the code it generates m
 
 There are feature packs available for other versions of SQL Server.  Go to [Microsoft Search](http://search.microsoft.com/) and search for "sql server feature pack".)
 
-Utilities.Core.Tests and Utilities.Sql.Tests depend on the latest 2.x version of [NUnit](http://www.nunit.org/) (nunit.framework.dll).  NUnit 3.x has been out for a while, but - unlike the 2.x version - 3.x does *not* include a GUI test runner.  The NUnit authors promies that a GUI test runner is coming for 3.x, but until it does, these projects will continue to use NUnit 2.x.
+Utilities.Core.Tests and Utilities.Sql.Tests depend on the latest 3.x version of [NUnit](http://www.nunit.org/) (nunit.framework.dll).  Use NuGet to install NUnit 3.x, and use Visual Studio's Test Explorer to run the unit tests.
 
 Highlights
 ----------
