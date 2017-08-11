@@ -17,7 +17,7 @@ See the [ctimmons/cs_tsql_make_example](https://github.com/ctimmons/cs_tsql_make
 
 Inputs:
 
-- SQL Server connection object (opened).
+- SQL Server connection object (opened by caller).
 - Folder(s) where the T-SQL files reside, and/or names of the individual T-SQL files.
 - Optional default schema name used when a one-part T-SQL identifier is encountered (default is "dbo").
 - Optional error callback/event handler.  The make algorithm will not stop on an error, but only log the errors that do occur by calling the callback and passing the System.Exception descendant of the error.
@@ -34,7 +34,7 @@ Outputs and Side Effects:
 - One or more "state" data files will either be created or updated in the current user's application data folder.  The data files contain information related to the content and last-compiled date of each SQL file in the folder.
 - Any SQL objects that don't yet exist or have changed since the last compilation run will be compiled on the specified instance of SQL Server.
 - Any errors that occur will NOT throw an exception.  Instead, all exceptions are sent to the Make.ErrorEvent event handler.  The make algorithm will stop after the first exception is sent to the event handler.
-- If a user-defined table type needs to be compiled, any type-related dependencies will be dropped and re-created. If the source file for a dependency is not available, an error will be registered, and make algorithm will stop. (The source for a dependency object is present in sys.sql_modules, but it might not be *all* of the source that was originally executed to compile the object.  Things in the object's original source file preamble like various SETs, and after the object is compiled, like GRANT statements.  Those things need to be executed when the object is recompiled, which can only realistically be done from the source file, not sys.sql_modules).
+- If a user-defined table type needs to be compiled, any type-related dependencies will be dropped and re-created. If the source file for a dependency is not available, an error will be raised, and the make algorithm will stop. (The source for a dependency object is present in sys.sql_modules, but it might not be *all* of the source that was originally executed to compile the object.  Things in the object's original source file preamble like various SETs, and after the object is compiled, like GRANT statements, are not saved in sys.sql_modules.  Those things need to be executed when the object is recompiled, which can only realistically be done from the source file, not sys.sql_modules).
 
 
 ## A DETAILED INTRODUCTION
@@ -49,13 +49,13 @@ A traditional make utility - like GNU Make or Microsoft's NMake - works by compa
 
 The main drawbacks to using a traditional make utility for compiling SQL Server files are the assumptions the make utility makes:
 
-First, a traditional make utility assumes everything is in the file system, so source and object files can be compared by their name and timestamp.
+- First, a traditional make utility assumes everything is in the file system, so source and object files can be compared by their name and timestamp.
     
-For T-SQL code, source files are stored in the file system, and compiled objects stored in a database.  Once an object is compiled, there's no way to tell what - if any - T-SQL source file it was compiled from.  SQL Server Management Studio (SSMS) allows programmers to create objects interactively, so there might not be a source file at all (though this is not recommended in for production development because the object's source code won't be in source control).
+    For T-SQL code, source files are stored in the file system, and compiled objects stored in a database.  Once an object is compiled, there's no way to tell what - if any - T-SQL source file it was compiled from.  SQL Server Management Studio (SSMS) allows programmers to create objects interactively, so there might not be a source file at all (though this is not recommended in for production development because the object's source code won't be in source control).
 
-The second assumption is that source files and object files are on the same computer, so comparing their timestamps returns meaningful information because their timestamps were both set by the same clock.
+- The second assumption is that source files and object files are on the same computer, so comparing their timestamps returns meaningful information because their timestamps were both set by the same clock.
 
-While T-SQL source files are stored in the file system, SQL Server object files are stored in a database on a server. The database may be on a different computer, and might even be in a different time zone. Comparing two files' timestamps set by different computer clocks will always have a margin of error.
+    While T-SQL source files are stored in the file system, SQL Server object files are stored in a database on a server. The database may be on a different computer, and might even be in a different time zone. Comparing a source file's timestamp with a database object's timestamp will always have a margin of error.
 
 This means a traditional make utility can't deal with how SQL Server does things, so I wrote this little "make" algorithm.
 
@@ -79,17 +79,17 @@ SQL Server supports three kinds of user-defined types:  CLR, scalar and table.  
 
 Microsoft's names for these different types are ambiguous.  They call user-defined scalar types "alias types", and CLR types "user-defined types".  MS did manage to correctly name user-defined table types.  Here's a table to add to the confusion:
 
-Official MS Term   | How It Appears in SSMS     | Unambiguous Name That I Insist On Using
+Official MS Term   | How It Appears in SSMS     | Unambiguous Name and Abbreviation That I Insist On Using
 ------------------------|-------------------------|-------------------------
-Alias Type              | User-Defined Data Type  | User-Defined Scalar Type 
-User-Defined Type       | User-Defined Type       | User-Defined CLR Type
-User-Defined Table Type | User-Defined Table Type | User-Defined Table Type
+Alias Type              | User-Defined Data Type  | User-Defined Scalar Type (UDST)
+User-Defined Type       | User-Defined Type       | User-Defined CLR Type (UDCT)
+User-Defined Table Type | User-Defined Table Type | User-Defined Table Type (UDTT)
 
 I use the unambiguous names both in the code and this document.
 
 I did not include support for user-defined CLR types.  I've never met a DBA who allows CLR types or CLR assemblies in their database, so I've never had a chance to use them in my code.  That might change in the future (see section "5. FUTURE ENHANCEMENTS" below).
 
-User-defined scalar types (UDST) are a nice idea, but SQL Server's implementation is broken.  SQL Server provides CREATE TYPE and DROP TYPE statements, but no corresponding ALTER TYPE statement.  The programmer must manually drop or alter any object or table type that references the UDST before the UDST's definition can be changed. This makes it difficult - verging on impossible, especially on large tables - to change a UDST's definition.  As a result, this make algorithm doesn't support UDSTs because they're just too painful to work with.  See Aaron Bertrand's blog entry for a [reality check on UDSTs](http://sqlblog.com/blogs/aaron_bertrand/archive/2009/10/14/bad-habits-to-kick-using-alias-types.aspx).
+User-defined scalar types (UDST) are a nice idea, but SQL Server's implementation is broken.  SQL Server provides CREATE TYPE and DROP TYPE statements, but no corresponding ALTER TYPE statement.  The programmer must manually drop or alter any object or table type that references the UDST before the UDST's definition can be changed. This makes it difficult - verging on impossible, especially on large tables - to change a UDST's definition.  As a result, this make algorithm doesn't support UDSTs because they're just too painful to work with.  See Aaron Bertrand's blog entry for a [reality check on UDSTs](http://sqlblog.com/blogs/aaron_bertrand/archive/2009/10/14/bad-habits-to-kick-using-alias-types.aspx). TL;DR: Don't ever use UDSTs.
 
 That leaves user-defined table types (UDTT).  They suffer from the same limitations as UDSTs, but UDTTs are much more useful.  UDTTs allow multiple rows to be sent as a single parameter to a stored procedure via ADO.Net calls.  Speaking as a database programmer, this is a *great* feature.  This algorithm *does* support user-defined table types, as long as they don't reference user-defined scalar types or CLR types.
 
@@ -100,7 +100,7 @@ Because SQL Server throws a compile-time error for missing types, but not for mi
 
 #### Multiple Objects and/or Types in a Script
 
-A script (i.e. a file containing T-SQL code) can contain any kind of code, including definitions for multiple objects.
+A T-SQL script can contain any kind of code, including definitions for multiple types and/or objects.
 
 The make algorithm's compilation unit is a source file. This poses a problem because a script can contain any kind of code, including definitions for multiple objects, as well as supporting code (explained below).
 
@@ -118,7 +118,7 @@ This restriction is necessary to allow the make algorithm to match the T-SQL sou
 
 ### Supporting Code in a Script
 
-For this make utility to work correctly, a script can contain supporting code, like USE, IF and GRANT statements, but it can only contain one CREATE statement.
+A script can contain supporting code, like USE, IF and GRANT statements, but it can only contain one CREATE statement.
 
 For example, here's a simple script named 'dbo.mydb_sp_say_hello.sql'.  Note both the script's filename and CREATE statement are the same, and both use a two-part T-SQL object name.  (Square brackets in filenames are optional/ignored by the make algorithm).
 
@@ -205,22 +205,22 @@ All make algorithms have the general form:
 
 This make algorithm follows the same general form.
 
-As noted above, timestamps cannot be used to determine if a T-SQL file is out of date.  Some other method of detecting source file changes is needed.  This make algorithm checks a source file for out-of-dateness by comparing the contents of that source file with its previous contents.
+As noted above, timestamps cannot be used to determine if a T-SQL script is out of date.  Some other method of detecting script changes is needed.  This make algorithm checks a script for out-of-dateness by comparing the contents of the script with its previous contents.
 
-The first time the make algorithm is run against a source file, an MD5 hash of that file's contents is stored in a file.  Subsequent runs of the make algorithm retrieve that old MD5 hash and compare it to a new MD5 hash of the source file.  If the hashes are different, the file has changed since the last run and needs to be compiled.
+The first time the make algorithm is run against a script, an MD5 hash of the script's contents is cached.  Subsequent runs of the make algorithm retrieve that old MD5 hash and compare it to a new MD5 hash of the script.  If the hashes are different, the script has changed since the last run and needs to be compiled.
 
-One side effect with this approach is that the first time the make algorithm is run, it will unconditionally compile *all* of the source files.
+One side effect with this approach is that the first time the make algorithm is run, it will unconditionally compile *all* of the scripts.
 
 As for dependencies, SQL Server imposes a compile-time dependency on user-defined types.  Before a user-defined type can be compiled, all of its dependencies must be dropped first.  They must also be tracked so they can be re-compiled after the user-defined type is compiled.  After the dependencies are dropped, and because there is no ALTER TYPE statement, the user-defined type is dropped.  Now the user-defined type can be compiled, followed by the compilation of the previously dropped dependent objects.
 
 The make algorithm looks like this:
 
-- Gather source files (inputs).
-- Load old MD5 content hashes for those source files.
-- Compare the source files' MD5 content hashes to see which files need to be compiled.
+- Gather source scripts (inputs).
+- Load old MD5 content hashes for those scripts.
+- Compare the scripts' MD5 content hashes to see which ones need to be compiled.
 - Ask SQL Server for a list of types and objects that don't yet exist on the server, user-defined types and their dependencies that need to be dropped and re-compiled, as well as the order in which the types and dependencies have to be dropped.
 - Drop the required dependencies and user-defined types in the specified order.
-- Save the source files' new MD5 content hashes for use in the next run.
+- Save the scripts' new MD5 content hashes for use in the next run.
 - Compile all user-defined table types and objects that either don't exist yet on the server, or have been changed since the last run (outputs). The user-defined types and their dependencies are compiled in the reverse order in which they were dropped.
 
 

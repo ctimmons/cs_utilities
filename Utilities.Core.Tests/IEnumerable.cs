@@ -41,6 +41,41 @@ namespace Utilities.Core.UnitTests
     }
 
     [Test]
+    public void ContainsAnyTest()
+    {
+      String s = null;
+      var cs = "".ToCharArray();
+      Assert.Throws<ArgumentNullException>(() => s.ContainsAny(cs));
+
+      s = "";
+      Assert.Throws<ArgumentNullException>(() => s.ContainsAny(null));
+      Assert.Throws<ArgumentException>(() => s.ContainsAny(cs));
+
+      cs = "cd".ToCharArray();
+      Assert.IsFalse("abe".ContainsAny(cs));
+      Assert.IsTrue("abce".ContainsAny(cs));
+      Assert.IsTrue("abcde".ContainsAny(cs));
+    }
+
+    [Test]
+    public void ContainsAllTest()
+    {
+      String s = null;
+      var cs = "".ToCharArray();
+      Assert.Throws<ArgumentNullException>(() => s.ContainsAll(cs));
+
+      s = "";
+      Assert.Throws<ArgumentNullException>(() => s.ContainsAll(null));
+      Assert.Throws<ArgumentException>(() => s.ContainsAll(cs));
+
+      cs = "cd".ToCharArray();
+      Assert.IsFalse("abe".ContainsAll(cs));
+      Assert.IsFalse("abce".ContainsAll(cs));
+      Assert.IsTrue("abcde".ContainsAll(cs));
+      Assert.IsTrue("abcdecd".ContainsAll(cs));
+    }
+
+    [Test]
     public void JoinTest()
     {
       var data = new List<String>() { "A", "B", "C", "D", "E" };

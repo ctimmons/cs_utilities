@@ -307,7 +307,5 @@ namespace Utilities.Sql.SqlServer
           connection.ChangeDatabase(previousDatabaseName);
       }
     }
-
-
   }
 }

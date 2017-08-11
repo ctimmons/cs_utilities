@@ -63,18 +63,17 @@ namespace Utilities.Sql.SqlServer
     public String DefaultSchema { get; set; }
 
     private Boolean _didErrorOccur = false;
-    private readonly Dictionary<String, Dictionary<String, Item>> _items = new Dictionary<String, Dictionary<String, Item>>();
-    private readonly String _itemsFolder;
+    private readonly Dictionary<String, Dictionary<String, MakeItem>> _makeItems = new Dictionary<String, Dictionary<String, MakeItem>>();
+    private readonly String _makeItemsCacheFolder;
 
     /* A pathname is an absolute path, i.e. a folder plus filename (e.g. c:\temp\myfile.txt). */
-    //private readonly List<String> _pathnames = new List<String>();
     private readonly List<String> _pathnames = new List<String>();
 
-    private IEnumerable<Item> _allItems
+    private IEnumerable<MakeItem> _makeItemsFlatList
     {
       get
       {
-        return this._items.SelectMany(kvp => kvp.Value.Values.Select(i => i));
+        return this._makeItems.SelectMany(kvp => kvp.Value.Values.Select(i => i));
       }
     }
 
@@ -124,8 +123,8 @@ namespace Utilities.Sql.SqlServer
       this.DefaultSchema = "dbo";
       this.Connection = connection;
 
-      this._itemsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SQL Server Make Item Files");
-      Directory.CreateDirectory(this._itemsFolder);
+      this._makeItemsCacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SQL Server Make Item Files");
+      Directory.CreateDirectory(this._makeItemsCacheFolder);
     }
 
     public void AddFile(String pathname)
@@ -139,8 +138,7 @@ namespace Utilities.Sql.SqlServer
     {
       pathnames.Name("pathnames").NotNull();
 
-      foreach (var pathname in pathnames)
-        this.AddFile(pathname);
+      this.AddFiles(pathnames.ToList());
     }
 
     public void AddFiles(IEnumerable<String> pathnames)
@@ -172,16 +170,7 @@ namespace Utilities.Sql.SqlServer
            That odd (IMO buggy) behavior is avoided by converting the filemask to an equivalent
            regular expression. */
 
-        var filemaskRegexPattern =
-          filemask
-          /* Escape all regex-related characters except '*' and '?'. */
-          .RegexEscape('*', '?')
-          /* Convert '*' and '?' to their regex equivalents. */
-          .Replace('?', '.')
-          .Replace("*", ".*?");
-        var _saneFilemaskRegex = new Regex(filemaskRegexPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-        this.AddFiles(pathnames.Where(f => _saneFilemaskRegex.IsMatch(Path.GetFileName(f))));
+        this.AddFiles(pathnames.Where(f => filemask.GetRegexFromFilemask().IsMatch(Path.GetFileName(f))));
       }
     }
 
@@ -208,53 +197,54 @@ namespace Utilities.Sql.SqlServer
       this.Connection.Name("this.Connection").IsOpen();
 
       this.Sequence(
-        this.LoadItems,
-        this.SynchronizeItemsWithSourceFiles,
-        this.UpdateItemsWithServerData,
+        this.LoadMakeItemsFromCache,
+        this.SynchronizeMakeItemsCacheWithSourceFiles,
+        this.UpdateMakeItemsWithServerData,
         this.DropDependencies,
-        this.SaveItems,
-        this.CompileItems);
+        this.SaveMakeItemsToCache,
+        this.CompileMakeItems);
     }
 
-    private void LoadItems()
+    private void LoadMakeItemsFromCache()
     {
-      var folders = this._pathnames.Select(pathname => Path.GetDirectoryName(pathname)).Distinct();
+      var uniqueFolderList = this._pathnames.Select(pathname => Path.GetDirectoryName(pathname).ToLower()).Distinct();
 
-      foreach (var folder in folders)
+      foreach (var folder in uniqueFolderList)
       {
-        var pathname = Path.Combine(this._itemsFolder, StringUtils.MD5Checksum(folder));
+        var pathname = Path.Combine(this._makeItemsCacheFolder, folder.MD5Checksum());
 
         if (File.Exists(pathname))
         {
-          this._items.Add(folder, XmlUtils.DeserializeObjectFromBinaryFile<Dictionary<String, Item>>(pathname));
+          this._makeItems.Add(folder, XmlUtils.DeserializeObjectFromXmlFile<Dictionary<String, MakeItem>>(pathname));
           this.RaiseLogEvent(Properties.Resources.Make_ItemsLoaded, pathname);
         }
         else
         {
-          this._items.Add(folder, new Dictionary<String, Item>());
+          this._makeItems.Add(folder, new Dictionary<String, MakeItem>());
           this.RaiseLogEvent(Properties.Resources.Make_ItemsDoNotExist, pathname);
         }
       }
     }
 
-    public void SynchronizeItemsWithSourceFiles()
+    public void SynchronizeMakeItemsCacheWithSourceFiles()
     {
       foreach (var pathname in this._pathnames.Distinct())
-        this.AddOrUpdateItem(pathname);
+        this.AddOrUpdateMakeItem(pathname);
 
-      /* Delete items that don't have a corresponding source file.
+      /* Delete MakeItems from the cache that no longer have
+         a corresponding source file.
          
-         (Note: The "ToList()" call creates a new copy of item references.
+         (Note: The "ToList()" call creates a new copy of references.
          That copy is what's enumerated over, allowing
-         the "Remove()" call on the original this._items to succeed.) */
-      foreach (var kvp in this._items)
+         the "Remove()" call on the original this._makeItems to succeed.) */
+      foreach (var kvp in this._makeItems)
         foreach (var kvp2 in kvp.Value.Where(kvp3 => !File.Exists(kvp3.Value.Pathname)).ToList())
           kvp.Value.Remove(kvp2.Key);
     }
 
-    private void AddOrUpdateItem(String pathname)
+    private void AddOrUpdateMakeItem(String pathname)
     {
-      /* Why keep the items in a Dictionary<String, Item>?  Why not a List<Item>?
+      /* Why keep the MakeItems in a Dictionary<String, MakeItem>?  Why not a List<MakeItem>?
       
          Adding and updating items requires searching the existing items.
       
@@ -263,48 +253,47 @@ namespace Utilities.Sql.SqlServer
          The List.BinarySearch() method's performance is O(log N), which is
          acceptable.  However, BinarySearch() requires that an Item instance
          be passed to it, and - in this case - an IComparer as well.
-         This would require a new Item instance to be created for every
+         This would require a new MakeItem instance to be created for every
          search, even if that instance already exists in the list!
       
          The Dictionary.TryGetValue() method's performance approaches O(1).
-         A new Item instance only needs to be created when it doesn't yet
+         A new MakeItem instance only needs to be created when it doesn't yet
          exist in the dictionary. */
 
-      var items = this._items[Path.GetDirectoryName(pathname)];
+      var makeItems = this._makeItems[Path.GetDirectoryName(pathname)];
 
-      Item item;
-      if (items.TryGetValue(pathname, out item))
+      if (makeItems.TryGetValue(pathname, out MakeItem makeItem))
       {
         var currentMD5Hash = FileUtils.GetMD5Checksum(pathname);
-        if (item.FileContentsMD5Hash == currentMD5Hash)
+        if (makeItem.FileContentsMD5Hash == currentMD5Hash)
         {
-          item.NeedsToBeCompiled = false;
+          makeItem.NeedsToBeCompiled = false;
+          this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem_DoesNotNeedToBeCompiled, pathname);
         }
         else
         {
-          item.NeedsToBeCompiled = true;
-          item.FileContentsMD5Hash = currentMD5Hash;
+          makeItem.NeedsToBeCompiled = true;
+          makeItem.FileContentsMD5Hash = currentMD5Hash;
+          this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem_NeedsToBeCompiled, pathname);
         }
-
-        this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem, pathname);
       }
       else
       {
-        items.Add(pathname, new Item(pathname));
+        makeItems.Add(pathname, new MakeItem(pathname));
         this.RaiseLogEvent(Properties.Resources.Make_CreatedNewItem, pathname);
       }
     }
 
-    private void UpdateItemsWithServerData()
+    private void UpdateMakeItemsWithServerData()
     {
       var sqlTemplate = "Utilities.Sql.SQL_Server.GetUpdatedItems.sql".GetEmbeddedTextResource();
 
       var insertValues =
-        this._allItems
+        this._makeItemsFlatList
         .Select(s => String.Format("('{0}', '{1}', '', '', {2}, '{3}', 'N', {4}, 'Y', 'N')",
             s.Pathname,
             s.Filename.RemoveFileExtension(),
-            (s.Type.Trim() == "") ? "NULL" : "'" + s.Type + "'",
+            (s.Type.Trim() == "") ? "NULL" : s.Type.SingleQuote(),
             s.NeedsToBeCompiled.AsYOrN(),
             s.DropOrder))
         .JoinAndIndent("," + Environment.NewLine, 2);
@@ -322,20 +311,19 @@ namespace Utilities.Sql.SqlServer
             if (reader["does_file_exist"].ToString().AsBoolean())
             {
               var pathname = reader["pathname"].ToString();
-              var items = this._items[Path.GetDirectoryName(pathname)];
+              var makeItems = this._makeItems[Path.GetDirectoryName(pathname)];
 
-              Item item;
-              if (items.TryGetValue(pathname, out item))
+              if (makeItems.TryGetValue(pathname, out MakeItem makeItem))
               {
-                item.SchemaName = reader["schema_name"].ToString();
-                item.ObjectName = reader["object_name"].ToString();
-                item.Type = reader["type"].ToString();
-                item.NeedsToBeCompiled = reader["needs_to_be_compiled"].ToString().AsBoolean();
-                item.IsPresentOnServer = reader["is_present_on_server"].ToString().AsBoolean();
-                item.DropOrder = Convert.ToInt32(reader["drop_order"]);
-                item.NeedsToBeDropped = reader["needs_to_be_dropped"].ToString().AsBoolean();
+                makeItem.SchemaName = reader["schema_name"].ToString();
+                makeItem.ObjectName = reader["object_name"].ToString();
+                makeItem.Type = reader["type"].ToString();
+                makeItem.NeedsToBeCompiled = reader["needs_to_be_compiled"].ToString().AsBoolean();
+                makeItem.IsPresentOnServer = reader["is_present_on_server"].ToString().AsBoolean();
+                makeItem.DropOrder = Convert.ToInt32(reader["drop_order"]);
+                makeItem.NeedsToBeDropped = reader["needs_to_be_dropped"].ToString().AsBoolean();
 
-                this.RaiseLogEvent(Properties.Resources.Make_UpdatedItemForFile, item.Pathname);
+                this.RaiseLogEvent(Properties.Resources.Make_UpdatedItemForFile, makeItem.Pathname);
               }
               else
               {
@@ -389,7 +377,7 @@ namespace Utilities.Sql.SqlServer
     private void DropDependencies()
     {
       var dropSqlCommands =
-        this._allItems
+        this._makeItemsFlatList
         .Where(item => item.NeedsToBeDropped)
         .OrderBy(item => item.DropOrder)
         .Select(item => String.Format("DROP {0} [{1}].[{2}]", this.GetTypeName(item.Type), item.SchemaName, item.ObjectName))
@@ -402,19 +390,19 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
-    public void SaveItems()
+    public void SaveMakeItemsToCache()
     {
-      foreach (var kvp in this._items)
+      foreach (var kvp in this._makeItems)
       {
-        var pathname = Path.Combine(this._itemsFolder, StringUtils.MD5Checksum(kvp.Key));
-        XmlUtils.SerializeObjectToBinaryFile(kvp.Value, pathname);
+        var pathname = Path.Combine(this._makeItemsCacheFolder, kvp.Key.MD5Checksum());
+        XmlUtils.SerializeObjectToXmlFile(kvp.Value, pathname);
         this.RaiseLogEvent(Properties.Resources.Make_ItemsSaved, pathname);
       }
     }
 
-    private static readonly Regex _splitAtGoRegex = new Regex(@"^\s*GO\s*$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex _splitAtGoRegex = new Regex(@"^\s*GO\s*?.*?$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-    private void CompileItems()
+    private void CompileMakeItems()
     {
       Func<String, IEnumerable<String>> getParts = f => _splitAtGoRegex.Split(File.ReadAllText(f)).Where(s => s.IsNotEmpty());
 
@@ -424,7 +412,7 @@ namespace Utilities.Sql.SqlServer
            a drop order of 0.  When dropping items, non-udtts are dropped first and
            udtts are dropped second.  The reverse is true when compiling, hence the
            OrderByDescending() call. */
-        foreach (var item in this._allItems.Where(i => i.NeedsToBeCompiled).OrderByDescending(i => i.DropOrder))
+        foreach (var item in this._makeItemsFlatList.Where(i => i.NeedsToBeCompiled).OrderByDescending(i => i.DropOrder))
         {
           try
           {
@@ -447,7 +435,7 @@ namespace Utilities.Sql.SqlServer
   }
 
   [Serializable]
-  internal class Item
+  internal class MakeItem
   {
     public String Filename { get; private set; }
     public String Pathname { get; private set; }
@@ -460,14 +448,14 @@ namespace Utilities.Sql.SqlServer
     public Int32 DropOrder { get; set; }
     public Boolean NeedsToBeDropped { get; set; }
 
-    private Item()
+    private MakeItem()
       : base()
     {
     }
 
     private static readonly Regex _userDefinedTableTypeRegex = new Regex(@"create\s+type.*?as\s+table", RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-    public Item(String pathname)
+    public MakeItem(String pathname)
       : this()
     {
       pathname.Name("pathname").NotNullEmptyOrOnlyWhitespace().FileExists();

@@ -26,23 +26,25 @@ namespace Utilities.Core
           RedirectStandardOutput = (runProcessType == RunProcessType.ReturnResult),
           UseShellExecute = false
         };
-      var process = Process.Start(psi);
 
-      switch (runProcessType)
+      using (var process = Process.Start(psi))
       {
-        case RunProcessType.IgnoreResult:
-          return null;
-        case RunProcessType.ReturnResult:
-          /* Avoid deadlocks by reading the entire standard output stream and
-             then waiting for the process to exit.  See the "Remarks" section
-             in the MSDN documentation:
-               https://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k(System.Diagnostics.ProcessStartInfo.RedirectStandardOutput);k(TargetFrameworkMoniker-.NETFramework   
-          */
-          var output = process.StandardOutput.ReadToEnd();
-          process.WaitForExit();
-          return output;
-        default:
-          throw new ArgumentExceptionFmt(Properties.Resources.Utils_UnknownRunProcessType, runProcessType);
+        switch (runProcessType)
+        {
+          case RunProcessType.IgnoreResult:
+            return null;
+          case RunProcessType.ReturnResult:
+            /* Avoid deadlocks by reading the entire standard output stream and
+               then waiting for the process to exit.  See the "Remarks" section
+               in the MSDN documentation:
+                 https://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k(System.Diagnostics.ProcessStartInfo.RedirectStandardOutput);k(TargetFrameworkMoniker-.NETFramework   
+            */
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            return output;
+          default:
+            throw new ArgumentExceptionFmt(Properties.Resources.Utils_UnknownRunProcessType, runProcessType);
+        }
       }
     }
 

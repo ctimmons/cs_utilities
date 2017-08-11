@@ -32,6 +32,71 @@ namespace Utilities.Core
         action(item, i++);
     }
 
+    /// <summary>
+    /// Return true if any of the 'values' appear in 'source'.
+    /// </summary>
+    public static Boolean ContainsAny<T>(this IEnumerable<T> source, T[] values)
+      where T : IComparable<T>
+    {
+      /* Don't check 'source' for zero length.
+         If it's empty, this method will just return false.
+         That seems to make more sense than throwing an exception. */
+      source.Name("source").NotNull();
+      values.Name("values").NotNull().NotEmpty();
+
+      return source.Any(c => values.Any(x => x.CompareTo(c) == 0));
+    }
+
+    /// <summary>
+    /// Return true if all of the 'values' appear in 'source'.
+    /// </summary>
+    public static Boolean ContainsAll<T>(this IEnumerable<T> source, T[] values)
+    {
+      /* Assuming both 'source' and 'values' are sufficiently small,
+         this algorithm should have acceptable performance.
+         
+         If 'source' is large, it may be worthwhile to parallelize the foreach loop.
+         (Note that 'hash' and 'numberOfHashesSet' would be shared between the
+         threads and would need to be protected in some way.)
+
+         Parallelizing now feels like a premature optimization.  Also, that
+         would probably put this algorithm on the wrong side of Amdahl's Law,
+         as for small 'source' and 'values' the parallel loop might perform
+         more poorly than the present linear algorithm.
+         
+         If 'values' is large, allocating the 'hash' dictionary may use too much memory.
+         A different algorithm that doesn't use an intermediate data structure like 'hash'
+         would be appropriate in that case. */
+
+      /* Don't check 'source' for zero length.
+         If it's empty, this method will just return false.
+         That seems to make more sense than throwing an exception. */
+      source.Name("source").NotNull();
+      values.Name("values").NotNull().NotEmpty();
+
+      /* Exit early if 'source' is empty.
+         This saves the expense of creating 'hash' for no reason. */
+      if (!source.Any())
+        return false;
+
+      var hash = values.Distinct().ToDictionary(c => c, c => false);
+      var numberOfHashesSet = 0;
+
+      foreach (var c in source)
+      {
+        if (hash.ContainsKey(c) && !hash[c])
+        {
+          hash[c] = true;
+          numberOfHashesSet++;
+
+          if (numberOfHashesSet == hash.Count)
+            return true;
+        }
+      }
+
+      return false;
+    }
+
     public static Boolean ContainsCI(this IEnumerable<String> values, String searchValue)
     {
       values.Name("values").NotNull();

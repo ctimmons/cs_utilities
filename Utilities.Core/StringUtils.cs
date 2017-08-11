@@ -77,6 +77,28 @@ namespace Utilities.Core
     }
 
     /// <summary>
+    /// If filemask contains * or ? characters, convert it
+    /// to an equivalent Regex.  If neither of those characters are in filemask,
+    /// throw an error.
+    /// </summary>
+    public static Regex GetRegexFromFilemask(this String filemask)
+    {
+      filemask.Name("filemask").NotNullEmptyOrOnlyWhitespace();
+      if (!filemask.ContainsAny("*?".ToCharArray()))
+        throw new ArgumentException("'filemask' does not contain either the * or ? characters.");
+
+      var filemaskRegexPattern =
+        filemask
+        /* Escape all regex-related characters except '*' and '?'. */
+        .RegexEscape('*', '?')
+        /* Convert '*' and '?' to their regex equivalents. */
+        .Replace('?', '.')
+        .Replace("*", ".*?");
+
+      return new Regex("^" + filemaskRegexPattern + "$", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    }
+
+    /// <summary>
     /// Returns the string s with all of the characters in cs removed.
     /// </summary>
     public static String Strip(this String s, Char[] cs)
@@ -239,6 +261,16 @@ namespace Utilities.Core
       c1.Name("c1").NotNull();
       c2.Name("c2").NotNull();
       return String.Concat(c1, value, c2);
+    }
+
+    public static String SingleQuote(this String value)
+    {
+      return value.SurroundWith("'");
+    }
+
+    public static String DoubleQuote(this String value)
+    {
+      return value.SurroundWith("\"");
     }
 
     /// <summary>

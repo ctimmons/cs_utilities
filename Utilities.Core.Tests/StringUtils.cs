@@ -95,6 +95,34 @@ namespace Utilities.Core.UnitTests
     }
 
     [Test]
+    public void GetRegexFromFilemaskTest()
+    {
+      String s = null;
+      Assert.Throws<ArgumentNullException>(() => s.GetRegexFromFilemask());
+
+      s = "";
+      Assert.Throws<ArgumentException>(() => s.GetRegexFromFilemask());
+
+      s = " ";
+      Assert.Throws<ArgumentException>(() => s.GetRegexFromFilemask());
+
+      s = "abc";
+      Assert.Throws<ArgumentException>(() => s.GetRegexFromFilemask());
+
+      s = "*";
+      Assert.AreEqual("^.*?$", s.GetRegexFromFilemask().ToString());
+
+      s = "?";
+      Assert.AreEqual("^.$", s.GetRegexFromFilemask().ToString());
+
+      s = "??";
+      Assert.AreEqual("^..$", s.GetRegexFromFilemask().ToString());
+
+      s = "a.b[cd]*";
+      Assert.AreEqual(@"^a\.b\[cd].*?$", s.GetRegexFromFilemask().ToString());
+    }
+
+    [Test]
     public void UpToTest()
     {
       String s = null;

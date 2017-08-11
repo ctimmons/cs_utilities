@@ -205,11 +205,20 @@ namespace Utilities.Sql.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Updated existing item for &apos;{0}&apos;..
+        ///   Looks up a localized string similar to Does not need to be compiled: &apos;{0}&apos;.
         /// </summary>
-        internal static string Make_UpdatedExistingItem {
+        internal static string Make_UpdatedExistingItem_DoesNotNeedToBeCompiled {
             get {
-                return ResourceManager.GetString("Make_UpdatedExistingItem", resourceCulture);
+                return ResourceManager.GetString("Make_UpdatedExistingItem_DoesNotNeedToBeCompiled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Needs to be compiled: &apos;{0}&apos;.
+        /// </summary>
+        internal static string Make_UpdatedExistingItem_NeedsToBeCompiled {
+            get {
+                return ResourceManager.GetString("Make_UpdatedExistingItem_NeedsToBeCompiled", resourceCulture);
             }
         }
         

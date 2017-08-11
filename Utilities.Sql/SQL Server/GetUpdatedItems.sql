@@ -34,9 +34,9 @@ INSERT INTO @client_items
 {0};
 
 /* An UPDATE statement's SET operations act as if they're
-   executed in parallel.  Therefore, some columns have
-   to be set in a separate UPDATE before they can be referenced
-   by later UPDATE statements. */
+   executed independently (i.e. in isolation from one another).
+   Therefore, some columns have to be set in a separate
+   UPDATE before they can be referenced by later UPDATE statements. */
 
 DECLARE @object_name_piece INT = 1;
 DECLARE @schema_name_piece INT = 2;
@@ -77,9 +77,10 @@ UPDATE @client_items
           )
         ELSE [type]
       END,
-    is_present_on_server = 
+    is_present_on_server =
       CASE
-        WHEN EXISTS
+        WHEN
+          EXISTS
           (
             /* User-defined table types */
             SELECT
@@ -91,12 +92,12 @@ UPDATE @client_items
                   AND T.[schema_id] = SCHEMA_ID([schema_name])
               WHERE
                 [object_name] = T.[name]
-           )
+          )
+          
+          OR
 
-           OR
-
-           EXISTS
-           (
+          EXISTS
+          (
             /* Objects */
             SELECT
                 *
@@ -105,9 +106,10 @@ UPDATE @client_items
               WHERE
                 O.[name] = [object_name]
                 AND O.[schema_id] = SCHEMA_ID([schema_name])
-          ) THEN 'Y'
-        ELSE 'N'
-      END;
+          )
+          THEN 'Y'
+          ELSE 'N'
+        END;
 
 DECLARE @udtt_dependencies_to_drop TABLE
   (

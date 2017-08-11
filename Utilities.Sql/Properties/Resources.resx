@@ -183,10 +183,13 @@
   <data name="Make_UnknownType" xml:space="preserve">
     <value>Unknown type: '{0}'.</value>
   </data>
-  <data name="Make_UpdatedExistingItem" xml:space="preserve">
-    <value>Updated existing item for '{0}'.</value>
+  <data name="Make_UpdatedExistingItem_NeedsToBeCompiled" xml:space="preserve">
+    <value>Needs to be compiled: '{0}'</value>
   </data>
   <data name="Make_UpdatedItemForFile" xml:space="preserve">
     <value>Updated item for file '{0}'.</value>
+  </data>
+  <data name="Make_UpdatedExistingItem_DoesNotNeedToBeCompiled" xml:space="preserve">
+    <value>Does not need to be compiled: '{0}'</value>
   </data>
 </root>
