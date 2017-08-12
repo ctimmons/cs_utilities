@@ -63,7 +63,7 @@ namespace Utilities.Sql.SqlServer
     public String DefaultSchema { get; set; }
 
     private Boolean _didErrorOccur = false;
-    private readonly Dictionary<String, Dictionary<String, MakeItem>> _makeItems = new Dictionary<String, Dictionary<String, MakeItem>>();
+    private readonly Dictionary<String, Dictionary<String, MakeItem>> _makeItems = new Dictionary<String, Dictionary<String, MakeItem>>(StringComparer.OrdinalIgnoreCase);
     private readonly String _makeItemsCacheFolder;
 
     /* A pathname is an absolute path, i.e. a folder plus filename (e.g. c:\temp\myfile.txt). */
@@ -207,7 +207,7 @@ namespace Utilities.Sql.SqlServer
 
     private void LoadMakeItemsFromCache()
     {
-      var uniqueFolderList = this._pathnames.Select(pathname => Path.GetDirectoryName(pathname).ToLower()).Distinct();
+      var uniqueFolderList = this._pathnames.Select(pathname => Path.GetDirectoryName(pathname)).Distinct();
 
       foreach (var folder in uniqueFolderList)
       {
@@ -215,12 +215,12 @@ namespace Utilities.Sql.SqlServer
 
         if (File.Exists(pathname))
         {
-          this._makeItems.Add(folder, XmlUtils.DeserializeObjectFromXmlFile<Dictionary<String, MakeItem>>(pathname));
+          this._makeItems.Add(folder, XmlUtils.DeserializeObjectFromBinaryFile<Dictionary<String, MakeItem>>(pathname));
           this.RaiseLogEvent(Properties.Resources.Make_ItemsLoaded, pathname);
         }
         else
         {
-          this._makeItems.Add(folder, new Dictionary<String, MakeItem>());
+          this._makeItems.Add(folder, new Dictionary<String, MakeItem>(StringComparer.OrdinalIgnoreCase));
           this.RaiseLogEvent(Properties.Resources.Make_ItemsDoNotExist, pathname);
         }
       }
@@ -381,7 +381,7 @@ namespace Utilities.Sql.SqlServer
         .Where(item => item.NeedsToBeDropped)
         .OrderBy(item => item.DropOrder)
         .Select(item => String.Format("DROP {0} [{1}].[{2}]", this.GetTypeName(item.Type), item.SchemaName, item.ObjectName))
-        .ToList(); // Force GetTypeName() to be evaluated before this list is enumerated.
+        .ToList(); /* Force GetTypeName() to be evaluated before this list is enumerated. */
 
       foreach (var dropSql in dropSqlCommands)
       {
@@ -395,7 +395,12 @@ namespace Utilities.Sql.SqlServer
       foreach (var kvp in this._makeItems)
       {
         var pathname = Path.Combine(this._makeItemsCacheFolder, kvp.Key.MD5Checksum());
-        XmlUtils.SerializeObjectToXmlFile(kvp.Value, pathname);
+        /* Any class that implements IDictionary cannot be serialized to XML.
+           Binary has to be used instead.
+           See this blog post for more ways to serialize/deserialize an
+           IDictionary to/from XML:
+           http://theburningmonk.com/2010/05/net-tips-xml-serialize-or-deserialize-dictionary-in-csharp/ */
+        XmlUtils.SerializeObjectToBinaryFile(kvp.Value, pathname);
         this.RaiseLogEvent(Properties.Resources.Make_ItemsSaved, pathname);
       }
     }
