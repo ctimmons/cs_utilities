@@ -4,7 +4,7 @@ SET NOCOUNT ON;
 
 DECLARE @client_items TABLE
   (
-    [pathname] VARCHAR(MAX) NOT NULL DEFAULT '',
+    [full_filename] VARCHAR(MAX) NOT NULL DEFAULT '',
     [filename] VARCHAR(MAX) NOT NULL DEFAULT '',
     [schema_name] VARCHAR(MAX) NOT NULL,
     [object_name] VARCHAR(MAX) NOT NULL,
@@ -19,7 +19,7 @@ DECLARE @client_items TABLE
 
 INSERT INTO @client_items
   (
-    [pathname],
+    [full_filename],
     [filename],
     [schema_name],
     [object_name],
@@ -242,7 +242,7 @@ UPDATE @client_items
       END;
 
 SELECT
-    [pathname],
+    [full_filename],
     [filename],
     [schema_name],
     [object_name],

@@ -64,10 +64,8 @@ namespace Utilities.Sql.SqlServer
 
     private Boolean _didErrorOccur = false;
     private readonly Dictionary<String, Dictionary<String, MakeItem>> _makeItems = new Dictionary<String, Dictionary<String, MakeItem>>(StringComparer.OrdinalIgnoreCase);
-    private readonly String _makeItemsCacheFolder;
-
-    /* A pathname is an absolute path, i.e. a folder plus filename (e.g. c:\temp\myfile.txt). */
-    private readonly List<String> _pathnames = new List<String>();
+    private readonly String _makeItemsCacheDirectory;
+    private readonly List<String> _filenames = new List<String>();
 
     private IEnumerable<MakeItem> _makeItemsFlatList
     {
@@ -123,54 +121,54 @@ namespace Utilities.Sql.SqlServer
       this.DefaultSchema = "dbo";
       this.Connection = connection;
 
-      this._makeItemsCacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SQL Server Make Item Files");
-      Directory.CreateDirectory(this._makeItemsCacheFolder);
+      this._makeItemsCacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SQL Server Make Item Files");
+      Directory.CreateDirectory(this._makeItemsCacheDirectory);
     }
 
-    public void AddFile(String pathname)
+    public void AddFile(String filename)
     {
-      pathname.Name("pathname").NotNullEmptyOrOnlyWhitespace().FileExists();
+      filename.Name("filename").NotNullEmptyOrOnlyWhitespace().FileExists();
 
-      this._pathnames.Add(Path.GetFullPath(pathname));
+      this._filenames.Add(Path.GetFullPath(filename));
     }
 
-    public void AddFiles(params String[] pathnames)
+    public void AddFiles(params String[] filenames)
     {
-      pathnames.Name("pathnames").NotNull();
+      filenames.Name("filenames").NotNull();
 
-      this.AddFiles(pathnames.ToList());
+      this.AddFiles(filenames.ToList());
     }
 
-    public void AddFiles(IEnumerable<String> pathnames)
+    public void AddFiles(IEnumerable<String> filenames)
     {
-      pathnames.Name("pathnames").NotNull();
+      filenames.Name("filenames").NotNull();
 
-      foreach (var pathname in pathnames)
-        this.AddFile(pathname);
+      foreach (var filename in filenames)
+        this.AddFile(filename);
     }
 
-    public void AddFolder(String folder, String filemask = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly)
+    public void AddDirectory(String directory, String filemask = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly)
     {
-      folder.Name("folder").NotNullEmptyOrOnlyWhitespace().DirectoryExists();
+      directory.Name("directory").NotNullEmptyOrOnlyWhitespace().DirectoryExists();
       filemask.Name("filemask").NotNullEmptyOrOnlyWhitespace();
 
       filemask = filemask.Trim();
 
-      var pathnames = Directory.EnumerateFiles(folder, "*", searchOption);
+      var filenames = Directory.EnumerateFiles(directory, "*", searchOption);
 
       if ((filemask == "*") || (filemask == "*.*"))
       {
-        this.AddFiles(pathnames);
+        this.AddFiles(filenames);
       }
       else
       {
         /* Directory.EnumerateFiles()'s searchPattern parameter has an odd behavior
-           when matching pathname extensions.
+           when matching filename extensions.
            (Read the "Remarks" section at https://msdn.microsoft.com/en-us/library/dd413233%28v=vs.110%29.aspx).
            That odd (IMO buggy) behavior is avoided by converting the filemask to an equivalent
            regular expression. */
 
-        this.AddFiles(pathnames.Where(f => filemask.GetRegexFromFilemask().IsMatch(Path.GetFileName(f))));
+        this.AddFiles(filenames.Where(f => filemask.GetRegexFromFilemask().IsMatch(Path.GetFileName(f))));
       }
     }
 
@@ -207,29 +205,29 @@ namespace Utilities.Sql.SqlServer
 
     private void LoadMakeItemsFromCache()
     {
-      var uniqueFolderList = this._pathnames.Select(pathname => Path.GetDirectoryName(pathname)).Distinct();
+      var uniqueDirectoryList = this._filenames.Select(filename => Path.GetDirectoryName(filename)).Distinct();
 
-      foreach (var folder in uniqueFolderList)
+      foreach (var directory in uniqueDirectoryList)
       {
-        var pathname = Path.Combine(this._makeItemsCacheFolder, folder.MD5Checksum());
+        var filename = Path.Combine(this._makeItemsCacheDirectory, directory.MD5Checksum());
 
-        if (File.Exists(pathname))
+        if (File.Exists(filename))
         {
-          this._makeItems.Add(folder, XmlUtils.DeserializeObjectFromBinaryFile<Dictionary<String, MakeItem>>(pathname));
-          this.RaiseLogEvent(Properties.Resources.Make_ItemsLoaded, pathname);
+          this._makeItems.Add(directory, XmlUtils.DeserializeObjectFromBinaryFile<Dictionary<String, MakeItem>>(filename));
+          this.RaiseLogEvent(Properties.Resources.Make_ItemsLoaded, filename);
         }
         else
         {
-          this._makeItems.Add(folder, new Dictionary<String, MakeItem>(StringComparer.OrdinalIgnoreCase));
-          this.RaiseLogEvent(Properties.Resources.Make_ItemsDoNotExist, pathname);
+          this._makeItems.Add(directory, new Dictionary<String, MakeItem>(StringComparer.OrdinalIgnoreCase));
+          this.RaiseLogEvent(Properties.Resources.Make_ItemsDoNotExist, filename);
         }
       }
     }
 
     public void SynchronizeMakeItemsCacheWithSourceFiles()
     {
-      foreach (var pathname in this._pathnames.Distinct())
-        this.AddOrUpdateMakeItem(pathname);
+      foreach (var filename in this._filenames.Distinct())
+        this.AddOrUpdateMakeItem(filename);
 
       /* Delete MakeItems from the cache that no longer have
          a corresponding source file.
@@ -238,11 +236,11 @@ namespace Utilities.Sql.SqlServer
          That copy is what's enumerated over, allowing
          the "Remove()" call on the original this._makeItems to succeed.) */
       foreach (var kvp in this._makeItems)
-        foreach (var kvp2 in kvp.Value.Where(kvp3 => !File.Exists(kvp3.Value.Pathname)).ToList())
+        foreach (var kvp2 in kvp.Value.Where(kvp3 => !File.Exists(kvp3.Value.FullFilename)).ToList())
           kvp.Value.Remove(kvp2.Key);
     }
 
-    private void AddOrUpdateMakeItem(String pathname)
+    private void AddOrUpdateMakeItem(String filename)
     {
       /* Why keep the MakeItems in a Dictionary<String, MakeItem>?  Why not a List<MakeItem>?
       
@@ -260,27 +258,27 @@ namespace Utilities.Sql.SqlServer
          A new MakeItem instance only needs to be created when it doesn't yet
          exist in the dictionary. */
 
-      var makeItems = this._makeItems[Path.GetDirectoryName(pathname)];
+      var makeItems = this._makeItems[Path.GetDirectoryName(filename)];
 
-      if (makeItems.TryGetValue(pathname, out MakeItem makeItem))
+      if (makeItems.TryGetValue(filename, out MakeItem makeItem))
       {
-        var currentMD5Hash = FileUtils.GetMD5Checksum(pathname);
+        var currentMD5Hash = FileUtils.GetMD5Checksum(filename);
         if (makeItem.FileContentsMD5Hash == currentMD5Hash)
         {
           makeItem.NeedsToBeCompiled = false;
-          this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem_DoesNotNeedToBeCompiled, pathname);
+          this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem_DoesNotNeedToBeCompiled, filename);
         }
         else
         {
           makeItem.NeedsToBeCompiled = true;
           makeItem.FileContentsMD5Hash = currentMD5Hash;
-          this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem_NeedsToBeCompiled, pathname);
+          this.RaiseLogEvent(Properties.Resources.Make_UpdatedExistingItem_NeedsToBeCompiled, filename);
         }
       }
       else
       {
-        makeItems.Add(pathname, new MakeItem(pathname));
-        this.RaiseLogEvent(Properties.Resources.Make_CreatedNewItem, pathname);
+        makeItems.Add(filename, new MakeItem(filename));
+        this.RaiseLogEvent(Properties.Resources.Make_CreatedNewItem, filename);
       }
     }
 
@@ -291,7 +289,7 @@ namespace Utilities.Sql.SqlServer
       var insertValues =
         this._makeItemsFlatList
         .Select(s => String.Format("('{0}', '{1}', '', '', {2}, '{3}', 'N', {4}, 'Y', 'N')",
-            s.Pathname,
+            s.FullFilename,
             s.Filename.RemoveFileExtension(),
             (s.Type.Trim() == "") ? "NULL" : s.Type.SingleQuote(),
             s.NeedsToBeCompiled.AsYOrN(),
@@ -310,10 +308,10 @@ namespace Utilities.Sql.SqlServer
           {
             if (reader["does_file_exist"].ToString().AsBoolean())
             {
-              var pathname = reader["pathname"].ToString();
-              var makeItems = this._makeItems[Path.GetDirectoryName(pathname)];
+              var filename = reader["full_filename"].ToString();
+              var makeItems = this._makeItems[Path.GetDirectoryName(filename)];
 
-              if (makeItems.TryGetValue(pathname, out MakeItem makeItem))
+              if (makeItems.TryGetValue(filename, out MakeItem makeItem))
               {
                 makeItem.SchemaName = reader["schema_name"].ToString();
                 makeItem.ObjectName = reader["object_name"].ToString();
@@ -323,11 +321,11 @@ namespace Utilities.Sql.SqlServer
                 makeItem.DropOrder = Convert.ToInt32(reader["drop_order"]);
                 makeItem.NeedsToBeDropped = reader["needs_to_be_dropped"].ToString().AsBoolean();
 
-                this.RaiseLogEvent(Properties.Resources.Make_UpdatedItemForFile, makeItem.Pathname);
+                this.RaiseLogEvent(Properties.Resources.Make_UpdatedItemForFile, makeItem.FullFilename);
               }
               else
               {
-                this.RaiseErrorEvent(Properties.Resources.Make_PathnameNotFound, pathname);
+                this.RaiseErrorEvent(Properties.Resources.Make_PathnameNotFound, filename);
               }
             }
             else
@@ -394,14 +392,14 @@ namespace Utilities.Sql.SqlServer
     {
       foreach (var kvp in this._makeItems)
       {
-        var pathname = Path.Combine(this._makeItemsCacheFolder, kvp.Key.MD5Checksum());
-        /* Any class that implements IDictionary cannot be serialized to XML.
-           Binary has to be used instead.
+        var filename = Path.Combine(this._makeItemsCacheDirectory, kvp.Key.MD5Checksum());
+        /* Any class that implements IDictionary cannot be (easily) serialized to XML.
+           In this case, it's easier to serialize to a binary format instead.
            See this blog post for more ways to serialize/deserialize an
            IDictionary to/from XML:
            http://theburningmonk.com/2010/05/net-tips-xml-serialize-or-deserialize-dictionary-in-csharp/ */
-        XmlUtils.SerializeObjectToBinaryFile(kvp.Value, pathname);
-        this.RaiseLogEvent(Properties.Resources.Make_ItemsSaved, pathname);
+        XmlUtils.SerializeObjectToBinaryFile(kvp.Value, filename);
+        this.RaiseLogEvent(Properties.Resources.Make_ItemsSaved, filename);
       }
     }
 
@@ -421,17 +419,17 @@ namespace Utilities.Sql.SqlServer
         {
           try
           {
-            foreach (var part in getParts(item.Pathname))
+            foreach (var part in getParts(item.FullFilename))
             {
               command.CommandText = part;
               command.ExecuteNonQuery();
             }
 
-            this.RaiseLogEvent(Properties.Resources.Make_SuccessfullyCompiled, item.Pathname);
+            this.RaiseLogEvent(Properties.Resources.Make_SuccessfullyCompiled, item.FullFilename);
           }
           catch (Exception ex)
           {
-            this.RaiseErrorEvent(item.Pathname, ex);
+            this.RaiseErrorEvent(item.FullFilename, ex);
             break;
           }
         }
@@ -443,7 +441,7 @@ namespace Utilities.Sql.SqlServer
   internal class MakeItem
   {
     public String Filename { get; private set; }
-    public String Pathname { get; private set; }
+    public String FullFilename { get; private set; }
     public String SchemaName { get; set; }
     public String ObjectName { get; set; }
     public String FileContentsMD5Hash { get; set; }
@@ -460,15 +458,15 @@ namespace Utilities.Sql.SqlServer
 
     private static readonly Regex _userDefinedTableTypeRegex = new Regex(@"create\s+type.*?as\s+table", RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-    public MakeItem(String pathname)
+    public MakeItem(String fullFilename)
       : this()
     {
-      pathname.Name("pathname").NotNullEmptyOrOnlyWhitespace().FileExists();
+      fullFilename.Name("fullFilename").NotNullEmptyOrOnlyWhitespace().FileExists();
 
-      var fileContents = File.ReadAllText(pathname);
+      var fileContents = File.ReadAllText(fullFilename);
 
-      this.Filename = Path.GetFileName(pathname);
-      this.Pathname = pathname;
+      this.Filename = Path.GetFileName(fullFilename);
+      this.FullFilename = fullFilename;
       this.SchemaName = "";
       this.ObjectName = "";
       this.FileContentsMD5Hash = fileContents.MD5Checksum();
