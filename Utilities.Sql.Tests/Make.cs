@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -115,10 +116,7 @@ namespace Utilities.Sql.SqlServer.Tests
 
     private enum FileVersion { One, Two }
 
-    private Boolean DoesStringContainFileVersion(String s, FileVersion fileVersion)
-    {
-      return s.ContainsCI($"FileVersion_{fileVersion}");
-    }
+    private Boolean DoesStringContainFileVersion(String s, FileVersion fileVersion) => s.ContainsCI($"FileVersion_{fileVersion}");
 
     private void CreateIndependentSPFile(FileVersion fileVersion)
     {
@@ -327,7 +325,7 @@ IF EXISTS(SELECT * FROM sys.types WHERE is_table_type = 1 AND name = 'udtt')
       
            NUnit doesn't guarantee that individual test methods will be
            run in any kind of order.  But these particular tests are
-           tightly coupled to one another via their source files.
+           tightly coupled to one another via the source files they work with.
            That requires the tests to be run in a specific order.
            Therefore, all of the tests are contained in one test method
            where their execution order can be explicitly stated.
@@ -355,8 +353,8 @@ IF EXISTS(SELECT * FROM sys.types WHERE is_table_type = 1 AND name = 'udtt')
 
       var make = new Make(_connection);
       make.AddDirectory(_tempFolder, "*.sql", SearchOption.AllDirectories);
-      make.LogEvent += (_, e) => _log.WriteLine(LogEntryType.Info, e.GetMessage());
-      make.ErrorEvent += (_, e) => _log.WriteLine(LogEntryType.Error, e.GetException().GetAllExceptionMessages());
+      make.LogEvent += (_, e) => _log.WriteLine(EventLogEntryType.Information, e.GetMessage());
+      make.ErrorEvent += (_, e) => _log.WriteLine(EventLogEntryType.Error, e.GetException().GetAllExceptionMessages());
       make.Run();
 
       Assert.IsTrue(DoesIndependentSPServerObjectExist(FileVersion.One), "1. No independent V1.");

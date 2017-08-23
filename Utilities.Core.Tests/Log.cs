@@ -1,9 +1,10 @@
 ﻿/* See the LICENSE.txt file in the root folder for license details. */
 
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text.RegularExpressions;
+
 using NUnit.Framework;
 
 namespace Utilities.Core.UnitTests
@@ -33,9 +34,9 @@ namespace Utilities.Core.UnitTests
       using (var sw = new StreamWriter(logFilename))
       {
         var log = new Log(sw);
-        log.WriteLine(LogEntryType.Info, "info log entry");
-        log.WriteLine(LogEntryType.Warning, "warning log entry");
-        log.WriteLine(LogEntryType.Error, "error log entry");
+        log.WriteLine(EventLogEntryType.Information, "info log entry");
+        log.WriteLine(EventLogEntryType.Warning, "warning log entry");
+        log.WriteLine(EventLogEntryType.Error, "error log entry");
       }
 
       var logFileContents = File.ReadAllLines(logFilename);

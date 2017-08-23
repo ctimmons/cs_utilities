@@ -1,12 +1,11 @@
 ﻿/* See the LICENSE.txt file in the root folder for license details. */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Utilities.Core
 {
-  public enum LogEntryType { Info, Warning, Error }
-
   /* The Log class provides a very simple logging facility.  It's only intended
      to be used when larger and more complete logging libraries,
      like Microsoft's Enterprise Library (http://msdn.microsoft.com/en-us/library/ff648951.aspx),
@@ -45,7 +44,7 @@ namespace Utilities.Core
       this._writer = writer;
     }
 
-    public void WriteLine(LogEntryType logEntryType, String message)
+    public void WriteLine(EventLogEntryType logEntryType, String message)
     {
       /* Timestamps are represented in the Round Trip Format Specifier
          (http://msdn.microsoft.com/en-us/library/az4se3k1.aspx#Roundtrip). */
@@ -54,13 +53,13 @@ namespace Utilities.Core
       String type;
       switch (logEntryType)
       {
-        case LogEntryType.Info:
+        case EventLogEntryType.Information:
           type = "INF";
           break;
-        case LogEntryType.Warning:
+        case EventLogEntryType.Warning:
           type = "WRN";
           break;
-        case LogEntryType.Error:
+        case EventLogEntryType.Error:
           type = "ERR";
           break;
         default:
@@ -71,7 +70,7 @@ namespace Utilities.Core
       this._writer.WriteLine(String.Format("{0} - {1} - {2}", timestamp, type, message));
     }
 
-    public void WriteLine(LogEntryType logEntryType, String message, params Object[] args)
+    public void WriteLine(EventLogEntryType logEntryType, String message, params Object[] args)
     {
       this.WriteLine(logEntryType, String.Format(message, args));
     }
