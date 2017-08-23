@@ -83,7 +83,9 @@
     <Compile Include="SQL Server\Database.cs" />
     <Compile Include="SQL Server\DataGeneration.cs" />
     <Compile Include="SQL Server\IdentifierHelper.cs" />
+    <Compile Include="SQL Server\LogEventArgs.cs" />
     <Compile Include="SQL Server\Make.cs" />
+    <Compile Include="SQL Server\MakeErrorEventArgs.cs" />
     <Compile Include="SQL Server\Schema.cs" />
     <Compile Include="SQL Server\Server.cs" />
     <Compile Include="SQL Server\StoredProcedure.cs" />

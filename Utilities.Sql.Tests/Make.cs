@@ -74,6 +74,14 @@ namespace Utilities.Sql.SqlServer.Tests
       _connection.ChangeDatabase(_databaseName);
     }
 
+    private void SaveLogFile()
+    {
+      var destinationFilename = @"c:\temp\log.txt";
+      Directory.CreateDirectory(Path.GetDirectoryName(destinationFilename));
+      File.Delete(destinationFilename);
+      File.Copy(_logFilename, destinationFilename);
+    }
+
     [OneTimeTearDown]
     public void Cleanup()
     {
@@ -86,15 +94,10 @@ namespace Utilities.Sql.SqlServer.Tests
       _connection.ExecuteNonQuery($"DROP DATABASE [{_databaseName}];");
       _connection.Close();
 
-      /* Uncomment the code below to save the log file
+      /* Uncomment the line below to save the log file
          for later viewing. */
 
-      /*
-      var destinationFilename = @"c:\temp\log.txt";
-      Directory.CreateDirectory(Path.GetDirectoryName(destinationFilename));
-      File.Delete(destinationFilename);
-      File.Copy(_logFilename, destinationFilename);
-      */
+      SaveLogFile();
 
       Directory.Delete(_tempFolder, true /* Recursive delete. */);
     }

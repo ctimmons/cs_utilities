@@ -4,10 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 
 using Utilities.Core;
@@ -15,47 +13,6 @@ using Utilities.Core;
 namespace Utilities.Sql.SqlServer
 {
   /* See "Make - Description.md" for details on this algorithm and how to use it. */
-
-  public class LogEventArgs : EventArgs
-  {
-    private String _message;
-    private Boolean _isJitOptimized = Assembly.GetExecutingAssembly().IsJITOptimized();
-
-    public LogEventArgs(String message, Int32 stackDepth = 2)
-    {
-      var stackFrame = new StackFrame(stackDepth, true /* Get the file name, line number, and column number of the stack frame. */);
-      var methodBase = stackFrame.GetMethod();
-      var lineNumber = stackFrame.GetFileLineNumber();
-
-      this._message = String.Format("{0}.{1}{2} - {3}",
-        methodBase.DeclaringType.FullName,
-        methodBase.Name,
-        /* In JIT optimized builds, lineNumber will either be 0 or wildly inaccurate.
-           In non-optimized builds, lineNumber will be non-zero and accurate. */
-        this._isJitOptimized ? "" : " - Line " + lineNumber.ToString(),
-        message);
-    }
-
-    public virtual String GetMessage()
-    {
-      return this._message;
-    }
-  }
-
-  public class MakeErrorEventArgs : EventArgs
-  {
-    private Exception _exception;
-
-    public MakeErrorEventArgs(Exception exception)
-    {
-      this._exception = exception;
-    }
-
-    public virtual Exception GetException()
-    {
-      return this._exception;
-    }
-  }
 
   public class Make
   {
@@ -102,14 +59,19 @@ namespace Utilities.Sql.SqlServer
 
     public event EventHandler<LogEventArgs> LogEvent;
 
-    protected virtual void RaiseLogEvent(String format, params Object[] args)
+    protected virtual void RaiseLogEvent(Exception ex)
     {
-      this.RaiseLogEvent(String.Format(format, args), 3);
+      (new LogEventArgs(ex)).Raise(this, ref LogEvent);
     }
 
-    protected virtual void RaiseLogEvent(String message, Int32 stackDepth = 2)
+    protected virtual void RaiseLogEvent(String format, params Object[] args)
     {
-      (new LogEventArgs(message, stackDepth)).Raise(this, ref LogEvent);
+      this.RaiseLogEvent(String.Format(format, args));
+    }
+
+    protected virtual void RaiseLogEvent(String message)
+    {
+      (new LogEventArgs(message)).Raise(this, ref LogEvent);
     }
 
     private Make()
@@ -192,6 +154,7 @@ namespace Utilities.Sql.SqlServer
         }
         catch (Exception ex)
         {
+          this.RaiseLogEvent(ex);
           this.RaiseErrorEvent(ex);
         }
       }
@@ -344,12 +307,12 @@ namespace Utilities.Sql.SqlServer
               }
               else
               {
-                this.RaiseErrorEvent(Properties.Resources.Make_PathnameNotFound, filename);
+                throw new ExceptionFmt(Properties.Resources.Make_PathnameNotFound, filename);
               }
             }
             else
             {
-              this.RaiseErrorEvent(Properties.Resources.Make_SourceFileDoesNotExist,
+              throw new ExceptionFmt(Properties.Resources.Make_SourceFileDoesNotExist,
                 reader["schema_name"], reader["object_name"], reader["type"]);
             }
           }
@@ -442,8 +405,7 @@ namespace Utilities.Sql.SqlServer
         }
         catch (Exception ex)
         {
-          this.RaiseErrorEvent(item.FullFilename, ex);
-          break;
+          throw new Exception(item.FullFilename, ex);
         }
       }
     }
