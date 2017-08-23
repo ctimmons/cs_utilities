@@ -88,14 +88,14 @@ namespace Utilities.Sql.SqlServer.Tests
       /* Uncomment the code below to save the log file
          for later viewing. */
 
-      //*
+      /*
       var destinationFilename = @"c:\temp\log.txt";
       Directory.CreateDirectory(Path.GetDirectoryName(destinationFilename));
       File.Delete(destinationFilename);
       File.Copy(_logFilename, destinationFilename);
-      //*/
+      */
 
-      //Directory.Delete(_tempFolder, true /* Recursive delete. */);
+      Directory.Delete(_tempFolder, true /* Recursive delete. */);
     }
 
     /* Luckily the random eight character string returned by this simple code
