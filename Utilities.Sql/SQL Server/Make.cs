@@ -218,7 +218,7 @@ namespace Utilities.Sql.SqlServer
         foreach (var kvp2 in kvp.Value.Where(kvp3 => !File.Exists(kvp3.Value.FullFilename)).ToList())
           kvp.Value.Remove(kvp2.Key);
 
-      foreach (var filename in this._filenames.Distinct())
+      foreach (var filename in this._filenames.Distinct().Where(filename => File.Exists(filename)))
         this.AddOrUpdateMakeItem(filename);
     }
 
