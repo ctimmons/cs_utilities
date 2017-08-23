@@ -19,7 +19,7 @@ namespace Utilities.Sql.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -111,6 +111,15 @@ namespace Utilities.Sql.Properties {
         internal static string ItemNotFound {
             get {
                 return ResourceManager.GetString("ItemNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item &apos;{0}&apos; has already been compiled..
+        /// </summary>
+        internal static string Make_AttemptedMultipleCompilationOfSameItem {
+            get {
+                return ResourceManager.GetString("Make_AttemptedMultipleCompilationOfSameItem", resourceCulture);
             }
         }
         

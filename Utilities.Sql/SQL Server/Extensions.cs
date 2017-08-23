@@ -1,11 +1,14 @@
 ﻿/* See the LICENSE.txt file in the root folder for license details. */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
@@ -58,6 +61,47 @@ namespace Utilities.Sql.SqlServer
     {
       using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.Text, CommandText = sql })
         return command.ExecuteNonQuery();
+    }
+
+    private static readonly Regex _splitAtGoRegex = new Regex(@"^\s*GO\s*?.*?$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+    private static IEnumerable<String> GetSqlBatchParts(String sql)
+    {
+      return _splitAtGoRegex.Split(sql).Where(s => s.IsNotEmpty());
+    }
+
+    public static void ExecuteFileBatch(this SqlConnection connection, String filename)
+    {
+      connection.ExecuteBatch(File.ReadAllText(filename));
+    }
+
+    public static void ExecuteFileBatch(this SqlConnection connection, String filename, SqlCommand command)
+    {
+      connection.ExecuteBatch(File.ReadAllText(filename), command);
+    }
+
+    public static void ExecuteBatch(this SqlConnection connection, String sql)
+    {
+      using (var command = new SqlCommand() { Connection = connection, CommandType = CommandType.Text })
+        connection.ExecuteBatch(sql, command);
+    }
+
+    public static void ExecuteBatch(this SqlConnection connection, String sql, SqlCommand command)
+    {
+      var oldCommandText = command.CommandText;
+
+      try
+      {
+        foreach (var part in GetSqlBatchParts(sql))
+        {
+          command.CommandText = part;
+          command.ExecuteNonQuery();
+        }
+      }
+      finally
+      {
+        command.CommandText = oldCommandText;
+      }
     }
 
     public static XDocument GetXDocument(this SqlDataReader sqlDataReader, String columnName)

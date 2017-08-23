@@ -192,4 +192,7 @@
   <data name="Make_UpdatedExistingItem_DoesNotNeedToBeCompiled" xml:space="preserve">
     <value>Does not need to be compiled: '{0}'</value>
   </data>
+  <data name="Make_AttemptedMultipleCompilationOfSameItem" xml:space="preserve">
+    <value>Item '{0}' has already been compiled.</value>
+  </data>
 </root>

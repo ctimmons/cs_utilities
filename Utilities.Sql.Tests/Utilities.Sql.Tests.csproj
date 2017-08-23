@@ -68,10 +68,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.cs" />
+    <Compile Include="Make.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IdentifierHelper.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Utilities.Core\Utilities.Core.csproj">
+      <Project>{714ba021-2a07-4d0e-b174-149c41c4b37a}</Project>
+      <Name>Utilities.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Utilities.Sql\Utilities.Sql.csproj">
       <Project>{594ed8db-e3e4-472b-9bc7-bd5d89d29efd}</Project>
       <Name>Utilities.Sql</Name>

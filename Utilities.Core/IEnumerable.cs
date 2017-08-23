@@ -118,6 +118,10 @@ namespace Utilities.Core
       return String.Join(separator, values);
     }
 
+    /// <summary>
+    /// Concatenate the values in an IEnumerable&lt;String&gt;,
+    /// placing an Environment.NewLine in between each one.
+    /// </summary>
     public static String Join(this IEnumerable<String> values)
     {
       values.Name("values").NotNull();

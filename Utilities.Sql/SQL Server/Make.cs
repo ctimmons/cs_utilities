@@ -63,9 +63,16 @@ namespace Utilities.Sql.SqlServer
     public String DefaultSchema { get; set; }
 
     private Boolean _didErrorOccur = false;
-    private readonly Dictionary<String, Dictionary<String, MakeItem>> _makeItems = new Dictionary<String, Dictionary<String, MakeItem>>(StringComparer.OrdinalIgnoreCase);
+
+    private Dictionary<String, Dictionary<String, MakeItem>> _makeItems;
+
     private readonly String _makeItemsCacheDirectory;
     private readonly List<String> _filenames = new List<String>();
+
+    /* Used for testing and to make sure that an object is not
+       compiled more than once. */
+    public HashSet<String> _compiledObjectNames = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
+    public HashSet<String> CompiledObjectNames => this._compiledObjectNames;
 
     private IEnumerable<MakeItem> _makeItemsFlatList
     {
@@ -192,8 +199,14 @@ namespace Utilities.Sql.SqlServer
 
     public void Run()
     {
+      /* Run() can be called multiple times.
+         Start with a clean slate each time. */
+      this._makeItems = new Dictionary<String, Dictionary<String, MakeItem>>(StringComparer.OrdinalIgnoreCase);
+      this._compiledObjectNames.Clear();
+
       this.Connection.Name("this.Connection").IsOpen();
 
+      this.RaiseLogEvent("*** START ***");
       this.Sequence(
         this.LoadMakeItemsFromCache,
         this.SynchronizeMakeItemsCacheWithSourceFiles,
@@ -201,6 +214,12 @@ namespace Utilities.Sql.SqlServer
         this.DropDependencies,
         this.SaveMakeItemsToCache,
         this.CompileMakeItems);
+      this.RaiseLogEvent("*** END ***");
+
+      /* As noted above, Run() can be called multiple times.
+         In case an error occurred during this run,
+         clear the error flag prior to the next possible run. */
+      this._didErrorOccur = false;
     }
 
     private void LoadMakeItemsFromCache()
@@ -226,9 +245,6 @@ namespace Utilities.Sql.SqlServer
 
     public void SynchronizeMakeItemsCacheWithSourceFiles()
     {
-      foreach (var filename in this._filenames.Distinct())
-        this.AddOrUpdateMakeItem(filename);
-
       /* Delete MakeItems from the cache that no longer have
          a corresponding source file.
          
@@ -238,6 +254,9 @@ namespace Utilities.Sql.SqlServer
       foreach (var kvp in this._makeItems)
         foreach (var kvp2 in kvp.Value.Where(kvp3 => !File.Exists(kvp3.Value.FullFilename)).ToList())
           kvp.Value.Remove(kvp2.Key);
+
+      foreach (var filename in this._filenames.Distinct())
+        this.AddOrUpdateMakeItem(filename);
     }
 
     private void AddOrUpdateMakeItem(String filename)
@@ -403,35 +422,28 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
-    private static readonly Regex _splitAtGoRegex = new Regex(@"^\s*GO\s*?.*?$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
-
     private void CompileMakeItems()
     {
-      Func<String, IEnumerable<String>> getParts = f => _splitAtGoRegex.Split(File.ReadAllText(f)).Where(s => s.IsNotEmpty());
-
-      using (var command = new SqlCommand() { Connection = this.Connection, CommandType = CommandType.Text })
+      /* User-defined table types (udtts) have a drop order of 1.  All other items have
+         a drop order of 0.  When dropping items, non-udtts are dropped first and
+         udtts are dropped second.  The reverse is true when compiling, hence the
+         OrderByDescending() call. */
+      foreach (var item in this._makeItemsFlatList.Where(i => i.NeedsToBeCompiled).OrderByDescending(i => i.DropOrder))
       {
-        /* User-defined table types (udtts) have a drop order of 1.  All other items have
-           a drop order of 0.  When dropping items, non-udtts are dropped first and
-           udtts are dropped second.  The reverse is true when compiling, hence the
-           OrderByDescending() call. */
-        foreach (var item in this._makeItemsFlatList.Where(i => i.NeedsToBeCompiled).OrderByDescending(i => i.DropOrder))
+        try
         {
-          try
-          {
-            foreach (var part in getParts(item.FullFilename))
-            {
-              command.CommandText = part;
-              command.ExecuteNonQuery();
-            }
+          /* Compiling the same item more than once is an error. */
+          if (this._compiledObjectNames.Contains(item.ObjectName))
+            throw new ExceptionFmt(Properties.Resources.Make_AttemptedMultipleCompilationOfSameItem, item.ObjectName);
 
-            this.RaiseLogEvent(Properties.Resources.Make_SuccessfullyCompiled, item.FullFilename);
-          }
-          catch (Exception ex)
-          {
-            this.RaiseErrorEvent(item.FullFilename, ex);
-            break;
-          }
+          this.Connection.ExecuteFileBatch(item.FullFilename);
+          this.RaiseLogEvent(Properties.Resources.Make_SuccessfullyCompiled, item.FullFilename);
+          this._compiledObjectNames.Add(item.ObjectName);
+        }
+        catch (Exception ex)
+        {
+          this.RaiseErrorEvent(item.FullFilename, ex);
+          break;
         }
       }
     }
