@@ -496,5 +496,31 @@ three
 
       Assert.AreEqual(input.Indent(4), output);
     }
+
+    [Test]
+    public void NLETest()
+    {
+      var actual = "one\rtwo\nthree\r\nfour".NLE();
+
+      String expected;
+      switch (Environment.OSVersion.Platform)
+      {
+        case PlatformID.MacOSX:
+        case PlatformID.Unix:
+          expected = "one\ntwo\nthree\nfour";
+          break;
+        case PlatformID.Win32NT:
+        case PlatformID.Win32S:
+        case PlatformID.Win32Windows:
+        case PlatformID.WinCE:
+        case PlatformID.Xbox:
+          expected = "one\r\ntwo\r\nthree\r\nfour";
+          break;
+        default:
+          throw new Exception("Unknown operating system.");
+      }
+
+      Assert.AreEqual(expected, actual);
+    }
   }
 }

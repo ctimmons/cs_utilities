@@ -204,6 +204,7 @@ namespace Utilities.Core
     ///   <li>A count of zero or a negative count returns an empty string</li>
     ///   <li>A count of one returns value.</li>
     ///   <li>A count of more than one returns value repeated count times.</li>
+    ///   <li>If (value.Length * count) > Int32.Max, an OverflowException is thrown.</li>
     /// </ul>
     /// </para>
     /// </summary>
@@ -477,6 +478,44 @@ namespace Utilities.Core
       value.Name("value").NotNull();
       other.Name("other").NotNull();
       return value.StartsWith(other, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    /* Match a line feed (LF) not preceded by a carriage return (CR),
+      or a CR not followed by a LF. */
+    private static readonly Regex _windowsRegex = new Regex(@"(?<!\r)\n|\r(?!\n)");
+
+    /* Match CR/LF pair, or a solitary CR. */
+    private static readonly Regex _unixRegex = new Regex(@"\r\n|\r");
+
+    /// <summary>
+    /// Normalize the line endings (NLE) for a string, depending on what OS this code is running on.
+    /// <para>
+    /// When run on Windows, solitary line feeds and solitary carriage returns will
+    /// be replaced with a carriage return/line feed pair.  Existing carriage return/line feed pairs
+    /// will not be modified.
+    /// </para>
+    /// <para>
+    /// When run on a Unix-style system, carriage return/line feed pairs and solitary carriage returns
+    /// will be replaced with a single line feed.  Existing single line feeds will not
+    /// be modified.
+    /// </para>
+    /// </summary>
+    public static String NLE(this String s)
+    {
+      switch (Environment.OSVersion.Platform)
+      {
+        case PlatformID.MacOSX:
+        case PlatformID.Unix:
+          return _unixRegex.Replace(s, Environment.NewLine);
+        case PlatformID.Win32NT:
+        case PlatformID.Win32S:
+        case PlatformID.Win32Windows:
+        case PlatformID.WinCE:
+        case PlatformID.Xbox:
+          return _windowsRegex.Replace(s, Environment.NewLine);
+        default:
+          throw new Exception("Unknown operating system.");
+      }
     }
   }
 
