@@ -289,7 +289,7 @@ namespace Utilities.Core
       path.Name("path").NotNullEmptyOrOnlyWhitespace();
       DeleteEmptyDirectories(new DirectoryInfo(path));
     }
-    
+
     public static void DeleteEmptyDirectories(DirectoryInfo directoryInfo)
     {
       directoryInfo.Name("directoryInfo").NotNull();
@@ -352,10 +352,10 @@ namespace Utilities.Core
     {
       filename.Name("filename").NotNullEmptyOrOnlyWhitespace();
       using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
-        return GetMD5Checksum(fs);
+        return fs.MD5Checksum();
     }
 
-    public static String GetMD5Checksum(Stream stream)
+    public static String MD5Checksum(this Stream stream)
     {
       stream.Name("stream").NotNull();
 

@@ -13,6 +13,11 @@ namespace Utilities.Core
   {
     /// <summary>
     /// Convert value to a MemoryStream, using a default Unicode encoding.
+    /// <para>
+    /// If <param>value</param> is null, no data is written to the memory stream.
+    /// If you intended to write a null byte to the memory stream, pass "\0"
+    /// in the <param>value</param> parameter.
+    /// </para>
     /// </summary>
     public static MemoryStream ToMemoryStream(this String value)
     {
@@ -21,6 +26,11 @@ namespace Utilities.Core
 
     /// <summary>
     /// Convert value to a MemoryStream, using the given encoding.
+    /// <para>
+    /// If <param>value</param> is null, no data is written to the memory stream.
+    /// If you intended to write a null byte to the memory stream, pass "\0"
+    /// in the <param>value</param> parameter.
+    /// </para>
     /// </summary>
     public static MemoryStream ToMemoryStream(this String value, Encoding encoding)
     {
@@ -85,7 +95,7 @@ namespace Utilities.Core
     {
       filemask.Name("filemask").NotNullEmptyOrOnlyWhitespace();
       if (!filemask.ContainsAny("*?".ToCharArray()))
-        throw new ArgumentException("'filemask' does not contain either the * or ? characters.");
+        throw new ArgumentException("'filemask' does not contain either the * or ? characters.", "filemask");
 
       var filemaskRegexPattern =
         filemask
@@ -104,6 +114,7 @@ namespace Utilities.Core
     public static String Strip(this String s, Char[] cs)
     {
       s.Name("s").NotNull();
+      cs.Name("cs").NotNull();
 
       return
         s
@@ -145,11 +156,7 @@ namespace Utilities.Core
     /// </summary>
     public static String UpTo(this String s, Char c)
     {
-      var indexOfC = s.IndexOf(c);
-      return
-        (indexOfC == -1)
-        ? s
-        : s.Substring(0, indexOfC);
+      return s.TakeWhile(ch => ch != c).Join();
     }
 
     /// <summary>
@@ -217,7 +224,7 @@ namespace Utilities.Core
     /// <summary>
     /// Return the last Char in 'value'.
     /// <para>
-    /// 'value' must non-null and contain one or more characters.
+    /// 'value' must be non-null and contain one or more characters.
     /// </para>
     /// </summary>
     public static Char LastChar(this String value)
@@ -229,7 +236,7 @@ namespace Utilities.Core
     /// <summary>
     /// Return the last word - separated by a space character - in 'value'.
     /// <para>
-    /// 'value' must non-null and contain one or more characters.
+    /// 'value' must be non-null and contain one or more characters.
     /// </para>
     /// </summary>
     public static String LastWord(this String value)
@@ -242,7 +249,7 @@ namespace Utilities.Core
     /// <summary>
     /// Returns 'value' with 'c' pre-pended and appended.
     /// <para>
-    /// Both 'value' and 'c' must non-null.
+    /// Both 'value' and 'c' must be non-null.
     /// </para>
     /// </summary>
     public static String SurroundWith(this String value, String c)
@@ -251,9 +258,9 @@ namespace Utilities.Core
     }
 
     /// <summary>
-    /// Returns 'value' with 'c' pre-pended and appended.
+    /// Returns 'value' with 'c1' pre-pended and 'c2' appended.
     /// <para>
-    /// Both 'value' and 'c' must non-null.
+    /// All parameters must be non-null.
     /// </para>
     /// </summary>
     public static String SurroundWith(this String value, String c1, String c2)
@@ -277,7 +284,7 @@ namespace Utilities.Core
     /// <summary>
     /// Return the MD5 checksum for 'value', using an ASCII encoding for 'value'.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static String MD5Checksum(this String value)
@@ -289,7 +296,7 @@ namespace Utilities.Core
     /// <summary>
     /// Return the MD5 checksum for 'value', using 'encoding' as an encoding for 'value'.
     /// <para>
-    /// Both 'value' and 'encoding' must non-null.
+    /// Both 'value' and 'encoding' must be non-null.
     /// </para>
     /// </summary>
     public static String MD5Checksum(this String value, Encoding encoding)
@@ -297,15 +304,14 @@ namespace Utilities.Core
       value.Name("value").NotNull();
       encoding.Name("encoding").NotNull();
 
-      Byte[] bytes = encoding.GetBytes(value);
-      using (var ms = new MemoryStream(bytes))
-        return FileUtils.GetMD5Checksum(ms);
+      using (var ms = new MemoryStream(encoding.GetBytes(value)))
+        return ms.MD5Checksum();
     }
 
     /// <summary>
     /// Remove 'prefix' from the beginning of 'value' and return the result.
     /// <para>
-    /// Both 'value' and 'prefix' must non-null.
+    /// Both 'value' and 'prefix' must be non-null.
     /// </para>
     /// </summary>
     public static String RemovePrefix(this String value, String prefix)
@@ -322,7 +328,7 @@ namespace Utilities.Core
     /// <summary>
     /// Remove 'suffix' from the end of 'value' and return the result.
     /// <para>
-    /// Both 'value' and 'suffix' must non-null.
+    /// Both 'value' and 'suffix' must be non-null.
     /// </para>
     /// </summary>
     public static String RemoveSuffix(this String value, String suffix)
@@ -339,7 +345,7 @@ namespace Utilities.Core
     /// <summary>
     /// Remove 'stringToTrim' from the beginning and end of 'value' and return the result.
     /// <para>
-    /// Both 'value' and 'stringToTrim' must non-null.
+    /// Both 'value' and 'stringToTrim' must be non-null.
     /// </para>
     /// </summary>
     public static String RemovePrefixAndSuffix(this String value, String stringToTrim)
@@ -350,7 +356,7 @@ namespace Utilities.Core
     /// <summary>
     /// If 'value' doesn't already end with a trailing slash, one is appended to 'value' and the combined string is returned.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static String AddTrailingForwardSlash(this String value)
@@ -364,7 +370,7 @@ namespace Utilities.Core
     /// <summary>
     /// Remove anything that resembles an HTML or XML tag from 'value' and return the modified string.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static String RemoveHtml(this String value)
@@ -378,7 +384,7 @@ namespace Utilities.Core
     /// <summary>
     /// Remove all Unicode whitespace from 'value' and return the modified string.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static String RemoveWhitespace(this String value)
@@ -390,7 +396,7 @@ namespace Utilities.Core
     /// <summary>
     /// Returns true if 'value' is null, has a length of zero, or contains only whitespace.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static Boolean IsEmpty(this String value)
@@ -401,7 +407,7 @@ namespace Utilities.Core
     /// <summary>
     /// Returns true if 'value' is not null, has a length greater than zero, and does not consist of only whitespace.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static Boolean IsNotEmpty(this String value)
@@ -412,7 +418,7 @@ namespace Utilities.Core
     /// <summary>
     /// Returns true if all strings in 'values' are null, have a length of zero, or contain only whitespace.
     /// <para>
-    /// 'values' must non-null.
+    /// 'values' must be non-null.
     /// </para>
     /// </summary>
     public static Boolean AreAllEmpty(this List<String> values)
@@ -424,7 +430,7 @@ namespace Utilities.Core
     /// <summary>
     /// Returns true if any of the strings in 'values' are null, have a length of zero, or contain only whitespace.
     /// <para>
-    /// 'values' must non-null.
+    /// 'values' must be non-null.
     /// </para>
     /// </summary>
     public static Boolean AreAnyEmpty(this List<String> values)
@@ -437,7 +443,7 @@ namespace Utilities.Core
     /// Treat 'value' as a multiline string, where each string is separated by System.Environment.NewLine.
     /// Indent each line in 'value' by 'indent' spaces and return the modified string.
     /// <para>
-    /// 'value' must non-null.
+    /// 'value' must be non-null.
     /// </para>
     /// </summary>
     public static String Indent(this String value, Int32 indent)

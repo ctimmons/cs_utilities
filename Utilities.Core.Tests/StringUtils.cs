@@ -126,7 +126,7 @@ namespace Utilities.Core.UnitTests
     public void UpToTest()
     {
       String s = null;
-      Assert.Throws<NullReferenceException>(() => s.UpTo('.'));
+      Assert.Throws<ArgumentNullException>(() => s.UpTo('.'));
 
       s = "";
       Assert.AreEqual(s.UpTo('.'), "");
