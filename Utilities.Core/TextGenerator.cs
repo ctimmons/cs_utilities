@@ -1,7 +1,9 @@
 ﻿/* See the LICENSE.txt file in the root folder for license details. */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,32 +12,45 @@ namespace Utilities.Core
   public class TextGenerator
   {
     private readonly StringBuilder _content = new StringBuilder();
+    private readonly Stack<String> _indents = new Stack<String>();
+    private String _currentIndentString = "";
 
     public String Content => this._content.ToString();
 
-    public String Indent { get; private set;  }
+    /* Memoize _currentIndentString, rather than
+       calculating it for every line of text. */
+    private void RefreshCurrentIndentString() => this._currentIndentString = String.Join("", this._indents.ToArray().Reverse());
 
-    public Int32 IndentBy { get; set; }
+    public TextGenerator ClearIndent() { this._indents.Clear(); this.RefreshCurrentIndentString(); return this; }
 
-    public TextGenerator PushIndent() => this.PushIndent(this.IndentBy);
-    public TextGenerator PushIndent(Int32 numberOfSpaces) { this.Indent += " ".Repeat(numberOfSpaces); return this; }
+    public TextGenerator PushIndent(Int32 numberOfSpaces) { this.PushIndent(" ".Repeat(numberOfSpaces)); return this; }
 
-    public TextGenerator PopIndent() => this.PopIndent(this.IndentBy);
-    public TextGenerator PopIndent(Int32 numberOfSpaces) { this.Indent = " ".Repeat(Math.Max(0, this.Indent.Length - numberOfSpaces)); return this; }
+    public TextGenerator PushIndent(String indent) { this._indents.Push(indent); this.RefreshCurrentIndentString(); return this; }
 
-    private static readonly Regex _indentTextRegex = new Regex("(\r\n|\n)", RegexOptions.Multiline);
+    public TextGenerator PopIndent()
+    {
+      /* Pop() throws an exception if the stack is empty.
+         Don't want that behavior.  Only pop if there's something
+         on the stack.  In othe words, popping the indent from 
+         an empty stack is a no-op. */
+      if (this._indents.Any())
+      {
+        this._indents.Pop();
+        this.RefreshCurrentIndentString();
+      }
 
-    public String GetIndentedText(String text) => this.GetIndentedText(text, this.Indent);
+      return this;
+    }
 
-    public String GetIndentedText(String text, Int32 indent) => this.GetIndentedText(text, " ".Repeat(indent));
+    private static readonly Regex _indentTextRegex = new Regex("(\r\n|\n)");
 
-    public String GetIndentedText(String text, String indentString) => indentString + _indentTextRegex.Replace(text, "$1" + indentString);
+    private String GetIndentedText(String text) => this._currentIndentString + _indentTextRegex.Replace(text, "$1" + this._currentIndentString);
 
     public TextGenerator Write(String text) { this._content.Append(GetIndentedText(text)); return this; }
 
     public TextGenerator WriteLine(String text) { this._content.AppendLine(GetIndentedText(text)); return this; }
 
-    public TextGenerator Clear() { this._content.Clear(); return this; }
+    public TextGenerator ClearContent() { this._content.Clear(); return this; }
 
     public TextGenerator SaveToFile(String filename) { File.WriteAllText(filename, this.Content); return this; }
   }
