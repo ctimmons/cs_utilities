@@ -1,4 +1,6 @@
-﻿using System;
+﻿/* See the LICENSE.txt file in the root folder for license details. */
+
+using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
