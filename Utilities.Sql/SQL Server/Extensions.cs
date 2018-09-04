@@ -20,6 +20,21 @@ namespace Utilities.Sql.SqlServer
   public static class SqlServerExtensionMethods
   {
     /// <summary>
+    /// Throws an exception if the connectionString parameter is either malformed or contains bad content.
+    /// </summary>
+    public static void CheckConnectionString(this String connectionString)
+    {
+      /* Check connectionString's form.  This line of code throws an
+         exception if connectionString is malformed. */
+      new SqlConnectionStringBuilder() { ConnectionString = connectionString };
+
+      /* Check connectionString's content.  This code throws an exception
+         if the server rejects connectionString. */
+      using (var connection = new SqlConnection(connectionString))
+        connection.Open();
+    }
+
+    /// <summary>
     /// Executes the given sql on the connection, and
     /// returns the result wrapped in a <see cref="System.Data.DataSet">DataSet</see>.
     /// </summary>
@@ -309,8 +324,9 @@ namespace Utilities.Sql.SqlServer
     {
       /* If T is not a nullable type, and dbDataReader returns a null value,
          throw an InvalidCastException.
-         (See http://msdn.microsoft.com/en-us/library/ms366789%28v=VS.90%29.aspx for info on
-         how to correctly identify a nullable type in C#.) */
+         (See
+           https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/nullable-types/how-to-identify-a-nullable-type
+         for info on how to correctly identify a nullable type in C#.) */
 
       var type = typeof(T);
       var isNullableType = (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Nullable<>)));

@@ -439,11 +439,16 @@ namespace Utilities.Core
       return values.Any(s => s.IsEmpty());
     }
 
+    private static readonly Regex _indentTextRegex = new Regex("(\r\n|\n)");
+
     /// <summary>
-    /// Treat 'value' as a multiline string, where each string is separated by System.Environment.NewLine.
-    /// Indent each line in 'value' by 'indent' spaces and return the modified string.
+    /// Treat 'value' as a multiline string, where each string is separated either by
+    /// a carriage return/linefeed combo, or just a linefeed.
     /// <para>
-    /// 'value' must be non-null.
+    /// Indent each line in 'value' by 'indent' spaces and return the modified string.
+    /// </para>
+    /// <para>
+    /// 'value' must be non-null, and 'indent' must be greater than zero.
     /// </para>
     /// </summary>
     public static String Indent(this String value, Int32 indent)
@@ -451,11 +456,8 @@ namespace Utilities.Core
       value.Name("value").NotNull();
       indent.Name("indent").GreaterThan(0);
 
-      /* A string may consist of more than one line (i.e. lines separated by carriage returns).
-          Return a string in which all lines are indented by the specified number of spaces. */
-
       var indentString = " ".Repeat(indent);
-      return indentString + value.Replace(Environment.NewLine, Environment.NewLine + indentString);
+      return indentString + _indentTextRegex.Replace(value, "$1" + indentString);
     }
 
     /// <summary>
