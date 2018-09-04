@@ -11,19 +11,19 @@ namespace Utilities.Core
 
     public String Content => this._content.ToString();
 
-    private String _indent = "";
+    public String Indent { get; private set;  }
 
     public Int32 IndentBy { get; set; }
 
     public TextGenerator PushIndent() => this.PushIndent(this.IndentBy);
-    public TextGenerator PushIndent(Int32 numberOfSpaces) { this._indent += " ".Repeat(numberOfSpaces); return this; }
+    public TextGenerator PushIndent(Int32 numberOfSpaces) { this.Indent += " ".Repeat(numberOfSpaces); return this; }
 
     public TextGenerator PopIndent() => this.PopIndent(this.IndentBy);
-    public TextGenerator PopIndent(Int32 numberOfSpaces) { this._indent = " ".Repeat(Math.Max(0, this._indent.Length - numberOfSpaces)); return this; }
+    public TextGenerator PopIndent(Int32 numberOfSpaces) { this.Indent = " ".Repeat(Math.Max(0, this.Indent.Length - numberOfSpaces)); return this; }
 
     private static readonly Regex _indentTextRegex = new Regex("(\r\n|\n)", RegexOptions.Multiline);
 
-    public String GetIndentedText(String text) => this.GetIndentedText(text, this._indent);
+    public String GetIndentedText(String text) => this.GetIndentedText(text, this.Indent);
 
     public String GetIndentedText(String text, Int32 indent) => this.GetIndentedText(text, " ".Repeat(indent));
 
