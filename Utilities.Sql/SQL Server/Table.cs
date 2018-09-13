@@ -8,14 +8,27 @@ using Utilities.Core;
 
 namespace Utilities.Sql.SqlServer
 {
+  [Flags]
+  public enum TableType
+  {
+    View = 0,
+    Table = 0b0001,
+    HistoryTable = 0b0010,
+    SystemVersionedTemporalTable = 0b0100
+  }
+
   public class Table : BaseSqlServerObject
   {
     public Schema Schema { get; private set; }
 
+    public TableType TableType { get; private set; }
+
     /// <summary>
     /// This class is named Table, but it handles both tables and views.  This property indicates what a Table instance really contains.
     /// </summary>
-    public Boolean IsView { get; private set; }
+    public Boolean IsView => (this.TableType == TableType.View);
+
+    public Boolean IsHistoryTable => (this.TableType == TableType.HistoryTable);
 
     /// <summary>
     /// In SQL Server 2005 and later, a table name in a database is not necessarily unique,
@@ -49,12 +62,12 @@ namespace Utilities.Sql.SqlServer
       }
     }
 
-    public Table(Schema schema, String name, Boolean isView)
+    public Table(Schema schema, String name, TableType tableType)
       : base()
     {
       this.Schema = schema;
       this.Name = IdentifierHelper.GetStrippedSqlIdentifier(name);
-      this.IsView = isView;
+      this.TableType = tableType;
     }
   }
 
