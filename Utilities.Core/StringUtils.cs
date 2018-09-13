@@ -281,6 +281,11 @@ namespace Utilities.Core
       return value.SurroundWith("\"");
     }
 
+    public static String SquareBrackets(this String value)
+    {
+      return value.SurroundWith("[", "]");
+    }
+
     /// <summary>
     /// Return the MD5 checksum for 'value', using an ASCII encoding for 'value'.
     /// <para>
