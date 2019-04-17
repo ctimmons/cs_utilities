@@ -1,11 +1,5 @@
 ﻿/* See the LICENSE.txt file in the root folder for license details. */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using NUnit.Framework;
 
 namespace Utilities.Core.UnitTests
@@ -27,7 +21,7 @@ namespace Utilities.Core.UnitTests
     }
 
     [Test]
-    public void PushIndentTest()
+    public void PushIndentTest1()
     {
       var tg = new TextGenerator();
 
@@ -82,6 +76,52 @@ namespace Utilities.Core.UnitTests
 
       tg.Write("x");
       Assert.AreEqual("x", tg.Content);
+    }
+
+    [Test]
+    public void SetStandardIndentStringTest()
+    {
+      var tg = new TextGenerator();
+
+      tg.Write("x");
+      tg.SetStandardIndentString(4);
+      tg.PushIndent();
+      tg.Write("x");
+      Assert.AreEqual("x    x", tg.Content);
+    }
+
+    [Test]
+    public void PushIndentTest2()
+    {
+      var expected = @"namespace Foo
+{
+  public class Bar
+  {
+      // Hello, world!
+  }
+}
+";
+
+      var tg = new TextGenerator();
+      tg.SetStandardIndentString(2);
+
+      tg.WriteLine("namespace Foo");
+      tg.WriteLine("{");
+
+      tg.PushIndent(); // Uses the standard indent string set above.
+      tg.WriteLine("public class Bar");
+      tg.WriteLine("{");
+
+      tg.PushIndent(4); // Does not use the standard indent string.
+      tg.WriteLine("// Hello, world!");
+      tg.PopIndent();
+
+      tg.WriteLine("}");
+      tg.PopIndent();
+
+      tg.WriteLine("}");
+
+      Assert.AreEqual(expected, tg.Content);
     }
   }
 }

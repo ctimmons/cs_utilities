@@ -9,38 +9,74 @@ using System.Text.RegularExpressions;
 
 namespace Utilities.Core
 {
+  /// <summary>
+  /// This class is a cousin to the abstract <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.texttemplating.texttransformation">Microsoft.VisualStudio.TextTemplating.TextTransformation</a> class.
+  /// <para><c>Microsoft's TextTranformation</c> is only used with T4 templates.  <c>TextGenerator</c> provides similar functionality thru methods that allow the construction
+  /// of multiline blocks of text with varying levels of indentation.</para>
+  /// <example>
+  /// <code>
+  /// 
+  /// </code>
+  /// </example>
+  /// </summary>
   public class TextGenerator
   {
     private readonly StringBuilder _content = new StringBuilder();
     private readonly Stack<String> _indents = new Stack<String>();
+    private String _standardIndentString = "";
     private String _currentIndentString = "";
+
+    public TextGenerator()
+      : base()
+    {
+    }
+
+    public TextGenerator(String content)
+      : this()
+    {
+      this._content.Append(content);
+    }
 
     public String Content => this._content.ToString();
 
+    public TextGenerator SetStandardIndentString(Int32 numberOfSpaces) { this._standardIndentString = " ".Repeat(numberOfSpaces); return this; }
+
+    public TextGenerator SetStandardIndentString(String indent) { this._standardIndentString = indent; return this; }
+
+    public TextGenerator ClearStandardIndentString() { this._standardIndentString = ""; return this; }
+
     /* Memoize _currentIndentString, rather than
        calculating it for every line of text. */
-    private void RefreshCurrentIndentString() => this._currentIndentString = String.Join("", this._indents.ToArray().Reverse());
+    private void RememberCurrentIndentString() => this._currentIndentString = this._indents.ToArray().Reverse().Join("");
 
-    public TextGenerator ClearIndent() { this._indents.Clear(); this.RefreshCurrentIndentString(); return this; }
+    public TextGenerator ClearIndent() { this._indents.Clear(); this.RememberCurrentIndentString(); return this; }
+
+    public TextGenerator PushIndent() { return this.PushIndent(this._standardIndentString); }
 
     public TextGenerator PushIndent(Int32 numberOfSpaces) { this.PushIndent(" ".Repeat(numberOfSpaces)); return this; }
 
-    public TextGenerator PushIndent(String indent) { this._indents.Push(indent); this.RefreshCurrentIndentString(); return this; }
+    public TextGenerator PushIndent(String indent) { this._indents.Push(indent); this.RememberCurrentIndentString(); return this; }
 
     public TextGenerator PopIndent()
     {
       /* Pop() throws an exception if the stack is empty.
          Don't want that behavior.  Only pop if there's something
-         on the stack.  In othe words, popping the indent from 
+         on the stack.  In other words, popping the indent from 
          an empty stack is a no-op. */
       if (this._indents.Any())
       {
         this._indents.Pop();
-        this.RefreshCurrentIndentString();
+        this.RememberCurrentIndentString();
       }
 
       return this;
     }
+
+    public TextGenerator PushLine(String text) { this.PushIndent().WriteLine(text); return this; }
+
+    public TextGenerator PushLineThenPop(String text) { this.PushLine(text).PopIndent(); return this; }
+
+    public TextGenerator PopLine(String text) { this.PopIndent().WriteLine(text); return this; }
 
     private static readonly Regex _indentTextRegex = new Regex("(\r\n|\n)");
 
