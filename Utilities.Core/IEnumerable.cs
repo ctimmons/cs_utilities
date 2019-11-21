@@ -143,11 +143,39 @@ namespace Utilities.Core
       return values.JoinAndIndent(Environment.NewLine, indent);
     }
 
+    private static String JoinAndOr(IEnumerable<String> values, String connector, Boolean shouldUseOxfordComma = true)
+    {
+      values.Name("values").NotNull();
+
+      var count = values.Count();
+      var comma = shouldUseOxfordComma ? "," : "";
+
+      if (count == 0)
+        return "";
+      else if (count == 1)
+        return values.First();
+      else if (count == 2)
+        /* Special case: never use an Oxford comma when there are only two values. */
+        return String.Join($" {connector} ", values);
+      else
+        return String.Join(", ", values.ToArray(), 0, count - 1) + $"{comma} {connector} " + values.Last();
+    }
+
+    public static String JoinAnd(this IEnumerable<String> values, Boolean shouldUseOxfordComma = true)
+    {
+      return JoinAndOr(values, "and", shouldUseOxfordComma);
+    }
+
+    public static String JoinOr(this IEnumerable<String> values, Boolean shouldUseOxfordComma = true)
+    {
+      return JoinAndOr(values, "or", shouldUseOxfordComma);
+    }
+
     public static IEnumerable<String> Lines(this TextReader textReader)
     {
       textReader.Name("textreader").NotNull();
 
-      String line = null;
+      String line;
       while ((line = textReader.ReadLine()) != null)
         yield return line;
     }

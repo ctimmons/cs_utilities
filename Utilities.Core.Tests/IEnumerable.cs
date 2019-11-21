@@ -97,6 +97,44 @@ namespace Utilities.Core.UnitTests
       Assert.AreEqual(expected, actual);
     }
 
+    [Test]
+    public void JoinAndTest()
+    {
+      var expected = "";
+      var actual = (new[] { "" }).JoinAnd();
+      Assert.AreEqual(expected, actual, "Empty, comma.");
+
+      actual = (new[] { "" }).JoinAnd(false);
+      Assert.AreEqual(expected, actual, "Empty, no comma.");
+
+      expected = "a";
+      actual = (new[] { "a" }).JoinAnd();
+      Assert.AreEqual(expected, actual, "One element, comma.");
+
+      expected = "a";
+      actual = (new[] { "a" }).JoinAnd(false);
+      Assert.AreEqual(expected, actual, "One element, no comma.");
+
+      expected = "a and b";
+      actual = (new[] { "a", "b" }).JoinAnd();
+      Assert.AreEqual(expected, actual, "Two elements, comma.");
+
+      expected = "a and b";
+      actual = (new[] { "a", "b" }).JoinAnd(false);
+      Assert.AreEqual(expected, actual, "Two elements, no comma.");
+
+      expected = "a, b, and c";
+      actual = (new[] { "a", "b", "c" }).JoinAnd();
+      Assert.AreEqual(expected, actual, "Three elements, comma.");
+
+      expected = "a, b and c";
+      actual = (new[] { "a", "b", "c" }).JoinAnd(false);
+      Assert.AreEqual(expected, actual, "Three elements, no comma.");
+    }
+
+    /* No point in writing a test for JoinOr().  It's the same code
+       as JoinAnd(). */
+
     /* IEnumerableExtensions.Lines is tested in FileIO.cs. */
 
     [Test]
