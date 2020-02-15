@@ -52,6 +52,10 @@ namespace Utilities.Sql.SqlServer.Tests
     [OneTimeSetUp]
     public void Init()
     {
+      /* Luckily the random eight character string returned by this simple code
+         should always meet the criteria for a valid SQL Server identifier. */
+      String GetTempName() => Path.GetFileNameWithoutExtension(Path.GetRandomFileName());
+
       _tempFolder = Path.Combine(Path.GetTempPath(), GetTempName());
       Directory.CreateDirectory(_tempFolder);
 
@@ -101,10 +105,6 @@ namespace Utilities.Sql.SqlServer.Tests
 
       Directory.Delete(_tempFolder, true /* Recursive delete. */);
     }
-
-    /* Luckily the random eight character string returned by this simple code
-       should always meet the criteria for a valid SQL Server identifier. */
-    private String GetTempName() => Path.GetFileNameWithoutExtension(Path.GetRandomFileName());
 
     /* The make algorithm cares only about content changes,
        not timestamps.
@@ -287,10 +287,10 @@ IF EXISTS(SELECT * FROM sys.types WHERE is_table_type = 1 AND name = 'udtt')
       var exceptionMessages = new List<String>();
 
       if (objectNamesThatWereCompiledButShouldNotHaveBeen.Any())
-        exceptionMessages.Add($"{testNumber}. These objects were compiled but should not have been: { objectNamesThatWereCompiledButShouldNotHaveBeen.Join(", ") }");
+        exceptionMessages.Add($"{testNumber}. These objects were compiled but should not have been: {objectNamesThatWereCompiledButShouldNotHaveBeen.Join(", ")}");
 
       if (objectNamesThatWereNotCompiledButShouldHaveBeen.Any())
-        exceptionMessages.Add($"{testNumber}. These objects were not compiled but should have been: { objectNamesThatWereNotCompiledButShouldHaveBeen.Join(", ") }");
+        exceptionMessages.Add($"{testNumber}. These objects were not compiled but should have been: {objectNamesThatWereNotCompiledButShouldHaveBeen.Join(", ")}");
 
       if (exceptionMessages.Any())
         throw new Exception(exceptionMessages.Join());

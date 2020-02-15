@@ -171,6 +171,16 @@ namespace Utilities.Core
       return JoinAndOr(values, "or", shouldUseOxfordComma);
     }
 
+    public static IEnumerable<String> RemoveNullOrEmpty(this IEnumerable<String> values)
+    {
+      return values.Where(s => !String.IsNullOrEmpty(s));
+    }
+
+    public static IEnumerable<String> RemoveNullOrWhiteSpace(this IEnumerable<String> values)
+    {
+      return values.Where(s => !String.IsNullOrWhiteSpace(s));
+    }
+
     public static IEnumerable<String> Lines(this TextReader textReader)
     {
       textReader.Name("textreader").NotNull();

@@ -271,12 +271,13 @@ namespace Utilities.Sql.SqlServer
       var insertValues =
         this._makeItemsFlatList
         .Select(s => String.Format("('{0}', '{1}', '', '', {2}, '{3}', 'N', {4}, 'Y', 'N')",
-            s.FullFilename,
-            s.Filename.RemoveFileExtension(),
-            (s.Type.Trim() == "") ? "NULL" : s.Type.SingleQuote(),
-            s.NeedsToBeCompiled.AsYOrN(),
-            s.DropOrder))
-        .JoinAndIndent("," + Environment.NewLine, 2);
+          s.FullFilename,
+          s.Filename.RemoveFileExtension(),
+          (s.Type.Trim() == "") ? "NULL" : s.Type.SingleQuote(),
+          s.NeedsToBeCompiled.AsYOrN(),
+          s.DropOrder))
+        .Join(",\n")
+        .Indent(2);
 
       var sql = String.Format(sqlTemplate, insertValues, this.DefaultSchema);
 
@@ -288,32 +289,28 @@ namespace Utilities.Sql.SqlServer
         {
           while (reader.Read())
           {
-            if (reader["does_file_exist"].ToString().AsBoolean())
+            if (!reader["does_file_exist"].ToString().AsBoolean())
+              throw new ExceptionFmt(Properties.Resources.Make_SourceFileDoesNotExist,
+                reader["schema_name"], reader["object_name"], reader["type"]);
+
+            var filename = reader["full_filename"].ToString();
+            var makeItems = this._makeItems[Path.GetDirectoryName(filename)];
+
+            if (makeItems.TryGetValue(filename, out MakeItem makeItem))
             {
-              var filename = reader["full_filename"].ToString();
-              var makeItems = this._makeItems[Path.GetDirectoryName(filename)];
+              makeItem.SchemaName = reader["schema_name"].ToString();
+              makeItem.ObjectName = reader["object_name"].ToString();
+              makeItem.Type = reader["type"].ToString();
+              makeItem.NeedsToBeCompiled = reader["needs_to_be_compiled"].ToString().AsBoolean();
+              makeItem.IsPresentOnServer = reader["is_present_on_server"].ToString().AsBoolean();
+              makeItem.DropOrder = Convert.ToInt32(reader["drop_order"]);
+              makeItem.NeedsToBeDropped = reader["needs_to_be_dropped"].ToString().AsBoolean();
 
-              if (makeItems.TryGetValue(filename, out MakeItem makeItem))
-              {
-                makeItem.SchemaName = reader["schema_name"].ToString();
-                makeItem.ObjectName = reader["object_name"].ToString();
-                makeItem.Type = reader["type"].ToString();
-                makeItem.NeedsToBeCompiled = reader["needs_to_be_compiled"].ToString().AsBoolean();
-                makeItem.IsPresentOnServer = reader["is_present_on_server"].ToString().AsBoolean();
-                makeItem.DropOrder = Convert.ToInt32(reader["drop_order"]);
-                makeItem.NeedsToBeDropped = reader["needs_to_be_dropped"].ToString().AsBoolean();
-
-                this.RaiseLogEvent(Properties.Resources.Make_UpdatedItemForFile, makeItem.FullFilename);
-              }
-              else
-              {
-                throw new ExceptionFmt(Properties.Resources.Make_PathnameNotFound, filename);
-              }
+              this.RaiseLogEvent(Properties.Resources.Make_UpdatedItemForFile, makeItem.FullFilename);
             }
             else
             {
-              throw new ExceptionFmt(Properties.Resources.Make_SourceFileDoesNotExist,
-                reader["schema_name"], reader["object_name"], reader["type"]);
+              throw new ExceptionFmt(Properties.Resources.Make_PathnameNotFound, filename);
             }
           }
         }

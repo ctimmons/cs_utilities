@@ -33,8 +33,7 @@ INSERT INTO @client_items
   VALUES
 {0};
 
-/* An UPDATE statement's SET operations act as if they're
-   executed independently (i.e. in isolation from one another).
+/* An UPDATE statement's SET operations are executed in parallel (i.e. in isolation from one another).
    Therefore, some columns have to be set in a separate
    UPDATE before they can be referenced by later UPDATE statements. */
 
@@ -137,7 +136,7 @@ AS
   SELECT
       SED.referencing_id,
       referencing_schema_name = SCHEMA_NAME(O.schema_id),
-      referencing_object_name = O.name,
+      referencing_object_name = O.[name],
       O.[type]
     FROM
       udtts_to_compile AS T
@@ -151,7 +150,7 @@ AS
   SELECT
       SED.referencing_id,
       SCHEMA_NAME(O.schema_id),
-      O.name,
+      O.[name],
       O.[type]
     FROM
       udtt_dependencies_to_drop AS R

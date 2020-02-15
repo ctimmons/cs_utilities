@@ -54,6 +54,7 @@ $@"SELECT
     sys.tables
   WHERE
     [schema_id] = SCHEMA_ID('{normalizedSchemaName}')
+    AND [name] <> 'sysdiagrams'
 
 UNION
 

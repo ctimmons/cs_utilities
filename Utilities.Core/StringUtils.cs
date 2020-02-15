@@ -1,6 +1,7 @@
 /* See the LICENSE.txt file in the root folder for license details. */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -203,6 +204,8 @@ namespace Utilities.Core
       return (source.IndexOfCI(searchValue) > -1);
     }
 
+    private static readonly ConcurrentDictionary<(String value, Int32 count), String> _memoizedRepeatStrings = new ConcurrentDictionary<(String value, Int32 count), String>();
+
     /// <summary>
     /// Return 'value' repeated 'count' times.
     /// <para>
@@ -218,7 +221,15 @@ namespace Utilities.Core
     public static String Repeat(this String value, Int32 count)
     {
       value.Name("value").NotNull();
-      return (count < 1) ? "" : (new StringBuilder(value.Length * count)).Insert(0, value, count).ToString();
+
+      /* This method may be called frequently.
+
+         To reduce garbage collection pressure, memoize the "repeat" strings to avoid
+         creating a new StringBuilder() instance unless it's absolutely necessary.
+
+         Use the lambda overload of GetOrAdd() so 'new StringBuilder()' only gets
+         evaluated if a repeated string isn't found in the dictionary. */
+      return (count < 1) ? "" : _memoizedRepeatStrings.GetOrAdd((value, count), _ => (new StringBuilder(value.Length * count)).Insert(0, value, count).ToString());
     }
 
     /// <summary>
