@@ -541,6 +541,81 @@ namespace Utilities.Core
           throw new Exception("Unknown operating system.");
       }
     }
+
+    /* Emulate Perl's chomp() function.
+       Remove a single \n, \r, or single \r\n pair from the end of a string.
+
+       Can't use String.TrimEnd(array) because it doesn't discriminate;
+       it removes all of the characters in 'array' - regardless of order -
+       from the end of a string.
+      
+       For example:
+         
+         "x\n\n\n".TrimEnd("\n".ToCharArray()) returns "x", whereas 
+
+         "x\n\n\n".Chomp() returns "x\n\n".
+
+       It gets worse when \r\n combos are present.
+
+         "x\n\r\n\r\n".TrimEnd("\r\n".ToCharArray()) returns "x", whereas 
+
+         "x\n\r\n\r\n".Chomp() returns "x\n\r\n".
+       
+       There's a neat trick on StackOverflow, but it only works on single-line
+       strings that end with a single trailing \r, \n, or \r\n pair.
+       (https://stackoverflow.com/a/1038072/116198).
+       
+          new StringReader("x\n").ReadLine() returns "x", but
+
+          new StringReader("x\n\n").ReadLine() also returns "x", and
+
+          new StringReader("x\n\nHello\nWorld!\n").ReadLine() returns "x" as well.
+
+       In all cases, Chomp() acts intelligently and only removes the
+       final \r, \n, or \r\n pair if those characters are present.
+       Otherwise Chomp() returns the original string. */
+    public static String Chomp(this String source)
+    {
+      /* Maintain a piece of state to prevent consuming multiple \n characters. */
+      var justConsumedALinefeed = false;
+
+      /* Process the string backwards. */
+      var n = source.Length - 1;
+      while (n >= 0)
+      {
+        var ch = source[n];
+
+        if (!justConsumedALinefeed && (ch == '\n'))
+        {
+          /* Consume the \n. */
+          n--;
+
+          /* Don't consume another \n on the next iteration. */
+          justConsumedALinefeed = true;
+
+          /* Continue and see if the previous character is the \r in a \r\n combo. */
+          continue;
+        }
+        else if (ch == '\r')
+        {
+          /* Consume the \r. */
+          n--;
+
+          /* Done.  Whether this \r was a solitary \r, or the \r in a \r\n combo,
+             there's nothing more to consume. */
+          break;
+        }
+        else
+        {
+          break;
+        }
+      }
+
+      return
+        (n == source.Length - 1)      /* No chomping was done, */
+        ? source                      /* so just return the original string. O(1) performance. */
+        : source.Substring(0, n + 1); /* Otherwise return the appropriate substring. O(n) performance. */
+    }
   }
 
   public class CaseInsensitiveStringComparer : IEqualityComparer<String>

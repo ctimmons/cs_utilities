@@ -522,5 +522,37 @@ three
 
       Assert.AreEqual(expected, actual);
     }
+
+    [Test]
+    public void ChompTest()
+    {
+      Assert.AreEqual("".Chomp(), "");
+      Assert.AreEqual("x".Chomp(), "x");
+      Assert.AreEqual("xx".Chomp(), "xx");
+
+      Assert.AreEqual("\n".Chomp(), "");
+      Assert.AreEqual("x\n".Chomp(), "x");
+      Assert.AreEqual("xx\n".Chomp(), "xx");
+
+      Assert.AreEqual("\r".Chomp(), "");
+      Assert.AreEqual("x\r".Chomp(), "x");
+      Assert.AreEqual("xx\r".Chomp(), "xx");
+
+      Assert.AreEqual("\r\n".Chomp(), "");
+      Assert.AreEqual("x\r\n".Chomp(), "x");
+      Assert.AreEqual("xx\r\n".Chomp(), "xx");
+
+      Assert.AreEqual("\n\n".Chomp(), "\n");
+      Assert.AreEqual("x\n\n".Chomp(), "x\n");
+      Assert.AreEqual("xx\n\n".Chomp(), "xx\n");
+
+      Assert.AreEqual("\r\r".Chomp(), "\r");
+      Assert.AreEqual("x\r\r".Chomp(), "x\r");
+      Assert.AreEqual("xx\r\r".Chomp(), "xx\r");
+
+      Assert.AreEqual("\r\n\r\n".Chomp(), "\r\n");
+      Assert.AreEqual("x\r\n\r\n".Chomp(), "x\r\n");
+      Assert.AreEqual("xx\r\n\r\n".Chomp(), "xx\r\n");
+    }
   }
 }
