@@ -1,6 +1,8 @@
 cs_utilities (A C# Utilities Library)
 =====================================
 
+NOTE: This repository is archived.  Its replacement is the [Lazy8](https://github.com/ctimmons/Lazy8) repository, which is built on .Net Core/5/6/7/8.
+
 Just a few C# projects of utility code I've accumulated over the years.
 
 License
